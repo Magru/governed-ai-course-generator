@@ -233,11 +233,31 @@
   .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
     font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
 
+  /* series nav */
+  .series {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--hairline); color: var(--muted);
+  }
+  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
+  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  .series a:hover { border-color: var(--accent); }
+  .series .here { color: var(--ink); font-weight: 650; }
+  .series .soon { color: var(--muted); opacity: 0.75; }
+
   a { color: var(--accent); }
   ::selection { background: var(--accent-soft); }
 </style>
 
 <div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Project pages</span>
+    <span class="here">Spec v2</span>
+    <a href="states.html">State inventory &mdash; draft</a>
+    <span class="soon">Transitions &amp; guards &mdash; next</span>
+  </div>
 
   <header>
     <div class="eyebrow">AI Architect · Final Project · Spec v2</div>

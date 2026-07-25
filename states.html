@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State inventory — Governed AI Course Generator</title>
+<meta name="description" content="Draft state inventory for the Governed AI Course Generator: the course FSM, the node FSM, events, guards, and temporal invariants.">
+<meta property="og:title" content="State inventory — Governed AI Course Generator">
+<meta property="og:description" content="Two-level state machine: what persists across editor sessions, where the process can stall, and which invariants hold over the trace.">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+</head>
+<body>
+
+<style>
+  /* Deliberately single-theme: this document always renders light (paper). */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    color-scheme: light;
+    --paper: #FAF9F5;
+    --ink: #202A35;
+    --muted: #5C6873;
+    --hairline: #DFE2DA;
+    --accent: #0E6E5C;
+    --accent-soft: #E3EFEA;
+    --blocked: #A6512B;
+    --blocked-soft: #F4E7DD;
+    --hitl: #8A6A1F;
+    --hitl-soft: #F3ECD8;
+    --panel: #F2F3EE;
+    --code-bg: #EDEFE8;
+    --diagram-bg: #F4F5F0;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.4rem 5rem; }
+  .wrap-wide { max-width: 54rem; margin: 0 auto; }
+
+  h1, h2, h3, .sans {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; margin: 0.6rem 0 0.9rem; text-wrap: balance; }
+  h2 { font-size: 1.32rem; font-weight: 650; letter-spacing: -0.008em; margin: 0 0 0.9rem; text-wrap: balance; }
+  h3 { font-size: 1.02rem; font-weight: 650; margin: 1.4rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  section { margin-top: 3.2rem; }
+
+  .eyebrow {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .kicker { color: var(--muted); font-size: 1.06rem; margin-bottom: 1.4rem; }
+
+  /* series nav */
+  .series {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--hairline); color: var(--muted);
+  }
+  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
+  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  .series a:hover { border-color: var(--accent); }
+  .series .here { color: var(--ink); font-weight: 650; }
+  .series .soon { color: var(--muted); opacity: 0.75; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.3rem 0 0; }
+  .meta-chip {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 550; color: var(--muted);
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 0.28rem 0.75rem;
+    background: var(--panel);
+  }
+  .meta-chip b { color: var(--ink); font-weight: 650; }
+
+  .thesis {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 0.9rem 1.1rem; border-radius: 0 8px 8px 0;
+    margin: 1.4rem 0;
+  }
+  .thesis p { margin: 0; }
+  .thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
+
+  nav.toc {
+    margin-top: 2.6rem; padding: 1.1rem 1.2rem;
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
+  }
+  nav.toc .toc-title { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.7rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  nav.toc ol { columns: 2; column-gap: 2rem; margin: 0; padding: 0 0 0 1.2rem; font-size: 0.92rem; }
+  nav.toc li { margin-bottom: 0.32rem; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 620px) { nav.toc ol { columns: 1; } }
+
+  ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
+  ul.plain li { margin-bottom: 0.45rem; }
+  ol.steps { padding-left: 1.3rem; margin: 0 0 1rem; }
+  ol.steps li { margin-bottom: 0.55rem; }
+
+  strong { font-weight: 650; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em; background: var(--code-bg);
+    padding: 0.1em 0.38em; border-radius: 4px;
+  }
+  .formula {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0.6rem 0 1rem;
+    line-height: 1.9;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--hairline); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 640px; }
+  thead th {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: left; color: var(--muted); background: var(--panel);
+    padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--hairline);
+  }
+  tbody td { padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.state {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 600; font-size: 0.82rem; white-space: nowrap; color: var(--accent);
+  }
+  td.state.hitl-s { color: var(--hitl); }
+  td.state.blocked-s { color: var(--blocked); }
+  td.ev { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; white-space: nowrap; color: var(--ink); }
+  td small, .muted { color: var(--muted); }
+
+  .diagram {
+    background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 1rem; margin: 1.2rem 0; overflow-x: auto;
+  }
+  .diagram .caption {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.75rem; color: #5C6873; letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 600;
+  }
+  .diagram pre.mermaid { margin: 0; background: transparent; }
+  .diagram .edgeLabel,
+  .diagram .edgeLabel p,
+  .diagram .edgeLabel span,
+  .diagram .edgeLabel div {
+    color: #202A35 !important;
+    background: #F4F5F0 !important;
+  }
+  .diagram svg .labelBkg { background: #F4F5F0 !important; }
+  .diagram svg .edgeLabel rect { fill: #F4F5F0 !important; opacity: 1 !important; }
+  .diagram svg .flowchart-link { stroke: #8B958F !important; }
+  .diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; margin-top: 0.6rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; color: #5C6873; }
+  .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
+
+  .principles { list-style: none; padding: 0; margin: 1.3rem 0; counter-reset: pr; }
+  .principles li {
+    position: relative; padding: 0.75rem 0 0.75rem 2.4rem; border-bottom: 1px solid var(--hairline);
+    counter-increment: pr;
+  }
+  .principles li:last-child { border-bottom: none; }
+  .principles li::before {
+    content: counter(pr);
+    position: absolute; left: 0; top: 0.85rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 650; color: var(--muted);
+    width: 1.7rem; height: 1.7rem; border: 1px solid var(--hairline); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; background: var(--panel);
+  }
+
+  .callout {
+    border: 1px solid var(--accent); border-radius: 12px;
+    background: var(--accent-soft); padding: 1.2rem 1.3rem; margin-top: 3rem;
+  }
+  .callout .eyebrow { margin-bottom: 0.3rem; }
+  .callout p { margin: 0 0 0.7rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .questions { padding-left: 1.3rem; margin: 0; }
+  .questions li { margin-bottom: 0.7rem; }
+
+  .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  .footer-note a { color: var(--accent); }
+
+  a { color: var(--accent); }
+  ::selection { background: var(--accent-soft); }
+</style>
+
+<div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Project pages</span>
+    <a href="./">Spec v2</a>
+    <span class="here">State inventory</span>
+    <span class="soon">Transitions &amp; guards — next</span>
+    <span class="soon">Validation layers — next</span>
+  </div>
+
+  <header>
+    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <h1>State inventory</h1>
+    <p class="kicker">The two-level state machine behind the generator: what actually persists between editor sessions, where the process is allowed to stall, and which invariants must hold over the whole trace.</p>
+    <div class="thesis">
+      <p><strong>A check is not a state — a stall is.</strong> We do not mint a state per validation. We mint one wherever the process can stop and wait: for a human, for a retry, for a decision. Everything else is a step inside a transition.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">Course states: <b>18</b></span>
+      <span class="meta-chip">Node states: <b>10</b></span>
+      <span class="meta-chip">Status: <b>draft for discussion</b></span>
+      <span class="meta-chip">Names: <b>not final</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#s1">Design principles</a></li>
+      <li><a href="#s2">Course FSM</a></li>
+      <li><a href="#s3">Node FSM</a></li>
+      <li><a href="#s4">The staleness cascade</a></li>
+      <li><a href="#s5">Events</a></li>
+      <li><a href="#s6">Guards</a></li>
+      <li><a href="#s7">Temporal invariants</a></li>
+      <li><a href="#s8">What each artifact carries</a></li>
+      <li><a href="#s9">Open questions</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1">
+    <div class="eyebrow">Section 1</div>
+    <h2>How these states were derived</h2>
+    <ol class="principles">
+      <li><strong>A state is what survives the editor closing the laptop.</strong> If something need not be restored after three days away, it is a variable inside a step — not a state.</li>
+      <li><strong>Two levels.</strong> The course is long-lived and aggregates its nodes; each node runs its own cycle. Course-level guards quantify over node states rather than duplicating them.</li>
+      <li><strong>A check is not a state; a stall is.</strong> States exist where the process waits — on a human, on a retry budget, on a decision.</li>
+      <li><strong>Two classes of blocking.</strong> A policy violation is terminal (<code>BlockedFinal</code>); a constraint or grounding violation is recoverable — it enters a bounded repair loop and, if the budget runs out, lands in <code>BlockedRecoverable</code>.</li>
+      <li><strong>Modality creates no states.</strong> An image is a block with a modality, not a branch of the machine. "A human must sign off on the visual" is a flag on the block type, carried by the catalog — not a state of the course.</li>
+      <li><strong>Every state answers three questions</strong> for the editor: what is available now, what is blocked and why, and what to do next. The wizard is this machine, rendered.</li>
+    </ol>
+  </section>
+
+  <section id="s2" class="wrap-wide">
+    <div class="eyebrow">Section 2</div>
+    <h2>Course FSM</h2>
+
+    <div class="diagram">
+      <div class="caption">Course lifecycle — happy path, repair loops, blocked and stale states</div>
+      <pre class="mermaid">
+flowchart TD
+  AB["AwaitingBrief"] --> BV["BriefValidation — schema, OPA, guardrail"]
+  BV --> BF["BriefFeasibility — Z3 pre-flight"]
+  BF --> OD["OutlineDrafting"]
+  OD --> OM["OutlineModeration — guardrail on output"]
+  OM --> OC["OutlineChecks — schema, Datalog, OPA, Z3"]
+  OC --> OR["OutlineReview — editor approves the skeleton"]
+  OR --> CIP["ContentInProgress — node FSMs run here"]
+  CIP --> RFR["ReadyForReview — all nodes approved, none stale"]
+  RFR --> WCC["WholeCourseChecks"]
+  WCC --> PA["PendingApproval — final human decision"]
+  PA --> AP["Approved — stamped with versions"]
+  AP --> PUB["Published"]
+  PUB --> ARC["Archived"]
+
+  BV -- "denied topic or policy" --> BFin["BlockedFinal"]
+  BF -- "unsat, core shown" --> BRec["BlockedRecoverable"]
+  OM -- "unsafe" --> ORep["OutlineRepair — retry ≤ 2"]
+  OC -- "violation" --> ORep
+  ORep -- "budget left" --> OD
+  ORep -- "budget spent" --> BRec
+  OR -- "reject with notes" --> OD
+  WCC -- "fails, offending nodes marked" --> CIP
+  PA -- "reject with notes" --> CIP
+  PUB -- "policy or catalog change, node edit" --> SR["StaleReview"]
+  SR -- "revalidated" --> PUB
+  SR -- "now violating" --> BRec
+  OD -- "model error or timeout" --> ER["ErrorRecovery"]
+  ER -- "idempotency check, then backoff" --> OD
+
+  classDef default fill:#FFFFFF,stroke:#8B958F,color:#202A35;
+  classDef hitl fill:#F3ECD8,stroke:#8A6A1F,color:#4A3A10;
+  classDef blocked fill:#F4E7DD,stroke:#A6512B,color:#5C2D16;
+  classDef terminal fill:#E3EFEA,stroke:#0E6E5C,color:#0B4438;
+  class OR,PA hitl;
+  class BFin,BRec,ORep,ER,SR blocked;
+  class AP,PUB,ARC terminal;
+      </pre>
+      <div class="legend">
+        <span><span class="dot" style="background:#E3EFEA;border:1px solid #0E6E5C;"></span>approved / published / terminal</span>
+        <span><span class="dot" style="background:#F3ECD8;border:1px solid #8A6A1F;"></span>waiting on a human</span>
+        <span><span class="dot" style="background:#F4E7DD;border:1px solid #A6512B;"></span>blocked, repairing, or stale</span>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>State</th><th>Meaning</th><th>What the editor can do</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="state">AwaitingBrief</td><td>The course record exists; no brief yet.</td><td>Write the brief, discard the draft</td></tr>
+          <tr><td class="state">BriefValidation</td><td>The input is checked in three hops: JSON schema → OPA (role, limits) → guardrail (denied topics, PII).</td><td>Wait; read the refusal reason</td></tr>
+          <tr><td class="state">BriefFeasibility</td><td>Z3 pre-flight: are the brief's requirements mutually satisfiable at all?</td><td>On unsat — read the core and fix the brief</td></tr>
+          <tr><td class="state">OutlineDrafting</td><td>The model proposes the structure through a forced JSON schema.</td><td>Cancel the run</td></tr>
+          <tr><td class="state">OutlineModeration</td><td>Managed moderation of the produced outline text.</td><td>Wait</td></tr>
+          <tr><td class="state">OutlineChecks</td><td>Schema, Datalog (skills grounded, no prerequisite cycles), OPA (structural policy), Z3 (counts and budgets).</td><td>Wait</td></tr>
+          <tr><td class="state blocked-s">OutlineRepair</td><td>Bounded repair: the formal explanation is fed back into the prompt, retry ≤ 2.</td><td>Watch the repair; abort</td></tr>
+          <tr><td class="state hitl-s">OutlineReview</td><td><strong>Human.</strong> The editor rewrites, renames, deletes, and approves the skeleton — before any content is paid for.</td><td>Edit, approve, reject with notes</td></tr>
+          <tr><td class="state">ContentInProgress</td><td>The long phase. An aggregate of node states; the editor comes and goes.</td><td>Pick a node, generate, edit, approve</td></tr>
+          <tr><td class="state">ReadyForReview</td><td>Guard satisfied: every node approved, none stale.</td><td>Start the course-level checks</td></tr>
+          <tr><td class="state">WholeCourseChecks</td><td>Completeness, ordering, consistency, LTL over the trace, a permission sweep across all sources used.</td><td>Wait; on failure see which nodes are at fault</td></tr>
+          <tr><td class="state hitl-s">PendingApproval</td><td><strong>Human.</strong> The final publication decision, with everything the approver needs on screen.</td><td>Approve, reject with notes</td></tr>
+          <tr><td class="state terminal">Approved</td><td>Approved and <strong>stamped</strong> with the policy, guardrail, catalog, and model versions it passed under.</td><td>Publish, or send back to work</td></tr>
+          <tr><td class="state terminal">Published</td><td>Live for its audience.</td><td>Archive; edits move it to StaleReview</td></tr>
+          <tr><td class="state blocked-s">StaleReview</td><td><strong>New in v2.</strong> Published, but a policy, catalog, or dependency change touched it. The course is not silently wrong and not silently stopped — it is queued for re-validation.</td><td>Re-validate, or unpublish</td></tr>
+          <tr><td class="state terminal">Archived</td><td>Terminal: withdrawn from circulation, kept for audit.</td><td>Clone as the basis for a new course</td></tr>
+          <tr><td class="state blocked-s">BlockedFinal</td><td>Terminal: a policy violation (OPA deny or a denied topic). Carries the deny reason and the audit entry.</td><td>Read only</td></tr>
+          <tr><td class="state blocked-s">BlockedRecoverable</td><td>The process stopped and needs a human move: retries exhausted, a contradictory brief, a rights refusal.</td><td>Fix the input and re-enter the relevant state</td></tr>
+          <tr><td class="state blocked-s">ErrorRecovery</td><td>Infrastructure trouble: a model error or a timeout — an <em>unknown</em>, not a failure.</td><td>Wait; cancel</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <h3>Why <code>ErrorRecovery</code> is not just "retry"</h3>
+      <p>Generating a node is an operation <strong>with side effects</strong>: it writes into course state and spends money. So the exit from this state is not "send the request again" — it is: check the <code>idempotency_key</code>, find out whether the operation actually completed, and only then retry with backoff. A timeout is an unknown, never a failure.</p>
+    </div>
+  </section>
+
+  <section id="s3" class="wrap-wide">
+    <div class="eyebrow">Section 3</div>
+    <h2>Node FSM — lesson, topic, exam</h2>
+
+    <div class="diagram">
+      <div class="caption">Node lifecycle — generation, moderation, checks, approval, staleness</div>
+      <pre class="mermaid">
+flowchart TD
+  PL["Planned — title and objectives only"] --> CD["ContentDrafting — retrieval plus block assembly"]
+  CD --> GEN["Generated"]
+  GEN --> OMD["OutputModeration — guardrail on text and images"]
+  OMD --> NC["NodeChecks — block schema, grounding, permissions, arithmetic, coverage"]
+  NC --> VAL["Validated"]
+  VAL --> NA["NodeApproved — editor signs off, versions stamped"]
+  OMD -- "unsafe content" --> NR["NodeRepair — retry ≤ 2"]
+  NC -- "ungrounded, bad settings, leak" --> NR
+  NR -- "budget left" --> CD
+  NR -- "budget spent" --> BR["BlockedRecoverable"]
+  NC -- "policy violation" --> BF["BlockedFinal"]
+  NA -- "editor edits the node" --> NRV["NeedsRevalidation"]
+  NRV -. "Datalog marks dependents" .-> NRV2["Dependent nodes — exam, images"]
+  NRV --> NC
+  NRV2 --> NC
+
+  classDef default fill:#FFFFFF,stroke:#8B958F,color:#202A35;
+  classDef hitl fill:#F3ECD8,stroke:#8A6A1F,color:#4A3A10;
+  classDef blocked fill:#F4E7DD,stroke:#A6512B,color:#5C2D16;
+  classDef terminal fill:#E3EFEA,stroke:#0E6E5C,color:#0B4438;
+  class NA hitl;
+  class NR,BR,BF,NRV,NRV2 blocked;
+  class VAL terminal;
+      </pre>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>State</th><th>Meaning</th><th>Exit</th></tr></thead>
+        <tbody>
+          <tr><td class="state">Planned</td><td>From the approved skeleton: a title and learning objectives, nothing else.</td><td>The editor starts generation</td></tr>
+          <tr><td class="state">ContentDrafting</td><td>Retrieval scoped to this topic; the model assembles blocks against the catalog's schemas.</td><td>→ Generated</td></tr>
+          <tr><td class="state">Generated</td><td>A draft exists and nothing has checked it yet.</td><td>→ OutputModeration</td></tr>
+          <tr><td class="state">OutputModeration</td><td><strong>New in v2.</strong> Managed moderation of the generated text <em>and</em> of any generated image.</td><td>Clean → NodeChecks · unsafe → NodeRepair</td></tr>
+          <tr><td class="state">NodeChecks</td><td>Block schemas · grounding (Datalog) · rights over the chunk IDs used · arithmetic (Z3) · objective coverage (Prolog).</td><td>Pass → Validated · violation → NodeRepair · policy → BlockedFinal</td></tr>
+          <tr><td class="state blocked-s">NodeRepair</td><td>The unsat core, deny reason, or proof tree is fed back into the prompt; retry ≤ 2.</td><td>Budget left → ContentDrafting · spent → BlockedRecoverable</td></tr>
+          <tr><td class="state terminal">Validated</td><td>Formally clean, waiting on a person.</td><td>→ NodeApproved</td></tr>
+          <tr><td class="state hitl-s">NodeApproved</td><td><strong>Human.</strong> The editor approved this node; versions are stamped onto it.</td><td>An edit → NeedsRevalidation</td></tr>
+          <tr><td class="state blocked-s">NeedsRevalidation</td><td>This node or something it depends on changed; the approval is honestly withdrawn.</td><td>→ NodeChecks</td></tr>
+          <tr><td class="state blocked-s">BlockedFinal</td><td>Terminal for this node: a policy violation.</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s4">
+    <div class="eyebrow">Section 4</div>
+    <h2>The staleness cascade</h2>
+    <p>This is the centerpiece of the design, and the reason the machine is two-level rather than one long pipeline.</p>
+    <p>Editing an approved node moves it to <code>NeedsRevalidation</code> — and Datalog marks the same status on everything that <strong>depends</strong> on it: the exam that tests this topic, the illustrations derived from this lesson's content, the nodes whose prerequisites point at it. A course cannot reach <code>ReadyForReview</code> while a single stale node remains, and a published course carrying one lands in <code>StaleReview</code> rather than quietly serving contradictory material.</p>
+    <p>The same machinery answers a second question, added in v2: when an <strong>organizational policy changes</strong>, the artifacts stamped with the old version are found and marked exactly the same way. A rule change is an event inside the system, not a redeployment.</p>
+  </section>
+
+  <section id="s5" class="wrap-wide">
+    <div class="eyebrow">Section 5</div>
+    <h2>Events</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Event</th><th>Source</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td class="ev">BriefSubmitted</td><td>editor</td><td>course</td></tr>
+          <tr><td class="ev">OutlineGenerated / NodeGenerated</td><td>model</td><td>course / node</td></tr>
+          <tr><td class="ev">GuardrailVerdict</td><td>managed service</td><td>course / node</td></tr>
+          <tr><td class="ev">CheckFailed(layer, reason)</td><td>formal layer</td><td>course / node</td></tr>
+          <tr><td class="ev">OutlineApproved / OutlineRejected</td><td>human</td><td>course</td></tr>
+          <tr><td class="ev">NodeApproved / NodeRejected</td><td>human</td><td>node</td></tr>
+          <tr><td class="ev">NodeEdited</td><td>human</td><td>node, then the cascade</td></tr>
+          <tr><td class="ev">PolicyChanged / CatalogChanged / KBUpdated</td><td>organization configuration</td><td>every stamped artifact</td></tr>
+          <tr><td class="ev">PublishRequested / ApprovalGranted / ApprovalRejected</td><td>human</td><td>course</td></tr>
+          <tr><td class="ev">ModelError / Timeout</td><td>infrastructure</td><td>the current state</td></tr>
+          <tr><td class="ev">ArchiveRequested</td><td>human</td><td>course</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow">Section 6</div>
+    <h2>Guards</h2>
+    <div class="formula">policy_allows(action, role, state)
+guardrail_clean(artifact)
+feasible(brief)                 — Z3 sat
+grounded(node)
+no_permission_leak(course)
+all_nodes_approved(course)
+no_stale_nodes(course)
+retry_budget_left(node)
+versions_current(artifact)
+idempotency_key_unused(operation)
+objectives_covered(course)</div>
+    <p>Each guard belongs to exactly one layer — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation. No guard is evaluated twice by two different tools.</p>
+  </section>
+
+  <section id="s7">
+    <div class="eyebrow">Section 7</div>
+    <h2>Temporal invariants over the trace</h2>
+    <p>These hold across the whole life of a course — including sessions separated by days.</p>
+    <div class="formula">G(content_generated(N) → O outline_approved)
+G(exam_generated(E)   → O content_approved(topics(E)))
+G(published(C)        → all_nodes_approved(C) ∧ ¬∃ stale(C))
+G(node_edited(N)      → X needs_revalidation(N))
+G(generated(A)        → O guardrail_checked(A))                  ← new in v2
+G(published(C)        → policy_version(C) = current ∨ stale(C))  ← new in v2
+G(restricted_chunk_used(N) → O permission_checked(N))
+G(action              → F audit(action))</div>
+  </section>
+
+  <section id="s8">
+    <div class="eyebrow">Section 8</div>
+    <h2>What each artifact carries</h2>
+    <p>Every course and every node persists more than its state name:</p>
+    <ul class="plain">
+      <li><code>state</code> — where it is in its machine;</li>
+      <li><code>policy_version</code>, <code>guardrail_version</code>, <code>catalog_version</code> — what it was judged against;</li>
+      <li><code>model_id + version</code> — who generated it;</li>
+      <li><code>kb_snapshot</code> — which knowledge it was grounded in;</li>
+      <li><code>idempotency_key</code> of the last side-effecting operation;</li>
+      <li><code>trace_id</code> — the thread that ties every event together across sessions;</li>
+      <li><code>approvals[]</code> — who approved what, when, and what they were shown at the time.</li>
+    </ul>
+    <p>Those fields are what make two things possible at once: resuming an editor's session three days later, and answering "which approved courses does this new rule affect?" without stopping the system.</p>
+  </section>
+
+  <section id="s9">
+    <div class="eyebrow">Section 9</div>
+    <h2>Open questions in this draft</h2>
+    <ol class="questions">
+      <li><strong>Is editing a published course a mutation or a new edition?</strong> With learners already partway through, silently swapping content is not acceptable. One option: <code>Published</code> becomes immutable, an edit spawns <code>Draft(v+1)</code> alongside it, and publication flips a pointer — which adds a <code>SupersededPublished</code> state and a learner-migration question.</li>
+      <li><strong>What happens to learners mid-course</strong> when it enters <code>StaleReview</code> — do they continue on the version they started, or is progress frozen?</li>
+      <li><strong>Does the editor need a <code>Sandbox</code></strong> for experiments that should not appear in the audit log as publication attempts?</li>
+      <li><strong>Is <code>BlockedFinal</code> truly terminal,</strong> or may an organization admin unblock with a justification — making that its own audited event?</li>
+      <li><strong>How granular is the cascade?</strong> If one topic out of five changes, does the whole exam go stale, or only the questions traced to that topic?</li>
+      <li><strong>Who owns <code>retry ≤ 2</code></strong> — is it a global rule or an organizational parameter? By the spec's own principle, if organizations may tune it, it is data, not a constant.</li>
+    </ol>
+  </section>
+
+  <div class="callout">
+    <div class="eyebrow">Next pages in this series</div>
+    <p><strong>Transitions &amp; guards</strong> — the full table the brief asks for: current state, event, guard, validation layer, next state; plus examples of valid and forbidden event chains.</p>
+    <p><strong>Validation layers</strong> — which tool owns which check, with the concrete rules written out.</p>
+  </div>
+
+  <p class="footer-note">State inventory · draft v0.1 · 25 July 2026 · companion to the <a href="./">spec v2</a></p>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'strict',
+    theme: 'base',
+    themeVariables: {
+      background: '#F4F5F0',
+      primaryColor: '#FFFFFF',
+      primaryTextColor: '#202A35',
+      primaryBorderColor: '#8B958F',
+      lineColor: '#8B958F',
+      secondaryColor: '#F2F3EE',
+      tertiaryColor: '#EDEFE8',
+      fontFamily: '"Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+  });
+</script>
+</body>
+</html>
