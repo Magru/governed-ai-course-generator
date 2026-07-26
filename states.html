@@ -271,11 +271,12 @@
   <a href="#s2"><span class="tick"></span><span class="lbl">Course FSM</span></a>
   <a href="#s3"><span class="tick"></span><span class="lbl">Node FSM</span></a>
   <a href="#s4"><span class="tick"></span><span class="lbl">Staleness</span></a>
-  <a href="#s5"><span class="tick"></span><span class="lbl">Events</span></a>
-  <a href="#s6"><span class="tick"></span><span class="lbl">Guards</span></a>
-  <a href="#s7"><span class="tick"></span><span class="lbl">Invariants</span></a>
-  <a href="#s8"><span class="tick"></span><span class="lbl">Artifact fields</span></a>
-  <a href="#s9"><span class="tick"></span><span class="lbl">Open questions</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Situations</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">Events</span></a>
+  <a href="#s7"><span class="tick"></span><span class="lbl">Guards</span></a>
+  <a href="#s8"><span class="tick"></span><span class="lbl">Invariants</span></a>
+  <a href="#s9"><span class="tick"></span><span class="lbl">Artifact fields</span></a>
+  <a href="#s10"><span class="tick"></span><span class="lbl">Open questions</span></a>
 </nav>
 
 <div class="wrap">
@@ -311,11 +312,12 @@
       <li><a href="#s2">Course FSM</a></li>
       <li><a href="#s3">Node FSM</a></li>
       <li><a href="#s4">The staleness cascade</a></li>
-      <li><a href="#s5">Events</a></li>
-      <li><a href="#s6">Guards</a></li>
-      <li><a href="#s7">Temporal invariants</a></li>
-      <li><a href="#s8">What each artifact carries</a></li>
-      <li><a href="#s9">Open questions</a></li>
+      <li><a href="#s5">Eight situations</a></li>
+      <li><a href="#s6">Events</a></li>
+      <li><a href="#s7">Guards</a></li>
+      <li><a href="#s8">Temporal invariants</a></li>
+      <li><a href="#s9">What each artifact carries</a></li>
+      <li><a href="#s10">Open questions</a></li>
     </ol>
   </nav>
 
@@ -490,6 +492,124 @@ flowchart TD
 
   <section id="s5" class="wrap-wide">
     <div class="eyebrow">Section 5</div>
+    <h2>The machine in eight situations</h2>
+    <p style="max-width:46rem;">A state list says what exists; it does not say what moves. Below are the situations the generator actually meets, and for each one: what the event is, which states change, which fields are written, and what the editor is left holding.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Situation</th><th>Course</th><th>Node</th><th>What else changes</th><th>Editor's next move</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="role">The brief asks for a forbidden topic</td>
+            <td><code>BriefValidation</code> → <code>BlockedFinal</code></td>
+            <td>none exist yet</td>
+            <td>Guardrail verdict and its reason land in the trace; the model is never called, so no model or token is recorded</td>
+            <td>Read the reason; start a new brief. This course is closed for good</td>
+          </tr>
+          <tr>
+            <td class="role">The brief contradicts itself</td>
+            <td><code>BriefFeasibility</code> → <code>BlockedRecoverable</code></td>
+            <td>none exist yet</td>
+            <td>The contradicting requirements are named and stored with the course; still no generation spend</td>
+            <td>Loosen one of the named requirements and resubmit — the course returns to <code>BriefValidation</code></td>
+          </tr>
+          <tr>
+            <td class="role">The proposed skeleton invents a skill</td>
+            <td><code>OutlineChecks</code> → <code>OutlineRepair</code> → <code>OutlineDrafting</code></td>
+            <td>none exist yet</td>
+            <td><code>repair_count</code> +1 on the course; the ungrounded skill and the explanation are fed into the next prompt</td>
+            <td>Nothing — watch, or abort. Only after two failed repairs does the course stop and ask</td>
+          </tr>
+          <tr>
+            <td class="role">A node's content cites nothing</td>
+            <td>stays <code>ContentInProgress</code></td>
+            <td><code>NodeChecks</code> → <code>NodeRepair</code> → <code>ContentDrafting</code></td>
+            <td><code>repair_count</code> +1 on that node only; other nodes are untouched and stay approved</td>
+            <td>Nothing yet — the loop is bounded and will either fix it or hand it back</td>
+          </tr>
+          <tr>
+            <td class="role">A node reaches for a restricted source</td>
+            <td>stays <code>ContentInProgress</code></td>
+            <td><code>NodeChecks</code> → <code>NodeRepair</code>, and on a second failure <code>BlockedRecoverable</code></td>
+            <td>The leak path is recorded: node → source → the audience that lacks rights. The source is excluded from this node's retrieval on retry</td>
+            <td>Narrow the audience, or accept the node without that source</td>
+          </tr>
+          <tr>
+            <td class="role">Generation times out</td>
+            <td>stays <code>ContentInProgress</code></td>
+            <td><code>ContentDrafting</code> → <code>ErrorRecovery</code></td>
+            <td>The <code>idempotency_key</code> is checked before anything else: if the write landed, the node moves on; if it did not, one bounded retry follows</td>
+            <td>Nothing — a timeout is an unknown, and the machine resolves it without asking</td>
+          </tr>
+          <tr>
+            <td class="role">An approved topic is edited</td>
+            <td><code>ReadyForReview</code> → <code>ContentInProgress</code></td>
+            <td>edited node → <code>NeedsRevalidation</code>; its exam and its images follow</td>
+            <td>Approvals are withdrawn from all of them, with the reason “dependency changed” and a pointer to the edit</td>
+            <td>Re-run the affected nodes; the course cannot be published while any of them is stale</td>
+          </tr>
+          <tr>
+            <td class="role">A policy changes after publication</td>
+            <td><code>Published</code> → <code>StaleReview</code></td>
+            <td>only the nodes the rule touches</td>
+            <td>Courses stamped with the old policy version are found by the dependency graph; untouched courses keep running</td>
+            <td>Re-validate. If the course now violates the rule, it is withdrawn with an explanation of what changed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Three of these are worth following event by event, because they are where the design earns its keep.</p>
+
+      <h3>A bounded repair, from failure to approval</h3>
+      <p>The node is generated, the guardrail is content, but a claim in it has no source behind it.</p>
+      <div class="formula">t0  NodeGenerated              node: ContentDrafting → Generated
+t1  GuardrailVerdict(allow)    node: Generated → OutputGuardrail → NodeChecks
+t2  CheckFailed(datalog,       node: NodeChecks → NodeRepair
+      ungrounded: claim #3)      node.repair_count: 0 → 1
+t3  NodeGenerated              node: ContentDrafting → Generated
+      (prompt now carries the
+       explanation from t2)
+t4  GuardrailVerdict(allow)    node: → NodeChecks → Validated
+t5  NodeApproved (editor)      node: Validated → NodeApproved
+                               node.policy_version, guardrail_version,
+                               catalog_version, model_id: stamped</div>
+      <p>What matters here is <em>t2</em>: the failure is not a retry signal, it is a specific explanation that becomes part of the next prompt. And <em>t5</em>: approval is not a boolean but a set of stamps — the node is approved <strong>against named versions</strong>, which is what makes the next situation possible.</p>
+
+      <h3>The staleness cascade</h3>
+      <p>Everything is approved, the course is one click from review — and the editor fixes a sentence in an approved topic.</p>
+      <div class="formula">before  course: ReadyForReview
+        topic T: NodeApproved   exam E: NodeApproved   image I: NodeApproved
+
+t0  NodeEdited(T)              T: NodeApproved → NeedsRevalidation
+t1  (dependency graph)         E: NodeApproved → NeedsRevalidation
+                               I: NodeApproved → NeedsRevalidation
+                               reason: "dependency changed → T"
+t2  (course guard re-evaluates) course: ReadyForReview → ContentInProgress
+
+after   the course is un-publishable until T, E and I pass NodeChecks again</div>
+      <p>Nobody decided this cascade — it is derived. The exam is stale because it was traced to T when it was written; the image is stale because its prompt came from T's content. That is the same dependency graph that finds permission leaks, used for a second purpose.</p>
+
+      <h3>A rule changes under a live course</h3>
+      <p>A compliance officer adds a forbidden topic. Nothing is deployed and nothing stops.</p>
+      <div class="formula">t0  PolicyChanged(v7 → v8)      no course changes state yet
+t1  (dependency graph)         courses stamped policy_version=v7
+                                 AND touching the new topic
+                                 → StaleReview
+                               every other course: untouched, still Published
+t2  re-check through the gateway
+      passes  → back to Published, stamped v8
+      fails   → BlockedRecoverable, with the diff explained
+                and the course withdrawn from its audience</div>
+      <p>This is what the version stamps are for. Without them the only honest answer to “which published courses does this new rule affect?” would be “all of them”, and the only safe action would be to stop everything.</p>
+    </div>
+  </section>
+
+  <section id="s6" class="wrap-wide">
+    <div class="eyebrow">Section 6</div>
     <h2>Events</h2>
     <div class="table-scroll">
       <table>
@@ -511,8 +631,8 @@ flowchart TD
     </div>
   </section>
 
-  <section id="s6">
-    <div class="eyebrow">Section 6</div>
+  <section id="s7">
+    <div class="eyebrow">Section 7</div>
     <h2>Guards</h2>
     <div class="formula">policy_allows(action, role, state)
 guardrail_clean(artifact)
@@ -528,8 +648,8 @@ objectives_covered(course)</div>
     <p>Each guard belongs to exactly one layer — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation. No guard is evaluated twice by two different tools.</p>
   </section>
 
-  <section id="s7">
-    <div class="eyebrow">Section 7</div>
+  <section id="s8">
+    <div class="eyebrow">Section 8</div>
     <h2>Temporal invariants over the trace</h2>
     <p>These hold across the whole life of a course — including sessions separated by days.</p>
     <div class="formula">G(content_generated(N) → O outline_approved)
@@ -542,8 +662,8 @@ G(restricted_chunk_used(N) → O permission_checked(N))
 G(action              → F audit(action))</div>
   </section>
 
-  <section id="s8">
-    <div class="eyebrow">Section 8</div>
+  <section id="s9">
+    <div class="eyebrow">Section 9</div>
     <h2>What each artifact carries</h2>
     <p>Every course and every node persists more than its state name:</p>
     <ul class="plain">
@@ -558,8 +678,8 @@ G(action              → F audit(action))</div>
     <p>Those fields are what make two things possible at once: resuming an editor's session three days later, and answering "which approved courses does this new rule affect?" without stopping the system.</p>
   </section>
 
-  <section id="s9">
-    <div class="eyebrow">Section 9</div>
+  <section id="s10">
+    <div class="eyebrow">Section 10</div>
     <h2>Open questions in this draft</h2>
     <ol class="questions">
       <li><strong>Is editing a published course a mutation or a new edition?</strong> With learners already partway through, silently swapping content is not acceptable. One option: <code>Published</code> becomes immutable, an edit spawns <code>Draft(v+1)</code> alongside it, and publication flips a pointer — which adds a <code>SupersededPublished</code> state and a learner-migration question.</li>
