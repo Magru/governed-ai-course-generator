@@ -261,7 +261,7 @@
       </span>
       <span class="card">
         <span class="card-title">Generation safety <span class="status planned">planned</span></span>
-        <span class="card-desc">The action registry with risk levels, pre- and post-generation checks, idempotency, secrets handling, kill switch, autonomy ladder.</span>
+        <span class="card-desc">The action registry with risk levels, prompt architecture and injection defense in full, pre- and post-generation checks, idempotency, secrets, kill switch, autonomy ladder.</span>
       </span>
       <span class="card">
         <span class="card-title">Evaluation &amp; red team <span class="status planned">planned</span></span>
@@ -364,7 +364,7 @@
       </div>
 
       <h3>Semantics are configuration</h3>
-      <p>Forbidden topics, content thresholds, and multimodal moderation live in a managed service with its own version history. A compliance officer changes them: no developer, no deployment, no downtime. Their verdict enters the system as a <em>fact</em> for the formal layer — it decides nothing on its own — and if the service is unreachable the gateway fails closed.</p>
+      <p>Forbidden topics, content thresholds, and multimodal guardrails live in a managed service with its own version history. A compliance officer changes them: no developer, no deployment, no downtime. Their verdict enters the system as a <em>fact</em> for the formal layer — it decides nothing on its own — and if the service is unreachable the gateway fails closed.</p>
 
       <h3>Vocabulary is data</h3>
       <p>The block catalog — every block type, its settings schema, its modality, its applicability policy — is read from the platform at runtime and never copied into the generator. A new modality (video, audio, an interactive block) arrives as a catalog entry: the generator proposes it, its schema validates it, provenance traces it, policy constrains it. Zero code, zero deployments. The same holds for the skills catalog, the Knowledge Base categories with their access rules, thresholds, and the model routing table — organizational data, not constants inside a release.</p>
@@ -397,7 +397,7 @@
   <section id="s6">
     <div class="eyebrow">Section 6</div>
     <h2>State model</h2>
-    <p>The lifecycle is an explicit two-level state machine, not a pipeline. The <strong>course</strong> machine survives editor sessions and aggregates the state of its nodes; each <strong>node</strong> — lesson, topic, exam — runs its own cycle of drafting, moderation, checks, repair, and approval.</p>
+    <p>The lifecycle is an explicit two-level state machine, not a pipeline. The <strong>course</strong> machine survives editor sessions and aggregates the state of its nodes; each <strong>node</strong> — lesson, topic, exam — runs its own cycle of drafting, guardrail screening, checks, repair, and approval.</p>
     <p>Two properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. And approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it.</p>
     <p><strong>The state machine is the editor's interface.</strong> In every state the system says what is available, what is blocked and why, and what to do next — the next best action is derived from uncovered objectives and stale nodes, not suggested by a model.</p>
     <p>→ <a href="states.html"><strong>State model — detailed specification</strong></a>: every course and node state, the event catalog, guards, temporal invariants, and the fields each artifact persists.</p>
@@ -414,16 +414,16 @@
 flowchart TD
   IN["Author prompt — untrusted input"] --> SC["Schema — is the request well formed"]
   SC --> OPA["Policy — role, audience, limits, action legal in this state"]
-  OPA --> GI["Moderation IN — forbidden topics, personal data"]
+  OPA --> GI["Guardrail IN — forbidden topics, personal data"]
   GI --> RT["Routing — task to model, by policy"]
   RT --> GEN["Generation — forced schema output"]
-  GEN --> GO["Moderation OUT — text and images"]
+  GEN --> GO["Guardrail OUT — text and images"]
   GO --> BS["Block schemas — from the platform catalog"]
   BS --> DL["Grounding and rights — sources traced, permissions re-checked"]
   DL --> ZP["Constraints and coverage"]
   ZP --> ADM["Admission into course state"]
   ADM --> HITL["Editor approval"]
-  ADM --> AUD["Audit trace — versions of model, policy, catalog, moderation"]
+  ADM --> AUD["Audit trace — versions of model, policy, catalog, guardrail"]
 
   OPA -- "not permitted" --> BL["Blocked — reason and safe next action"]
   GI -- "forbidden topic" --> BL
@@ -449,7 +449,16 @@ flowchart TD
     </div>
 
     <div class="wrap" style="padding:0; max-width:46rem;">
-      <p>Three properties of the gateway matter more than its individual steps. It is <strong>explicit</strong> — moderation is a call the architecture makes, visible in the state machine and in the trace, not a flag hidden inside a model invocation. It <strong>fails closed</strong> — if any layer cannot answer, nothing is admitted. And a refusal always carries a <strong>safe next action</strong>, which is what turns a block into a repair instead of a dead end.</p>
+      <h3>What the model is given, and how much of it is trusted</h3>
+      <p>Every prompt the gateway sends is assembled from three inputs with three different trust levels, kept separate rather than concatenated:</p>
+      <ol class="steps">
+        <li><strong>System instructions — trusted, ours.</strong> The generation rules for this phase and a strict output schema, enforced as a tool call so the model returns a structure rather than prose. Each phase has its own: skeleton, node content, illustration.</li>
+        <li><strong>The author's prompt — authorized, but untrusted.</strong> The author steers style and emphasis; the author cannot lift a rule. “Generate without checks” is refused at the entrance, with an explanation, and the model is never called.</li>
+        <li><strong>Retrieved sources — untrusted data.</strong> Passages from the Knowledge Base are quoted as data, never executed as instructions. An instruction embedded in an internal document is inert by construction.</li>
+      </ol>
+      <p>The model's output stays untrusted until it has passed every layer: the schema binds its shape, grounding binds its claims to sources, policy binds the action it implies, and the guardrail screens its meaning. Nothing about it is acted on before those return.</p>
+
+      <p>Three properties of the gateway matter more than its individual steps. It is <strong>explicit</strong> — the guardrail is a call the architecture makes, visible in the state machine and in the trace, not a flag hidden inside a model invocation. It <strong>fails closed</strong> — if any layer cannot answer, nothing is admitted. And a refusal always carries a <strong>safe next action</strong>, which is what turns a block into a repair instead of a dead end.</p>
     </div>
   </section>
 
@@ -465,7 +474,7 @@ flowchart TD
           <tr><td class="tool">Z3</td><td class="role">Arithmetic &amp; satisfiability</td><td>Whether the brief is satisfiable at all — proven <em>before</em> any generation spend, with the contradicting requirements named</td></tr>
           <tr><td class="tool">Prolog</td><td class="role">Inference &amp; explanation</td><td>Which learning objectives remain uncovered, and a readable proof of why something was refused</td></tr>
           <tr><td class="tool">Datalog</td><td class="role">Provenance &amp; dependencies</td><td>Every claim traced to a source; permission leaks found as paths; staleness propagated to dependents</td></tr>
-          <tr><td class="tool">LTL</td><td class="role">Ordering over time</td><td>Nothing published unapproved, no exam before its material, nothing admitted unmoderated — over a trace spanning months</td></tr>
+          <tr><td class="tool">LTL</td><td class="role">Ordering over time</td><td>Nothing published unapproved, no exam before its material, nothing admitted without a guardrail check — over a trace spanning months</td></tr>
         </tbody>
       </table>
     </div>
@@ -498,7 +507,7 @@ flowchart TD
           </tr>
           <tr>
             <td class="role">A rule change never requires a shutdown</td>
-            <td>Every approved artifact is stamped with the policy, moderation, and catalog versions it passed under. When a rule changes, the dependency graph marks exactly the affected courses for re-validation — a rule change is an event in the system, not a release.</td>
+            <td>Every approved artifact is stamped with the policy, guardrail, and catalog versions it passed under. When a rule changes, the dependency graph marks exactly the affected courses for re-validation — a rule change is an event in the system, not a release.</td>
           </tr>
           <tr>
             <td class="role">Anything published can be taken back</td>
@@ -506,7 +515,7 @@ flowchart TD
           </tr>
           <tr>
             <td class="role">Every action is reconstructable</td>
-            <td>One continuous trace per course: prompts, model and version, moderation verdicts, each layer's decision, human approvals with what the approver was shown, and the final outcome.</td>
+            <td>One continuous trace per course: prompts, model and version, guardrail verdicts, each layer's decision, human approvals with what the approver was shown, and the final outcome.</td>
           </tr>
           <tr>
             <td class="role">Side effects happen at most once</td>
@@ -556,11 +565,11 @@ flowchart TD
     <p>The system is graded on what it refuses as much as on what it produces.</p>
     <ul class="plain">
       <li><strong>Layer tests</strong> — each engine in isolation, plus valid and forbidden transitions of both state machines.</li>
-      <li><strong>Forbidden chains</strong> — content before an approved skeleton; publication with a stale node; an exam ahead of its material; anything admitted without moderation.</li>
+      <li><strong>Forbidden chains</strong> — content before an approved skeleton; publication with a stale node; an exam ahead of its material; anything admitted without a guardrail check.</li>
       <li><strong>Adversarial scenarios</strong> — a forbidden request phrased indirectly; an instruction embedded in a source document; a broad-audience course reaching a restricted source; an unsafe illustration; a timeout followed by a retry; an unregistered action proposed.</li>
       <li><strong>Trajectory evaluation</strong> — the path is graded, not only the artifact: which actions ran, in what order, at what cost, and how many repair rounds it took.</li>
       <li><strong>Dry run</strong> — a whole course generated in simulation, reporting what would be produced and what would be blocked, with no side effects.</li>
-      <li><strong>Recorded fixtures</strong> — model responses, moderation verdicts, and retrieval results are committed, so every result above reproduces offline; a live run is recorded separately.</li>
+      <li><strong>Recorded fixtures</strong> — model responses, guardrail verdicts, and retrieval results are committed, so every result above reproduces offline; a live run is recorded separately.</li>
       <li><strong>Production signals</strong> — blocked generations, policy denials, injection detections, near-miss source leaks, repair-loop depth, and the size of the re-validation queue.</li>
     </ul>
   </section>
@@ -571,7 +580,7 @@ flowchart TD
     <ul class="plain">
       <li><strong>Models:</strong> multi-model on AWS Bedrock, as in production — a strong reasoning model for the skeleton and for repairs, a light one for node text and utility work, an image model for illustrations. <strong>Routing is a policy table</strong>, not a model's choice, and it carries the rule that restricted sources may only be processed by the organization-approved model. Every artifact records which model and version produced it; each model has a fallback chain.</li>
       <li><strong>Formal engines are real:</strong> OPA (Rego), Z3, SWI-Prolog, a Datalog engine, and an LTL checker over the trace — the same stack I have already run end to end in an earlier assignment.</li>
-      <li><strong>Managed services</strong> for moderation and retrieval, reached through ports so the implementation stays replaceable.</li>
+      <li><strong>Managed services</strong> for guardrails and retrieval, reached through ports so the implementation stays replaceable.</li>
       <li><strong>Persistent course state</strong> (JSON/SQLite): sessions resume and the trace stays continuous across months.</li>
       <li><strong>Scope:</strong> a fixed small course — two modules, a handful of nodes, one exam, a couple of images — with the effort spent on verification depth rather than feature breadth. The editor surface is a wizard rendered from the state machine, not a full UI.</li>
       <li><strong>Hygiene:</strong> secrets outside the repository, configuration separated from code, and versioning for policies, prompts, and state definitions.</li>
@@ -582,8 +591,8 @@ flowchart TD
     <div class="eyebrow">Section 15</div>
     <h2>Limits, stated honestly</h2>
     <ul class="plain">
-      <li><strong>Pixels are not formally verifiable.</strong> An image passes moderation and provenance checks; the visual itself is a human decision, and the architecture says so rather than pretending otherwise.</li>
-      <li><strong>Managed moderation is no judge of pedagogy.</strong> It knows nothing about coverage, dependencies, or the organization's permission model — those never leave the formal layer.</li>
+      <li><strong>Pixels are not formally verifiable.</strong> An image passes guardrail and provenance checks; the visual itself is a human decision, and the architecture says so rather than pretending otherwise. Block types that need an eye are marked as such in the catalog, and a node cannot be approved while one of them is unseen — so the requirement travels with the vocabulary instead of being wired into the pipeline.</li>
+      <li><strong>A managed guardrail is no judge of pedagogy.</strong> It knows nothing about coverage, dependencies, or the organization's permission model — those never leave the formal layer.</li>
       <li><strong>A formal guarantee is only as good as the model of the world.</strong> If the catalog or the permission closure is wrong, the proof is about the wrong thing — which is why both are read from the platform rather than restated.</li>
       <li><strong>Every extra hop costs latency and money.</strong> Checks sit at generation boundaries, verdicts are cached by content hash, and cheap tasks go to the light model.</li>
     </ul>

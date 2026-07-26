@@ -245,7 +245,7 @@
     <ol class="principles">
       <li><strong>A state is what survives the editor closing the laptop.</strong> If something need not be restored after three days away, it is a variable inside a step — not a state.</li>
       <li><strong>Two levels.</strong> The course is long-lived and aggregates its nodes; each node runs its own cycle. Course-level guards quantify over node states rather than duplicating them.</li>
-      <li><strong>A check is not a state; a stall is.</strong> States exist where the process waits — on a human, on a retry budget, on a decision, or <strong>on an external call whose outcome must survive a crash</strong>. That last clause is why moderation and the check batches appear as states at all: they are network hops, the editor may close the laptop in the middle of one, and recovery has to know the run was inside a call before it can decide whether retrying is safe.</li>
+      <li><strong>A check is not a state; a stall is.</strong> States exist where the process waits — on a human, on a retry budget, on a decision, or <strong>on an external call whose outcome must survive a crash</strong>. That last clause is why the guardrail hops and the check batches appear as states at all: they are network hops, the editor may close the laptop in the middle of one, and recovery has to know the run was inside a call before it can decide whether retrying is safe.</li>
       <li><strong>Two classes of blocking.</strong> A policy violation is terminal (<code>BlockedFinal</code>); a constraint or grounding violation is recoverable — it enters a bounded repair loop and, if the budget runs out, lands in <code>BlockedRecoverable</code>.</li>
       <li><strong>Modality creates no states.</strong> An image is a block with a modality, not a branch of the machine. "A human must sign off on the visual" is a flag on the block type, carried by the catalog — not a state of the course.</li>
       <li><strong>Every state answers three questions</strong> for the editor: what is available now, what is blocked and why, and what to do next. The wizard is this machine, rendered.</li>
@@ -263,7 +263,7 @@ flowchart TD
   AB["AwaitingBrief"] --> BV["BriefValidation — schema, OPA, guardrail"]
   BV --> BF["BriefFeasibility — Z3 pre-flight"]
   BF --> OD["OutlineDrafting"]
-  OD --> OM["OutlineModeration — guardrail on output"]
+  OD --> OM["OutlineGuardrail — guardrail on the proposed outline"]
   OM --> OC["OutlineChecks — schema, Datalog, OPA, Z3"]
   OC --> OR["OutlineReview — editor approves the skeleton"]
   OR --> CIP["ContentInProgress — node FSMs run here"]
@@ -314,7 +314,7 @@ flowchart TD
           <tr><td class="state">BriefValidation</td><td>The input is checked in three hops: JSON schema → OPA (role, limits) → guardrail (denied topics, PII).</td><td>Wait; read the refusal reason</td></tr>
           <tr><td class="state">BriefFeasibility</td><td>Z3 pre-flight: are the brief's requirements mutually satisfiable at all?</td><td>On unsat — read the core and fix the brief</td></tr>
           <tr><td class="state">OutlineDrafting</td><td>The model proposes the structure through a forced JSON schema.</td><td>Cancel the run</td></tr>
-          <tr><td class="state">OutlineModeration</td><td>Managed moderation of the produced outline text.</td><td>Wait</td></tr>
+          <tr><td class="state">OutlineGuardrail</td><td>The managed guardrail screens the produced outline text.</td><td>Wait</td></tr>
           <tr><td class="state">OutlineChecks</td><td>Schema, Datalog (skills grounded, no prerequisite cycles), OPA (structural policy), Z3 (counts and budgets).</td><td>Wait</td></tr>
           <tr><td class="state blocked-s">OutlineRepair</td><td>Bounded repair: the formal explanation is fed back into the prompt, retry ≤ 2.</td><td>Watch the repair; abort</td></tr>
           <tr><td class="state hitl-s">OutlineReview</td><td><strong>Human.</strong> The editor rewrites, renames, deletes, and approves the skeleton — before any content is paid for.</td><td>Edit, approve, reject with notes</td></tr>
@@ -347,12 +347,12 @@ flowchart TD
     <h2>Node FSM — lesson, topic, exam</h2>
 
     <div class="diagram">
-      <div class="caption">Node lifecycle — generation, moderation, checks, approval, staleness</div>
+      <div class="caption">Node lifecycle — generation, guardrail, checks, approval, staleness</div>
       <pre class="mermaid">
 flowchart TD
   PL["Planned — title and objectives only"] --> CD["ContentDrafting — retrieval plus block assembly"]
   CD --> GEN["Generated"]
-  GEN --> OMD["OutputModeration — guardrail on text and images"]
+  GEN --> OMD["OutputGuardrail — guardrail on text and images"]
   OMD --> NC["NodeChecks — block schema, grounding, permissions, arithmetic, coverage"]
   NC --> VAL["Validated"]
   VAL --> NA["NodeApproved — editor signs off, versions stamped"]
@@ -382,8 +382,8 @@ flowchart TD
         <tbody>
           <tr><td class="state">Planned</td><td>From the approved skeleton: a title and learning objectives, nothing else.</td><td>The editor starts generation</td></tr>
           <tr><td class="state">ContentDrafting</td><td>Retrieval scoped to this topic; the model assembles blocks against the catalog's schemas.</td><td>→ Generated</td></tr>
-          <tr><td class="state">Generated</td><td>A draft exists and nothing has checked it yet.</td><td>→ OutputModeration</td></tr>
-          <tr><td class="state">OutputModeration</td><td><strong>New in v2.</strong> Managed moderation of the generated text <em>and</em> of any generated image.</td><td>Clean → NodeChecks · unsafe → NodeRepair</td></tr>
+          <tr><td class="state">Generated</td><td>A draft exists and nothing has checked it yet.</td><td>→ OutputGuardrail</td></tr>
+          <tr><td class="state">OutputGuardrail</td><td><strong>New in v2.</strong> The managed guardrail screens the generated text <em>and</em> any generated image.</td><td>Clean → NodeChecks · unsafe → NodeRepair</td></tr>
           <tr><td class="state">NodeChecks</td><td>Block schemas · grounding (Datalog) · rights over the chunk IDs used · arithmetic (Z3) · objective coverage (Prolog).</td><td>Pass → Validated · violation → NodeRepair · policy → BlockedFinal</td></tr>
           <tr><td class="state blocked-s">NodeRepair</td><td>The unsat core, deny reason, or proof tree is fed back into the prompt; retry ≤ 2.</td><td>Budget left → ContentDrafting · spent → BlockedRecoverable</td></tr>
           <tr><td class="state terminal">Validated</td><td>Formally clean, waiting on a person.</td><td>→ NodeApproved</td></tr>
@@ -393,6 +393,10 @@ flowchart TD
         </tbody>
       </table>
     </div>
+    <h3>Blocks that need a human eye</h3>
+    <p>Some block types cannot be cleared by any check — an illustration is the obvious one. The catalog marks those types <code>requires_visual_review</code>, so the requirement travels with the vocabulary rather than being hard-coded per modality: whoever adds a new visual block type declares it there, and the machine inherits the rule.</p>
+    <p>The flag is carried on the block, and it gates the node: a node reaches <code>Validated</code> when the formal layers are satisfied, but it cannot reach <code>NodeApproved</code> while any flagged block is still unseen. The editor's approval screen therefore shows two things — the formal verdict for the node, and the individual visuals still awaiting an eye. Rejecting one visual does not discard the node: that block returns to <code>NodeRepair</code> with the editor's reason, and everything already cleared stays cleared.</p>
+
     <p style="max-width:46rem;"><strong>Initial:</strong> <code>Planned</code> — every node is born from the approved skeleton. <strong>Terminal:</strong> <code>BlockedFinal</code>. <strong>Resting:</strong> <code>NodeApproved</code> — the state a node is supposed to end in, which it leaves only when it or a dependency changes. A course is publishable exactly when every node rests there.</p>
   </section>
 
