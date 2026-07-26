@@ -759,16 +759,28 @@ flowchart TD
       apply(pick);
     };
 
-    var ticking = false;
+    // rAF-throttled, but never able to wedge: if a frame never arrives
+    // (background tab, throttled timers) the age guard flushes directly.
+    var queued = false;
+    var lastRun = 0;
+    var flush = function () {
+      queued = false;
+      lastRun = Date.now();
+      update();
+    };
     var onScroll = function () {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function () { ticking = false; update(); });
+      if (Date.now() - lastRun > 300) { flush(); return; }
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(flush);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
     window.addEventListener('hashchange', function () { setTimeout(update, 60); });
+    window.addEventListener('load', function () { setTimeout(update, 50); });
+    // diagrams render after load and shift every offset below them
+    setTimeout(update, 900);
     update();
   })();
 </script>
