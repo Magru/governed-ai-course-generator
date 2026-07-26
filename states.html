@@ -217,7 +217,7 @@
       <p><strong>A check is not a state — a stall is.</strong> We do not mint a state per validation. We mint one wherever the process can stop and wait: for a human, for a retry, for a decision. Everything else is a step inside a transition.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Course states: <b>18</b></span>
+      <span class="meta-chip">Course states: <b>19</b></span>
       <span class="meta-chip">Node states: <b>10</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
       <span class="meta-chip">Names: <b>not final</b></span>
@@ -245,7 +245,7 @@
     <ol class="principles">
       <li><strong>A state is what survives the editor closing the laptop.</strong> If something need not be restored after three days away, it is a variable inside a step — not a state.</li>
       <li><strong>Two levels.</strong> The course is long-lived and aggregates its nodes; each node runs its own cycle. Course-level guards quantify over node states rather than duplicating them.</li>
-      <li><strong>A check is not a state; a stall is.</strong> States exist where the process waits — on a human, on a retry budget, on a decision.</li>
+      <li><strong>A check is not a state; a stall is.</strong> States exist where the process waits — on a human, on a retry budget, on a decision, or <strong>on an external call whose outcome must survive a crash</strong>. That last clause is why moderation and the check batches appear as states at all: they are network hops, the editor may close the laptop in the middle of one, and recovery has to know the run was inside a call before it can decide whether retrying is safe.</li>
       <li><strong>Two classes of blocking.</strong> A policy violation is terminal (<code>BlockedFinal</code>); a constraint or grounding violation is recoverable — it enters a bounded repair loop and, if the budget runs out, lands in <code>BlockedRecoverable</code>.</li>
       <li><strong>Modality creates no states.</strong> An image is a block with a modality, not a branch of the machine. "A human must sign off on the visual" is a flag on the block type, carried by the catalog — not a state of the course.</li>
       <li><strong>Every state answers three questions</strong> for the editor: what is available now, what is blocked and why, and what to do next. The wizard is this machine, rendered.</li>
@@ -334,6 +334,9 @@ flowchart TD
     </div>
 
     <div class="wrap" style="padding:0; max-width:46rem;">
+      <h3>Where a course starts and where it ends</h3>
+      <p><strong>Initial:</strong> <code>AwaitingBrief</code> — the only state a course can be created in. <strong>Terminal:</strong> <code>Archived</code> (withdrawn, kept for audit) and <code>BlockedFinal</code> (a policy violation, read-only from then on). <strong>Quasi-terminal:</strong> <code>Published</code> — a course rests here indefinitely and leaves only by being archived, or by a change that sends it to <code>StaleReview</code>. Every other state is transient by design: it either advances, repairs, or waits on a person.</p>
+
       <h3>Why <code>ErrorRecovery</code> is not just "retry"</h3>
       <p>Generating a node is an operation <strong>with side effects</strong>: it writes into course state and spends money. So the exit from this state is not "send the request again" — it is: check the <code>idempotency_key</code>, find out whether the operation actually completed, and only then retry with backoff. A timeout is an unknown, never a failure.</p>
     </div>
@@ -390,6 +393,7 @@ flowchart TD
         </tbody>
       </table>
     </div>
+    <p style="max-width:46rem;"><strong>Initial:</strong> <code>Planned</code> — every node is born from the approved skeleton. <strong>Terminal:</strong> <code>BlockedFinal</code>. <strong>Resting:</strong> <code>NodeApproved</code> — the state a node is supposed to end in, which it leaves only when it or a dependency changes. A course is publishable exactly when every node rests there.</p>
   </section>
 
   <section id="s4">

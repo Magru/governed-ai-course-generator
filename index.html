@@ -487,7 +487,7 @@ flowchart TD
   <section id="s10" class="wrap-wide">
     <div class="eyebrow">Section 10</div>
     <h2>Governance guarantees</h2>
-    <p style="max-width:46rem;">Six properties the system owes the organization — each enforced structurally rather than promised.</p>
+    <p style="max-width:46rem;">Seven properties the system owes the organization — each enforced structurally rather than promised.</p>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Guarantee</th><th>How it is enforced</th></tr></thead>
@@ -499,6 +499,10 @@ flowchart TD
           <tr>
             <td class="role">A rule change never requires a shutdown</td>
             <td>Every approved artifact is stamped with the policy, moderation, and catalog versions it passed under. When a rule changes, the dependency graph marks exactly the affected courses for re-validation — a rule change is an event in the system, not a release.</td>
+          </tr>
+          <tr>
+            <td class="role">Anything published can be taken back</td>
+            <td>Publication is reversible: withdrawing a course returns it to its approved state and is itself an audited event carrying a reason. The same applies one level up — policies, prompts, and catalogs are versioned, so reverting one is a normal operation that re-validates exactly what that version touched, rather than a migration.</td>
           </tr>
           <tr>
             <td class="role">Every action is reconstructable</td>
