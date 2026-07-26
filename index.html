@@ -222,9 +222,95 @@
     font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
   .footer-note a { color: var(--accent); }
 
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 2.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* sticky section rail */
+  .rail {
+    position: fixed;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    padding: 0.35rem 0;
+    max-height: 86vh;
+    overflow: hidden;
+  }
+  .rail a {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 0.16rem 0;
+    border: 0;
+  }
+  .rail .tick {
+    display: block;
+    width: 0.85rem;
+    height: 2px;
+    background: var(--hairline);
+    border-radius: 2px;
+    flex: none;
+    transition: width 0.18s ease, background-color 0.18s ease;
+  }
+  .rail .lbl {
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-0.25rem);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .rail:hover .lbl,
+  .rail a:focus-visible .lbl,
+  .rail a.active .lbl { opacity: 1; transform: none; }
+  .rail a:hover .tick { width: 1.5rem; background: var(--accent); }
+  .rail a:hover { color: var(--ink); }
+  .rail a.active .tick { width: 1.5rem; background: var(--accent); }
+  .rail a.active { color: var(--accent); font-weight: 650; }
+  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  .rail .rail-home {
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+  .rail .rail-home .lbl { opacity: 1; transform: none; }
+  @media (min-width: 1280px) { .rail { display: flex; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rail .tick, .rail .lbl { transition: none; }
+  }
+
   a { color: var(--accent); }
   ::selection { background: var(--accent-soft); }
 </style>
+
+<nav class="rail" aria-label="Sections">
+  <a href="#s1"><span class="tick"></span><span class="lbl">Context</span></a>
+  <a href="#s2"><span class="tick"></span><span class="lbl">Problem</span></a>
+  <a href="#s3"><span class="tick"></span><span class="lbl">Principle</span></a>
+  <a href="#s4"><span class="tick"></span><span class="lbl">Responsibility</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Editor's journey</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">State model</span></a>
+  <a href="#s7"><span class="tick"></span><span class="lbl">Gateway</span></a>
+  <a href="#s8"><span class="tick"></span><span class="lbl">Formal stack</span></a>
+  <a href="#s9"><span class="tick"></span><span class="lbl">Neuro-symbolic</span></a>
+  <a href="#s10"><span class="tick"></span><span class="lbl">Guarantees</span></a>
+  <a href="#s11"><span class="tick"></span><span class="lbl">Loop discipline</span></a>
+  <a href="#s12"><span class="tick"></span><span class="lbl">Quality</span></a>
+  <a href="#s13"><span class="tick"></span><span class="lbl">Evaluation</span></a>
+  <a href="#s14"><span class="tick"></span><span class="lbl">Technology</span></a>
+  <a href="#s15"><span class="tick"></span><span class="lbl">Limits</span></a>
+  <a href="#s16"><span class="tick"></span><span class="lbl">Open questions</span></a>
+</nav>
 
 <div class="wrap">
 
@@ -636,6 +722,55 @@ flowchart TD
     },
     flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
   });
+</script>
+
+<script>
+  (function () {
+    var rail = document.querySelector('.rail');
+    if (!rail) return;
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a[href^="#"]'));
+    var targets = links.map(function (a) {
+      return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+    }).filter(function (t) { return t.el; });
+    if (!targets.length) return;
+
+    var current = null;
+    var apply = function (t) {
+      if (t === current) return;
+      current = t;
+      targets.forEach(function (x) {
+        var on = x === t;
+        x.link.classList.toggle('active', on);
+        if (on) { x.link.setAttribute('aria-current', 'true'); }
+        else { x.link.removeAttribute('aria-current'); }
+      });
+    };
+
+    var update = function () {
+      var mid = window.innerHeight * 0.4;
+      var pick = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].el.getBoundingClientRect().top <= mid) pick = targets[i];
+      }
+      // at the very bottom of the page the last section wins
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+        pick = targets[targets.length - 1];
+      }
+      apply(pick);
+    };
+
+    var ticking = false;
+    var onScroll = function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () { ticking = false; update(); });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('hashchange', function () { setTimeout(update, 60); });
+    update();
+  })();
 </script>
 </body>
 </html>
