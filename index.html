@@ -3,18 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Governed AI Course Generator — Spec v2</title>
-<meta name="description" content="Spec v2 of the Governed AI Course Generator: three layers of responsibility, the Generation Gateway, vocabulary as data, and policy versioning.">
-<meta property="og:title" content="Governed AI Course Generator — Spec v2">
-<meta property="og:description" content="Structure is ours. Meaning and modality are managed. The decision is the human's.">
+<title>Governed AI Course Generator — Specification</title>
+<meta name="description" content="High-level specification of a governed AI course generator for an LXP platform: three layers of responsibility, a generation gateway, formal verification, and human approval.">
+<meta property="og:title" content="Governed AI Course Generator — Specification">
+<meta property="og:description" content="The model proposes. The architecture decides. The editor drives.">
 <meta property="og:type" content="article">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
 </head>
 <body>
 
 <style>
-  /* Deliberately single-theme: this document always renders light (paper),
-     regardless of the viewer's OS preference or theme toggle. */
+  /* Deliberately single-theme: this document always renders light (paper). */
   :root, :root[data-theme="dark"], :root[data-theme="light"] {
     color-scheme: light;
     --paper: #FAF9F5;
@@ -75,9 +74,35 @@
     margin: 1.4rem 0;
   }
   .thesis p { margin: 0; }
-  .thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
+  .thesis p + p { margin-top: 0.6rem; }
 
-  /* TOC */
+  /* drill-down menu */
+  .drill { margin: 2.4rem 0 0; }
+  .drill-title {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.8rem;
+  }
+  .drill-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
+  @media (max-width: 680px) { .drill-grid { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
+    padding: 0.85rem 1rem; display: block; text-decoration: none; color: var(--ink);
+  }
+  a.card:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .card .card-title {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-weight: 650; font-size: 0.95rem; display: flex; justify-content: space-between; gap: 0.6rem; align-items: baseline;
+  }
+  .card .card-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-top: 0.25rem; display: block; }
+  .status {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.13rem 0.5rem; border-radius: 999px; white-space: nowrap;
+  }
+  .status.draft { background: var(--hitl-soft); color: var(--hitl); }
+  .status.planned { background: #E9EBE4; color: var(--muted); }
+
   nav.toc {
     margin-top: 2.6rem; padding: 1.1rem 1.2rem;
     border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
@@ -90,10 +115,8 @@
   nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
   @media (max-width: 620px) { nav.toc ol { columns: 1; } }
 
-  ul.risks { padding-left: 1.2rem; margin: 0 0 1rem; }
-  ul.risks li { margin-bottom: 0.5rem; }
-  ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
-  ul.plain li { margin-bottom: 0.45rem; }
+  ul.risks, ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
+  ul.risks li, ul.plain li { margin-bottom: 0.45rem; }
   ol.steps { padding-left: 1.3rem; margin: 0 0 1rem; }
   ol.steps li { margin-bottom: 0.55rem; }
 
@@ -103,14 +126,8 @@
     font-size: 0.86em; background: var(--code-bg);
     padding: 0.1em 0.38em; border-radius: 4px;
   }
-  .formula {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.84rem; background: var(--code-bg); border: 1px solid var(--hairline);
-    border-radius: 8px; padding: 0.8rem 1rem; overflow-x: auto; margin: 0.6rem 0 1rem;
-    line-height: 1.7;
-  }
 
-  /* three-layer cards (v2) */
+  /* three-layer cards */
   .layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 1.4rem 0; }
   @media (max-width: 680px) { .layers { grid-template-columns: 1fr; } }
   .layer {
@@ -132,9 +149,23 @@
   .layer.human { border-top-color: var(--hitl); }
   .layer.human .ly-label { color: var(--hitl); }
 
-  /* tables */
+  /* phase cards */
+  .phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin: 1.4rem 0; }
+  @media (max-width: 680px) { .phases { grid-template-columns: 1fr; } }
+  .phase {
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
+    padding: 1rem 1.05rem;
+  }
+  .phase .ph-label {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.7rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.35rem;
+  }
+  .phase h3 { margin: 0 0 0.4rem; font-size: 0.98rem; }
+  .phase p { font-size: 0.88rem; color: var(--muted); margin: 0; line-height: 1.55; }
+
   .table-scroll { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--hairline); border-radius: 10px; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 640px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 620px; }
   thead th {
     font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
     font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
@@ -147,12 +178,9 @@
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-weight: 600; font-size: 0.84rem; white-space: nowrap; color: var(--accent);
   }
-  td.role { font-weight: 600; min-width: 11rem; }
-  td.sec { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; white-space: nowrap; color: var(--muted); }
+  td.role { font-weight: 600; min-width: 10rem; }
   td small, .muted { color: var(--muted); }
-  td.was { color: var(--muted); text-decoration-color: var(--hairline); }
 
-  /* diagrams */
   .diagram {
     background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 10px;
     padding: 1rem; margin: 1.2rem 0; overflow-x: auto;
@@ -163,8 +191,6 @@
     margin-bottom: 0.5rem; font-weight: 600;
   }
   .diagram pre.mermaid { margin: 0; background: transparent; }
-  /* The mermaid runtime styles edge labels for a dark theme (light text) —
-     force them legible on our light schematic panels. */
   .diagram .edgeLabel,
   .diagram .edgeLabel p,
   .diagram .edgeLabel span,
@@ -177,74 +203,24 @@
   .diagram svg .flowchart-link { stroke: #8B958F !important; }
   .diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
 
-  /* legend + chips */
   .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; margin-top: 0.6rem;
     font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; color: #5C6873; }
   .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
-
-  .chip {
-    display: inline-block; font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0.14rem 0.55rem; border-radius: 999px; vertical-align: 0.12em; margin-right: 0.45rem;
-  }
-  .chip.pass { background: var(--accent-soft); color: var(--accent); }
-  .chip.block { background: var(--blocked-soft); color: var(--blocked); }
-  .chip.hitl { background: var(--hitl-soft); color: var(--hitl); }
-
-  .demo-list { list-style: none; padding: 0; margin: 1.2rem 0; counter-reset: demo; }
-  .demo-list li {
-    position: relative; padding: 0.7rem 0 0.7rem 2.4rem; border-bottom: 1px solid var(--hairline);
-    counter-increment: demo;
-  }
-  .demo-list li:last-child { border-bottom: none; }
-  .demo-list li::before {
-    content: counter(demo);
-    position: absolute; left: 0; top: 0.78rem;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.78rem; font-weight: 650; color: var(--muted);
-    width: 1.7rem; height: 1.7rem; border: 1px solid var(--hairline); border-radius: 999px;
-    display: flex; align-items: center; justify-content: center; background: var(--panel);
-  }
-  .demo-list.alpha { counter-reset: demoa; }
-  .demo-list.alpha li { counter-increment: demoa; }
-  .demo-list.alpha li::before { content: counter(demoa, upper-alpha); }
-
-  .evidence { border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel); padding: 1rem 1.1rem; margin: 1.2rem 0; }
-  .evidence .src {
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.7rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 0.45rem;
-  }
-  .evidence p { margin: 0 0 0.6rem; font-size: 0.95rem; }
-  .evidence p:last-child { margin-bottom: 0; }
-  .evidence .verbatim {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.8rem; line-height: 1.6; color: var(--ink);
-    border-left: 2px solid var(--hairline); padding-left: 0.8rem; margin: 0.6rem 0;
-  }
 
   .callout {
     border: 1px solid var(--accent); border-radius: 12px;
     background: var(--accent-soft); padding: 1.2rem 1.3rem; margin-top: 3rem;
   }
   .callout .eyebrow { margin-bottom: 0.3rem; }
-  .callout p { margin: 0; }
+  .callout p { margin: 0 0 0.7rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .questions { padding-left: 1.3rem; margin: 0; }
+  .questions li { margin-bottom: 0.6rem; }
 
   .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
     font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
-
-  /* series nav */
-  .series {
-    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
-    border-bottom: 1px solid var(--hairline); color: var(--muted);
-  }
-  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
-  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
-  .series a:hover { border-color: var(--accent); }
-  .series .here { color: var(--ink); font-weight: 650; }
-  .series .soon { color: var(--muted); opacity: 0.75; }
+  .footer-note a { color: var(--accent); }
 
   a { color: var(--accent); }
   ::selection { background: var(--accent-soft); }
@@ -252,375 +228,380 @@
 
 <div class="wrap">
 
-  <div class="series">
-    <span class="series-label">Project pages</span>
-    <span class="here">Spec v2</span>
-    <a href="states.html">State inventory &mdash; draft</a>
-    <span class="soon">Transitions &amp; guards &mdash; next</span>
-  </div>
-
   <header>
-    <div class="eyebrow">AI Architect · Final Project · Spec v2</div>
+    <div class="eyebrow">AI Architect · Final project · Specification v2</div>
     <h1>Governed AI Course Generator</h1>
-    <p class="kicker">Second version of the specification — the answer to the design problem raised when the idea was approved. The proposal itself stands; what changes is where the boundary runs between what we build and what we configure.</p>
+    <p class="kicker">Governed AI course generation for an enterprise learning platform: from an empty brief to a published course, with formal layers at every step and the editor at the wheel.</p>
     <div class="thesis">
-      <p><strong>Structure is ours. Meaning and modality are managed. The decision is the human's.</strong> If a check can be written as a statement about a graph, a set, an ordering, or a number — it belongs to our formal engines. If it requires understanding text or looking at an image — it is not written in code at all. If it is about pedagogical value — a person makes it.</p>
+      <p><strong>The model proposes. The architecture decides. The editor drives.</strong></p>
+      <p>Nothing generated reaches a learner because it looked convincing. It reaches them because it was grounded in the organization's own knowledge, permitted by policy, consistent with everything already approved, and signed off by a person.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">v1 approved: <b>20 Jul 2026</b></span>
-      <span class="meta-chip">v2 written: <b>25 Jul 2026</b></span>
-      <span class="meta-chip">Defense: <b>4 Oct 2026</b></span>
-      <span class="meta-chip">Formal stack: <b>OPA · Z3 · Prolog · Datalog · LTL</b> — unchanged</span>
+      <span class="meta-chip">Domain: <b>Sylla LXP</b> — a production platform</span>
+      <span class="meta-chip">Formal stack: <b>OPA · Z3 · Prolog · Datalog · LTL</b></span>
+      <span class="meta-chip">Neural: <b>multi-model, policy-routed</b></span>
+      <span class="meta-chip">Deliverable: <b>standalone prototype</b></span>
     </div>
   </header>
+
+  <div class="drill">
+    <div class="drill-title">Detailed specifications</div>
+    <div class="drill-grid">
+      <a class="card" href="states.html">
+        <span class="card-title">State model <span class="status draft">draft</span></span>
+        <span class="card-desc">The two-level state machine: course and node states, events, guards, temporal invariants, and what each artifact carries between sessions.</span>
+      </a>
+      <span class="card">
+        <span class="card-title">Transitions &amp; guards <span class="status planned">next</span></span>
+        <span class="card-desc">The full transition table — current state, event, guard, validation layer, next state — with valid and forbidden event chains.</span>
+      </span>
+      <span class="card">
+        <span class="card-title">Validation layers <span class="status planned">planned</span></span>
+        <span class="card-desc">Which engine owns which check, the concrete rules written out, and the explanation each layer produces when it refuses.</span>
+      </span>
+      <span class="card">
+        <span class="card-title">Generation safety <span class="status planned">planned</span></span>
+        <span class="card-desc">The action registry with risk levels, pre- and post-generation checks, idempotency, secrets handling, kill switch, autonomy ladder.</span>
+      </span>
+      <span class="card">
+        <span class="card-title">Evaluation &amp; red team <span class="status planned">planned</span></span>
+        <span class="card-desc">Test taxonomy, adversarial scenarios, trajectory evaluation, recorded fixtures, and the production signals worth watching.</span>
+      </span>
+      <span class="card">
+        <span class="card-title">Implementation plan <span class="status planned">planned</span></span>
+        <span class="card-desc">Build order, scope boundaries, what is real and what is modeled in the prototype, and the demo script.</span>
+      </span>
+    </div>
+  </div>
 
   <nav class="toc">
     <div class="toc-title">Contents</div>
     <ol>
-      <li><a href="#s1">The problem, as we read it</a></li>
-      <li><a href="#s2">What changed from v1</a></li>
-      <li><a href="#s3">Three layers of responsibility</a></li>
-      <li><a href="#s4">The Generation Gateway</a></li>
-      <li><a href="#s5">Managed vs ours</a></li>
-      <li><a href="#s6">The five tools after the handoff</a></li>
-      <li><a href="#s7">Permissions and leaks</a></li>
-      <li><a href="#s8">Vocabulary as data</a></li>
-      <li><a href="#s9">Policy versioning</a></li>
-      <li><a href="#s10">The expected objection</a></li>
-      <li><a href="#s11">Demo — four new steps</a></li>
-      <li><a href="#s12">Risks, limits, reproducibility</a></li>
+      <li><a href="#s1">Context</a></li>
+      <li><a href="#s2">Problem &amp; success</a></li>
+      <li><a href="#s3">Governing principle</a></li>
+      <li><a href="#s4">Division of responsibility</a></li>
+      <li><a href="#s5">The editor's journey</a></li>
+      <li><a href="#s6">State model</a></li>
+      <li><a href="#s7">Generation gateway</a></li>
+      <li><a href="#s8">Formal stack</a></li>
+      <li><a href="#s9">Neuro-symbolic junction</a></li>
+      <li><a href="#s10">Governance guarantees</a></li>
+      <li><a href="#s11">Loop discipline</a></li>
+      <li><a href="#s12">Content quality</a></li>
+      <li><a href="#s13">Evaluation</a></li>
+      <li><a href="#s14">Technology</a></li>
+      <li><a href="#s15">Limits</a></li>
+      <li><a href="#s16">Open questions</a></li>
     </ol>
   </nav>
 
   <section id="s1">
     <div class="eyebrow">Section 1</div>
-    <h2>The problem, as we read it</h2>
-    <p>The idea was approved with a challenge attached, delivered as five hints: <em>don't solve it in code</em> · <em>what happens if you solve it in code and then leave the company?</em> · <em>what happens at deployment — do we stop everything?</em> · a pointer at <em>multimodality</em> · and finally <em>if you solve it in code, you won't finish the project in time</em>.</p>
-
-    <div class="thesis">
-      <p>In v1 we implicitly signed up to build the <strong>layer of meaning</strong> ourselves. The five formal tools can only reason about <strong>structure</strong>. Everything that requires understanding a text or seeing an image — a banned topic phrased indirectly, the safety of generated prose, the content of an illustration, the relevance of a retrieved chunk — is beyond them. Hand-writing that layer cannot be done in the project's timeframe, cannot be maintained after I leave, and cannot be changed without a release.</p>
-    </div>
-
-    <p>Two pieces of evidence, neither of them our own reasoning:</p>
-
-    <div class="evidence">
-      <div class="src">Evidence from the product</div>
-      <p>The builder's block catalog is a constant in the platform's frontend, and its own comment demands a second copy in the backend:</p>
-      <p class="verbatim">“Backend enforcement lives in apps/knowledge_base validators (mirror this set). When adding a new block type, decide here whether it belongs to KB.”</p>
-      <p>The platform's vocabulary is duplicated across two places in code. Adding a modality — video, audio, SCORM, an interactive block — requires a developer and a deployment. That is hints 1 through 4, stated by the product itself.</p>
-    </div>
-
-    <div class="evidence">
-      <div class="src">Evidence from the course</div>
-      <p>The Tool Safety lecture lists four anti-patterns of bad guardrails. The first is <strong>“keyword filter only”</strong> — trivially bypassed by rephrasing, encoding, or a chain of individually innocent steps. Validating banned topics with <code>OPA</code> over strings, as v1 proposed, is exactly that anti-pattern.</p>
-      <p>The same lecture: <em>a valid schema is not a valid policy</em>, and policy must live as an <strong>external, versioned layer</strong> that can be updated without touching either the code or the model.</p>
-    </div>
+    <h2>Context</h2>
+    <p><strong>Sylla</strong> is a production learning experience platform I work on. Organizations run employee training on it: courses, learning paths, assessments, a per-organization skills catalog, a Knowledge Base of internal documents, role- and data-level permissions, and human approvals. Courses are built by hand in a block editor — sections, lessons, and typed blocks (text, media, quizzes) — with adaptive branching now being added.</p>
+    <p>The generator described here is a standalone prototype on that domain. It does not touch production code; it models the same entities and the same permission rules, and it is designed so its architecture can graduate into the product.</p>
   </section>
 
-  <section id="s2" class="wrap-wide">
+  <section id="s2">
     <div class="eyebrow">Section 2</div>
-    <h2>What changed from v1</h2>
-    <p style="max-width:46rem;">v1 is not rewritten — it is the record of what was approved. Four sections change; two are new.</p>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr><th>Section</th><th>v1</th><th>v2</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="sec">§5 — OPA's role</td>
-            <td class="was">OPA validates the author's prompt for banned topics</td>
-            <td>OPA decides <strong>structure and rights</strong>. Topic semantics move to managed moderation, whose verdict becomes an <strong>input</strong> to OPA — not a replacement for it</td>
-          </tr>
-          <tr>
-            <td class="sec">§8 — images</td>
-            <td class="was">“Pixels cannot be formally verified” → the human decides alone</td>
-            <td>A <strong>multimodal content filter</strong> screens the image before it ever reaches the editor; the human then approves something that has already passed</td>
-          </tr>
-          <tr>
-            <td class="sec">§9 — prompts</td>
-            <td class="was">Input validation = an OPA policy</td>
-            <td>Input validation = <strong>three hops</strong>: JSON schema (shape) → OPA (rights, limits, state) → guardrail (denied topics, PII)</td>
-          </tr>
-          <tr>
-            <td class="sec">§11 — technology</td>
-            <td class="was">A hand-written BM25 retriever over chunk IDs</td>
-            <td><strong>Managed retrieval</strong> with permission metadata filters, <em>plus</em> our own re-check of the returned chunk IDs in Datalog</td>
-          </tr>
-          <tr>
-            <td class="sec">§13 — new</td>
-            <td class="was">—</td>
-            <td><strong>Vocabulary as data</strong>: the block catalog and its modalities are read from the platform, never duplicated in our code</td>
-          </tr>
-          <tr>
-            <td class="sec">§14 — new</td>
-            <td class="was">—</td>
-            <td><strong>Policy versioning</strong>: a rule changes without stopping anything, and the courses it touches go honestly back for re-validation</td>
-          </tr>
-        </tbody>
-      </table>
+    <h2>The problem and what success means</h2>
+    <p>Authoring is the most expensive part of the platform — days per course. Generating that content with a model is the obvious move, and an ungoverned generator is a product risk rather than a hypothetical one:</p>
+    <ul class="risks">
+      <li>it invents skills the organization's catalog does not contain, so the course teaches outside the company's competency model;</li>
+      <li>claims land in lessons with <strong>no traceable source</strong>;</li>
+      <li>an author's free-form prompt can request something the organization forbids;</li>
+      <li>content can be published <strong>without review</strong>;</li>
+      <li>a course lives across sessions, so editing one approved lesson silently <strong>desynchronizes</strong> the exam that tests it;</li>
+      <li>a generator with Knowledge Base access can pull <strong>restricted</strong> material into a course seen by an audience without rights to it;</li>
+      <li>adaptive branching can be structurally broken — unreachable branches, prerequisite cycles.</li>
+    </ul>
+    <p><strong>Users:</strong> course authors and training administrators. <strong>Cost of a wrong action:</strong> unverified, stale, or restricted content delivered to an entire workforce.</p>
+    <div class="thesis">
+      <p><strong>Success:</strong> authoring drops from days to hours — with zero courses published that bypassed the formal checks or human approval, zero leaks of restricted sources, and zero published courses carrying desynchronized nodes.</p>
     </div>
-    <p style="max-width:46rem;"><strong>Unchanged:</strong> the principle "the LLM proposes — the architecture decides — the editor drives"; the two-level state machine; the five formal tools; the staleness cascade; multi-point human-in-the-loop. The pedagogical core of the project is untouched.</p>
   </section>
 
-  <section id="s3" class="wrap-wide">
+  <section id="s3">
     <div class="eyebrow">Section 3</div>
-    <h2>Three layers of responsibility</h2>
-    <div class="layers">
-      <div class="layer formal">
-        <div class="ly-label">Formal engines</div>
-        <h3>Our code and rules</h3>
-        <p>OPA · Z3 · Prolog · Datalog · LTL. Everything structural: rights, ordering, dependencies, staleness, arithmetic, objective coverage.</p>
-        <div class="ly-ex">“A restricted chunk must not reach a broad-audience course” — that is a graph of relations, not a meaning.</div>
-      </div>
-      <div class="layer managed">
-        <div class="ly-label">Managed services</div>
-        <h3>Configuration, not code</h3>
-        <p>Guardrails · Knowledge Bases. Everything semantic and perceptual: banned topics in free text, harmful content, PII, what is inside an image, whether a retrieved chunk is relevant.</p>
-        <div class="ly-ex">“The author asks for something forbidden, phrased indirectly” — that is meaning, not structure.</div>
-      </div>
-      <div class="layer human">
-        <div class="ly-label">The human</div>
-        <h3>Judgment and publication</h3>
-        <p>Pedagogy, quality, publishing. Skeleton approval, per-node approval, final publish approval.</p>
-        <div class="ly-ex">Delegated to no model, no service, and no logic.</div>
-      </div>
+    <h2>Governing principle</h2>
+    <p>One sentence governs every decision that follows:</p>
+    <div class="thesis">
+      <p><strong>The model may propose anything. It may decide nothing.</strong> Publication, state transitions, and access to sources are decided by the architecture — formal layers first, a person last.</p>
     </div>
-    <p style="max-width:46rem;">The three layers are not a hierarchy but a division of competence. Each answers a question the other two cannot: <em>is this permitted and consistent</em> (formal), <em>does this mean something harmful</em> (managed), <em>is this worth teaching</em> (human).</p>
+    <p>The rest of this specification is the consequence: where proposals are checked, who may say yes, what happens when the answer is no, and how any of it can be reconstructed six months later.</p>
   </section>
 
   <section id="s4" class="wrap-wide">
     <div class="eyebrow">Section 4</div>
-    <h2>The Generation Gateway</h2>
-    <p style="max-width:46rem;">Structurally this is the Tool Gateway from the Tool Safety lecture, applied to generation: a membrane between the LLM and the system that every call must cross. The model proposes; the gateway decides; the tool — here, the act of writing into course state — runs only if allowed.</p>
+    <h2>Division of responsibility</h2>
+    <p style="max-width:46rem;">Three kinds of judgment run this system, and they are not interchangeable. Assigning every question to the layer that can actually answer it is the core architectural decision of the project.</p>
+
+    <div class="layers">
+      <div class="layer formal">
+        <div class="ly-label">Formal engines</div>
+        <h3>Structure</h3>
+        <p>Rights, ordering, dependencies, arithmetic, coverage, staleness. Deterministic versioned rules that produce a proof, not an opinion.</p>
+        <div class="ly-ex">“A restricted source must not reach a broad-audience course” — a graph of relations.</div>
+      </div>
+      <div class="layer managed">
+        <div class="ly-label">Managed services</div>
+        <h3>Meaning &amp; modality</h3>
+        <p>Forbidden topics phrased indirectly, harmful text, personal data, what is inside a generated image, whether a retrieved passage is relevant. Configured and versioned outside the application.</p>
+        <div class="ly-ex">“The author asks for something forbidden, in other words” — meaning, not structure.</div>
+      </div>
+      <div class="layer human">
+        <div class="ly-label">The editor</div>
+        <h3>Judgment</h3>
+        <p>Whether this is worth teaching, in this order, to these people. Approval of the skeleton, of every node, and of publication.</p>
+        <div class="ly-ex">Delegated to no model, no service, and no rule.</div>
+      </div>
+    </div>
+
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <div class="thesis">
+        <p><strong>The boundary rule.</strong> If a check can be stated about a graph, a set, an ordering, or a number — it belongs to the formal engines. If answering it requires understanding a text or looking at an image — it is configured, never coded. If it is about pedagogical value — a person decides.</p>
+      </div>
+
+      <h3>Semantics are configuration</h3>
+      <p>Forbidden topics, content thresholds, and multimodal moderation live in a managed service with its own version history. A compliance officer changes them: no developer, no deployment, no downtime. Their verdict enters the system as a <em>fact</em> for the formal layer — it decides nothing on its own — and if the service is unreachable the gateway fails closed.</p>
+
+      <h3>Vocabulary is data</h3>
+      <p>The block catalog — every block type, its settings schema, its modality, its applicability policy — is read from the platform at runtime and never copied into the generator. A new modality (video, audio, an interactive block) arrives as a catalog entry: the generator proposes it, its schema validates it, provenance traces it, policy constrains it. Zero code, zero deployments. The same holds for the skills catalog, the Knowledge Base categories with their access rules, thresholds, and the model routing table — organizational data, not constants inside a release.</p>
+    </div>
+  </section>
+
+  <section id="s5" class="wrap-wide">
+    <div class="eyebrow">Section 5</div>
+    <h2>The editor's journey</h2>
+    <p style="max-width:46rem;">A course is not generated in one pass. It is a governed journey in three phases, and the expensive work starts only after a human has approved the cheap part.</p>
+    <div class="phases">
+      <div class="phase">
+        <div class="ph-label">Phase 1</div>
+        <h3>Skeleton</h3>
+        <p>The author gives a brief; the model proposes modules, lessons, topics, and exams — titles and learning objectives only. Checked formally, then edited and <b>approved by a person</b> before any content is paid for.</p>
+      </div>
+      <div class="phase">
+        <div class="ph-label">Phase 2</div>
+        <h3>Content, over many sessions</h3>
+        <p>Node by node: retrieval scoped to that topic, blocks assembled against the catalog's schemas, checks, repair, approval. State is persistent — the editor leaves and comes back.</p>
+      </div>
+      <div class="phase">
+        <div class="ph-label">Phase 3</div>
+        <h3>Publication</h3>
+        <p>Every node approved and none stale → whole-course checks for completeness, ordering, and consistency → a final human approval → published.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow">Section 6</div>
+    <h2>State model</h2>
+    <p>The lifecycle is an explicit two-level state machine, not a pipeline. The <strong>course</strong> machine survives editor sessions and aggregates the state of its nodes; each <strong>node</strong> — lesson, topic, exam — runs its own cycle of drafting, moderation, checks, repair, and approval.</p>
+    <p>Two properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. And approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it.</p>
+    <p><strong>The state machine is the editor's interface.</strong> In every state the system says what is available, what is blocked and why, and what to do next — the next best action is derived from uncovered objectives and stale nodes, not suggested by a model.</p>
+    <p>→ <a href="states.html"><strong>State model — detailed specification</strong></a>: every course and node state, the event catalog, guards, temporal invariants, and the fields each artifact persists.</p>
+  </section>
+
+  <section id="s7" class="wrap-wide">
+    <div class="eyebrow">Section 7</div>
+    <h2>Generation gateway</h2>
+    <p style="max-width:46rem;">Every call to a model crosses one membrane, in both directions. Nothing generated enters course state without passing it, and the gateway — not the model — decides whether the write happens.</p>
 
     <div class="diagram">
-      <div class="caption">Generation Gateway — every call crosses pre-checks, generation, post-checks, admission</div>
+      <div class="caption">One gateway: pre-checks, generation, post-checks, admission, audit</div>
       <pre class="mermaid">
 flowchart TD
-  IN["Author prompt — untrusted input"] --> SC["Schema validation — request shape"]
-  SC --> OPA["OPA — role and audience rights, limits, action allowed in current FSM state"]
-  OPA --> GI["ApplyGuardrail INPUT — denied topics, PII, harmful content"]
-  GI --> RT["Routing — task to model, as policy"]
-  RT --> GEN["Bedrock generation — forced tool call, JSON schema of blocks"]
-  GEN --> GO["ApplyGuardrail OUTPUT — text and images"]
-  GO --> BS["Block schema validation — schemas from the platform catalog"]
-  BS --> DL["Datalog — grounding, provenance, rights on chunk IDs"]
-  DL --> ZP["Z3 and Prolog — settings arithmetic, objective coverage"]
+  IN["Author prompt — untrusted input"] --> SC["Schema — is the request well formed"]
+  SC --> OPA["Policy — role, audience, limits, action legal in this state"]
+  OPA --> GI["Moderation IN — forbidden topics, personal data"]
+  GI --> RT["Routing — task to model, by policy"]
+  RT --> GEN["Generation — forced schema output"]
+  GEN --> GO["Moderation OUT — text and images"]
+  GO --> BS["Block schemas — from the platform catalog"]
+  BS --> DL["Grounding and rights — sources traced, permissions re-checked"]
+  DL --> ZP["Constraints and coverage"]
   ZP --> ADM["Admission into course state"]
   ADM --> HITL["Editor approval"]
-  ADM --> AUD["Audit trace — model, guardrail, policy and catalog versions"]
+  ADM --> AUD["Audit trace — versions of model, policy, catalog, moderation"]
 
-  OPA -- "deny" --> BL["Blocked with reason and safe next action"]
-  GI -- "denied topic" --> BL
-  GO -- "unsafe text or image" --> RP["Repair loop, retry ≤ 2"]
+  OPA -- "not permitted" --> BL["Blocked — reason and safe next action"]
+  GI -- "forbidden topic" --> BL
+  GO -- "unsafe" --> RP["Repair loop — bounded retries"]
   BS -- "invalid settings" --> RP
-  DL -- "ungrounded or permission leak" --> RP
+  DL -- "ungrounded or leak" --> RP
   RP --> GEN
 
   classDef default fill:#FFFFFF,stroke:#8B958F,color:#202A35;
   classDef managed fill:#F4E7DD,stroke:#A6512B,color:#5C2D16;
   classDef hitl fill:#F3ECD8,stroke:#8A6A1F,color:#4A3A10;
   classDef terminal fill:#E3EFEA,stroke:#0E6E5C,color:#0B4438;
-  class GI,GO managed;
+  class GI,GO,BL,RP managed;
   class HITL hitl;
   class ADM,AUD terminal;
-  class BL,RP managed;
       </pre>
       <div class="legend">
-        <span><span class="dot" style="background:#FFFFFF;border:1px solid #8B958F;"></span>our formal layer</span>
-        <span><span class="dot" style="background:#F4E7DD;border:1px solid #A6512B;"></span>managed service / blocked</span>
-        <span><span class="dot" style="background:#F3ECD8;border:1px solid #8A6A1F;"></span>human-in-the-loop</span>
-        <span><span class="dot" style="background:#E3EFEA;border:1px solid #0E6E5C;"></span>admitted &amp; recorded</span>
+        <span><span class="dot" style="background:#FFFFFF;border:1px solid #8B958F;"></span>formal layer</span>
+        <span><span class="dot" style="background:#F4E7DD;border:1px solid #A6512B;"></span>managed service · blocked · repairing</span>
+        <span><span class="dot" style="background:#F3ECD8;border:1px solid #8A6A1F;"></span>human</span>
+        <span><span class="dot" style="background:#E3EFEA;border:1px solid #0E6E5C;"></span>admitted and recorded</span>
       </div>
     </div>
 
     <div class="wrap" style="padding:0; max-width:46rem;">
-      <h3>Why the guardrail is an explicit hop</h3>
-      <p>Sylla production calls Claude through the <strong>Anthropic SDK</strong> on Bedrock, not through the <code>bedrock-runtime</code> client. A guardrail therefore cannot be a checkbox wrapped invisibly around the model call — it is an explicit <code>ApplyGuardrail</code> request, an API deliberately built to be model-independent: it evaluates text and images <em>without</em> invoking any model.</p>
-      <p>That constraint turns out to be an advantage. The guardrail becomes a <strong>visible step of the architecture</strong> — present in the state machine, in the trace, and on the defense diagram; its verdict is recorded in the audit log and fed to the formal layer as a fact; and when the service is unavailable the gateway <strong>fails closed</strong>, exactly as the lecture demands of a policy gate.</p>
+      <p>Three properties of the gateway matter more than its individual steps. It is <strong>explicit</strong> — moderation is a call the architecture makes, visible in the state machine and in the trace, not a flag hidden inside a model invocation. It <strong>fails closed</strong> — if any layer cannot answer, nothing is admitted. And a refusal always carries a <strong>safe next action</strong>, which is what turns a block into a repair instead of a dead end.</p>
     </div>
   </section>
 
-  <section id="s5" class="wrap-wide">
-    <div class="eyebrow">Section 5</div>
-    <h2>Managed vs ours — the boundary, drawn explicitly</h2>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr><th>Responsibility</th><th>v1</th><th>v2</th><th>Why</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="role">Banned topics in the author's prompt</td><td class="was">OPA over strings</td><td>Guardrails denied topics</td><td>string matching is bypassed by rephrasing — the lecture's first anti-pattern</td></tr>
-          <tr><td class="role">Harmful generated text</td><td class="was">absent</td><td>Guardrails content filters</td><td>cannot be written in code</td></tr>
-          <tr><td class="role"><strong>Contents of a generated image</strong></td><td class="was">human only</td><td>Image filters → then the human</td><td>the direct answer to the multimodality hint: pixels are unreachable for both code and logic</td></tr>
-          <tr><td class="role">PII in content</td><td class="was">absent</td><td>Guardrails PII detection</td><td>available as configuration</td></tr>
-          <tr><td class="role">“The answer rests on the given sources”</td><td class="was">our grounding code</td><td>Contextual grounding check <em>and</em> our Datalog</td><td>two independent checks: meaning and graph</td></tr>
-          <tr><td class="role">Retrieval over the Knowledge Base</td><td class="was">hand-written BM25</td><td>Managed Knowledge Bases</td><td>“you won't finish in time”; the service returns chunk IDs — provenance for free</td></tr>
-          <tr><td class="role">Rights over sources</td><td class="was">Datalog</td><td>Metadata filters <em>and</em> Datalog re-check</td><td>the filter is the service's word; the check is our guarantee</td></tr>
-          <tr><td class="role">Structure, ordering, staleness, coverage</td><td class="was">the five tools</td><td><strong>the five tools, unchanged</strong></td><td>this is the core of the project</td></tr>
-          <tr><td class="role">Orchestration and the state machine</td><td class="was">our code</td><td><strong>our code</strong></td><td>managed agent frameworks are deliberately not used</td></tr>
-          <tr><td class="role">Publication</td><td class="was">human-in-the-loop</td><td><strong>human-in-the-loop</strong></td><td>delegated to nobody</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="s6" class="wrap-wide">
-    <div class="eyebrow">Section 6</div>
-    <h2>The five formal tools after the handoff</h2>
-    <p style="max-width:46rem;">Moving semantics outward does not weaken a single one of them. Each keeps an irreplaceable structural job, and each now has a place where a managed verdict enters as a <em>fact</em>.</p>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr><th>Tool</th><th>Role in v2</th><th>Where the managed verdict lands</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="tool">OPA</td>
-            <td>Role and audience rights; which actions are legal in the current FSM state; block-type policy; model routing; the rule that restricted chunks may only be processed by the organization-approved model; configurable thresholds</td>
-            <td>The guardrail verdict is an input to the rule: <code>deny if guardrail.blocked</code>, with the reason carried into the audit log</td>
-          </tr>
-          <tr>
-            <td class="tool">Z3</td>
-            <td>Brief pre-flight — unsat <em>before</em> any LLM spend, with the unsat core as the explanation; burn-down satisfiability as nodes are filled; block-settings arithmetic</td>
-            <td>—</td>
-          </tr>
-          <tr>
-            <td class="tool">Prolog</td>
-            <td>Incremental objective coverage; the editor's "what to do next"; the proof tree that explains every refusal in human terms</td>
-            <td>A block reason becomes a fact inside the explanation, so “the filter refused” is never the whole answer</td>
-          </tr>
-          <tr>
-            <td class="tool">Datalog</td>
-            <td>Provenance of every claim down to a chunk ID; <code>exposed_to_restricted</code> permission leaks; node dependencies and the staleness cascade; prerequisite cycles; orphan branches</td>
-            <td>The chunk IDs returned by retrieval are its input facts</td>
-          </tr>
-          <tr>
-            <td class="tool">LTL</td>
-            <td>Ordering across many sessions: content only after an approved skeleton; publish only after every approval; an exam only after the material it tests; <code>G(node_edited → X NeedsRevalidation)</code></td>
-            <td><strong>A new invariant:</strong> <code>G(generated → O guardrail_checked)</code> — nothing enters course state unmoderated</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="s7">
-    <div class="eyebrow">Section 7</div>
-    <h2>Permissions and leaks — v1's strongest part, preserved</h2>
-    <p>The real Sylla model: a KB category binds to access-control teams, individual members can be granted access directly, and a denormalized closure records every effective category-to-team pair (a category's own teams plus its ancestors'). An empty closure means the chain is public.</p>
-    <ol class="steps">
-      <li><strong>At retrieval time:</strong> the course audience's rights are expanded into a <strong>metadata filter</strong> on the query, so the service physically cannot return what the audience may not see.</li>
-      <li><strong>After retrieval:</strong> Datalog re-checks every returned chunk ID against the same closure — <code>exposed_to_restricted(Course) :- grounded_in(Node, Chunk), restricted(Chunk), audience_lacks(Course, Chunk)</code>.</li>
-    </ol>
-    <p>Why both and not one: the filter is a service <em>configuration</em>, which can be wrong, over metadata that can be stale. The managed layer makes retrieval fast and clean; the formal layer is what <strong>proves</strong> the result. This is defense in depth, and it is the clearest slide in the deck: speed from configuration, guarantees from logic.</p>
-  </section>
-
-  <section id="s8">
+  <section id="s8" class="wrap-wide">
     <div class="eyebrow">Section 8</div>
-    <h2>Vocabulary as data</h2>
-    <p class="muted">The answer to the multimodality hint and to "what if you leave the company".</p>
-    <ul class="plain">
-      <li>The generator keeps <strong>no copy of the catalog</strong>. The platform is the source of truth: block type, the JSON schema of its settings, its <strong>modality</strong> (text / image / video / audio / interactive / document), and its applicability policy.</li>
-      <li>The node pipeline is <strong>modality-agnostic</strong> by construction: it does not know about "text and images", it knows about "blocks, each with a modality and a schema". There is no branch per modality to rewrite.</li>
-      <li>A new modality arrives as a <strong>catalog entry</strong>: the generator can immediately propose it (its schema goes into the forced tool call), the guardrail can moderate it, Datalog can trace its provenance, OPA can restrict it. Zero lines of code, zero deployments.</li>
-      <li>The same logic covers the rest of the vocabulary — the skills catalog, KB categories and their rights, thresholds such as "a quiz needs at least N questions", the model routing table. These are organizational data that belong where the skills catalog already lives, not constants inside our release.</li>
-    </ul>
-    <p>This also repairs something the platform already suffers from: today the catalog exists twice, in the frontend constant and in the backend validators that must mirror it. A single governed source removes the duplication rather than adding a third copy.</p>
+    <h2>The formal stack</h2>
+    <p style="max-width:46rem;">Five engines, each owning exactly one kind of question. No check is evaluated twice by two tools.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Engine</th><th>Owns</th><th>Representative check</th></tr></thead>
+        <tbody>
+          <tr><td class="tool">OPA</td><td class="role">Policy &amp; authorization</td><td>Who may act, on which audience, with which sources and which model; which actions are legal in the current state</td></tr>
+          <tr><td class="tool">Z3</td><td class="role">Arithmetic &amp; satisfiability</td><td>Whether the brief is satisfiable at all — proven <em>before</em> any generation spend, with the contradicting requirements named</td></tr>
+          <tr><td class="tool">Prolog</td><td class="role">Inference &amp; explanation</td><td>Which learning objectives remain uncovered, and a readable proof of why something was refused</td></tr>
+          <tr><td class="tool">Datalog</td><td class="role">Provenance &amp; dependencies</td><td>Every claim traced to a source; permission leaks found as paths; staleness propagated to dependents</td></tr>
+          <tr><td class="tool">LTL</td><td class="role">Ordering over time</td><td>Nothing published unapproved, no exam before its material, nothing admitted unmoderated — over a trace spanning months</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <section id="s9" class="wrap-wide">
+  <section id="s9">
     <div class="eyebrow">Section 9</div>
-    <h2>Policy versioning — the answer to “do we stop everything?”</h2>
-    <p style="max-width:46rem;">Managed configuration answers half the hint: a rule changes without an application release. The other half is what happens to courses that were already approved under the <em>old</em> rule. The answer reuses machinery the design already has.</p>
-
-    <div class="diagram">
-      <div class="caption">A policy change is an event in the system, not a release</div>
-      <pre class="mermaid">
-flowchart LR
-  PC["Compliance officer edits the policy — configuration, no deploy"] --> V["New policy version"]
-  V --> DQ["Datalog: which approved artifacts were stamped with the old version?"]
-  DQ --> ST["Affected nodes and courses marked NeedsRevalidation"]
-  DQ --> UN["Unaffected courses keep running untouched"]
-  ST --> RC["Re-check through the same gateway"]
-  RC --> OK["Re-approved, new version stamped"]
-  RC --> BL["Now violating — blocked with the diff explained"]
-
-  classDef default fill:#FFFFFF,stroke:#8B958F,color:#202A35;
-  classDef blocked fill:#F4E7DD,stroke:#A6512B,color:#5C2D16;
-  classDef terminal fill:#E3EFEA,stroke:#0E6E5C,color:#0B4438;
-  class ST,BL blocked;
-  class OK,UN terminal;
-      </pre>
-    </div>
-
-    <div class="wrap" style="padding:0; max-width:46rem;">
-      <ul class="plain">
-        <li>Every approved artifact is <strong>stamped with the versions</strong> it was approved under: policy bundle, guardrail, block catalog, model and version, KB snapshot.</li>
-        <li>When a rule changes, nothing stops. Datalog finds the dependent artifacts and marks them <code>NeedsRevalidation</code> — the same cascade that already handles an edited node.</li>
-        <li>The editor sees a re-validation queue; a course cannot remain published in violation of the current rule.</li>
-      </ul>
-      <div class="formula">G(published(C) → policy_version(C) = current ∨ marked_stale(C))</div>
-      <p>Stated for the defense: <strong>changing a rule is an event inside the system, not a deployment.</strong> Nothing is halted; exactly the courses the rule touches go back for re-validation, each with an explanation of what changed.</p>
-    </div>
+    <h2>The neuro-symbolic junction</h2>
+    <p><strong>Only the neural side can</strong> write coherent teaching material, invent exam questions, decompose a subject, and illustrate it. <strong>Only the symbolic side can</strong> prove the result is grounded, permitted, and consistent — and explain a refusal.</p>
+    <p>They meet in four places:</p>
+    <ol class="steps">
+      <li><strong>Grounding</strong> — every claim is bound to the skills catalog or a source passage; unbound content is rejected. <em>Symbolic filters neural.</em></li>
+      <li><strong>Repair</strong> — the formal explanation (a contradiction core, a denial reason, a proof tree) is fed into the next prompt and the model fixes its own output against it. <em>Symbolic steers neural.</em></li>
+      <li><strong>Explanation</strong> — refusals are explained by derivation, never by “the model decided”. <em>Symbolic justifies.</em></li>
+      <li><strong>Process</strong> — what the editor should do next is inferred from coverage and staleness, not proposed by a model. <em>Symbolic drives.</em></li>
+    </ol>
   </section>
 
-  <section id="s10">
+  <section id="s10" class="wrap-wide">
     <div class="eyebrow">Section 10</div>
-    <h2>The objection this invites</h2>
-    <div class="thesis warn">
-      <p><em>“Managed moderation is your own anti-pattern — asking a model whether something is safe.”</em></p>
+    <h2>Governance guarantees</h2>
+    <p style="max-width:46rem;">Six properties the system owes the organization — each enforced structurally rather than promised.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Guarantee</th><th>How it is enforced</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="role">Restricted knowledge never leaks</td>
+            <td>Audience rights become a metadata filter on retrieval, and every returned source is re-checked against the permission closure afterwards. The filter makes it fast; the re-check makes it provable.</td>
+          </tr>
+          <tr>
+            <td class="role">A rule change never requires a shutdown</td>
+            <td>Every approved artifact is stamped with the policy, moderation, and catalog versions it passed under. When a rule changes, the dependency graph marks exactly the affected courses for re-validation — a rule change is an event in the system, not a release.</td>
+          </tr>
+          <tr>
+            <td class="role">Every action is reconstructable</td>
+            <td>One continuous trace per course: prompts, model and version, moderation verdicts, each layer's decision, human approvals with what the approver was shown, and the final outcome.</td>
+          </tr>
+          <tr>
+            <td class="role">Side effects happen at most once</td>
+            <td>Generation and publication carry idempotency keys. A timeout is treated as <em>unknown</em>, never as failure: status is checked before any retry.</td>
+          </tr>
+          <tr>
+            <td class="role">The model never holds credentials</td>
+            <td>Secrets stay with the executor and never enter a prompt, a context, or an open audit record; outputs are scanned for leaked secrets before admission.</td>
+          </tr>
+          <tr>
+            <td class="role">Autonomy is earned, and revocable</td>
+            <td>The generator climbs an explicit ladder — propose only, dry run, read-only actions, low-risk writes with approval, high-risk writes with policy and audit. A kill switch disables an action class, a model, or the whole generator without touching the platform.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <ol class="steps">
-      <li><strong>It is not the same model.</strong> The judgment comes from a separate system, not from the model that produced the content — there is no self-confirmation loop.</li>
-      <li><strong>Its configuration is external and versioned.</strong> Denied topics and filter thresholds live outside the prompt and outside the code — precisely what the lecture requires of policy.</li>
-      <li><strong>The verdict is an input, not a decision.</strong> The guardrail never publishes and never moves a state; its answer becomes a fact for OPA, for the proof tree, and for the audit log. The model retains zero authority over transitions.</li>
-      <li><strong>It fails closed.</strong> If the service is unavailable, generated content is not admitted into course state.</li>
-    </ol>
-    <p>And symmetrically — what the managed layer does <em>not</em> do, which is a slide of its own: it knows nothing about pedagogy, does not check objective coverage, cannot see dependencies between nodes, does not understand the organization's permission model, and does not track ordering over time. All of that stays with the formal engines. Drawing that boundary honestly <em>is</em> the architectural contribution.</p>
+    <p style="max-width:46rem;">Actions are registered rather than implicit: retrieval, node generation, image generation, writing into course state, publication, and learner notification each carry a risk level and the controls that level requires. Adding a new action means classifying it first.</p>
   </section>
 
   <section id="s11">
     <div class="eyebrow">Section 11</div>
-    <h2>Demo — four steps added to the editor's journey</h2>
-    <p>The eleven steps of v1 remain. Four are added, each demonstrating one hint answered.</p>
-    <ol class="demo-list alpha">
-      <li><span class="chip block">Block</span><strong>Bypassing the string filter.</strong> The author phrases a forbidden topic indirectly. A string-matching policy would pass it; the guardrail blocks at the entrance and <strong>the model is never called</strong>.</li>
-      <li><span class="chip block">Block</span><strong>An unsafe illustration.</strong> A generated image fails the multimodal content filter and never reaches the editor — the modality that neither code nor logic can inspect.</li>
-      <li><span class="chip block">Stale</span><strong>A policy change after approval.</strong> A compliance officer adds a denied topic in configuration, with no deployment. Datalog cascades the mark to the approved courses it touches; LTL catches the attempt to remain published under the old version.</li>
-      <li><span class="chip pass">Pass</span><strong>A new modality for zero code.</strong> A block type is added to the catalog; the generator immediately proposes it, its schema validates, its provenance traces — nothing is rebuilt and nothing is redeployed.</li>
-    </ol>
+    <h2>Loop discipline</h2>
+    <p>The generator is a closed loop, and closed loops have failure modes of their own. Four rules keep it bounded:</p>
+    <ul class="plain">
+      <li><strong>Repair, not retry.</strong> A failed check does not re-run the same request — it returns a specific explanation, and the next attempt is aimed at it. Repeating a request without new information is pointless by construction.</li>
+      <li><strong>Every loop has a stop.</strong> Bounded attempts per node, a minimum improvement between rounds, an overall timeout, and escalation to the editor when the budget is spent. A loop that cannot stop is a safety defect, not an inconvenience.</li>
+      <li><strong>Self-critique is not verification.</strong> The model may flag its own weaknesses; it may not clear itself. Only the formal layers and the editor approve, and the approval path is separate from the generation path.</li>
+      <li><strong>No refinement without a ruler.</strong> Where there is no explicit criterion and no independent verifier, the system escalates instead of iterating. Endless polishing costs money, dilutes good content, and disguises the absence of a real check.</li>
+    </ul>
+    <p>The prototype also keeps <strong>no cross-course memory</strong>. Anything learned from one course influencing another would need its own retention, provenance, and review policy — deliberately outside this scope rather than quietly present.</p>
   </section>
 
   <section id="s12">
     <div class="eyebrow">Section 12</div>
-    <h2>Risks, limits, reproducibility</h2>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Risk</th><th>Response</th></tr></thead>
-        <tbody>
-          <tr><td class="role">Vendor dependency</td><td>Moderation and retrieval sit behind ports; the implementation is replaceable. Sylla production already runs on the same cloud, so this is not a new dependency.</td></tr>
-          <tr><td class="role">The guardrail knows no pedagogy</td><td>Nor should it — that is the work of Prolog, Datalog, and the human. The boundary is stated explicitly rather than blurred.</td></tr>
-          <tr><td class="role">Latency and cost of extra hops</td><td>Hops occur only at generation boundaries; a light model handles cheap tasks, and verdicts are cached by content hash.</td></tr>
-          <tr><td class="role">False positives on legitimate training content</td><td>Thresholds and denied topics are configured by the organization; every block arrives with a reason and enters the repair loop rather than a dead end.</td></tr>
-          <tr><td class="role">“Too much was handed outward — where is the contribution?”</td><td>The contribution is formal guarantees, permissions, staleness, versioning, and vocabulary-as-data. The managed layer covers only what cannot be written in code at all.</td></tr>
-          <tr><td class="role">The managed layer is unavailable</td><td>Fail-closed plus a kill switch: generation is disabled, the course stays in its current state, nothing is published.</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <h3>Reproducibility</h3>
-    <p>The record/replay cassettes now capture more than model responses: every <strong>guardrail verdict</strong> (allow or blocked, with its reason, for text and for images) and every <strong>retrieval result</strong> (chunk IDs plus metadata) is recorded as a fixture. Without that, the offline verification promise of v1 would quietly break.</p>
+    <h2>Content quality</h2>
+    <p>“Generated quickly” is not “publishable”. Quality is enforced per node, as content lands, at three levels:</p>
+    <ol class="steps">
+      <li><strong>Structural, formal.</strong> Every lesson has objectives; every objective is covered; every exam question traces to material already taught <em>and approved</em>; prerequisites form a coherent chain. A structurally weak node never reaches the editor — it goes to repair.</li>
+      <li><strong>Substantive, grounded.</strong> Content comes from the organization's Knowledge Base and skills catalog. An unsourced claim is a blocking violation — which removes the main source of low quality: fabrication.</li>
+      <li><strong>Editorial, human.</strong> The skeleton is approved before generation, each node is approved with its explanation, and publication is a separate decision. Editing an approved node withdraws its approval, so silent degradation is architecturally impossible.</li>
+    </ol>
+  </section>
+
+  <section id="s13">
+    <div class="eyebrow">Section 13</div>
+    <h2>Evaluation</h2>
+    <p>The system is graded on what it refuses as much as on what it produces.</p>
+    <ul class="plain">
+      <li><strong>Layer tests</strong> — each engine in isolation, plus valid and forbidden transitions of both state machines.</li>
+      <li><strong>Forbidden chains</strong> — content before an approved skeleton; publication with a stale node; an exam ahead of its material; anything admitted without moderation.</li>
+      <li><strong>Adversarial scenarios</strong> — a forbidden request phrased indirectly; an instruction embedded in a source document; a broad-audience course reaching a restricted source; an unsafe illustration; a timeout followed by a retry; an unregistered action proposed.</li>
+      <li><strong>Trajectory evaluation</strong> — the path is graded, not only the artifact: which actions ran, in what order, at what cost, and how many repair rounds it took.</li>
+      <li><strong>Dry run</strong> — a whole course generated in simulation, reporting what would be produced and what would be blocked, with no side effects.</li>
+      <li><strong>Recorded fixtures</strong> — model responses, moderation verdicts, and retrieval results are committed, so every result above reproduces offline; a live run is recorded separately.</li>
+      <li><strong>Production signals</strong> — blocked generations, policy denials, injection detections, near-miss source leaks, repair-loop depth, and the size of the re-validation queue.</li>
+    </ul>
+  </section>
+
+  <section id="s14">
+    <div class="eyebrow">Section 14</div>
+    <h2>Technology</h2>
+    <ul class="plain">
+      <li><strong>Models:</strong> multi-model on AWS Bedrock, as in production — a strong reasoning model for the skeleton and for repairs, a light one for node text and utility work, an image model for illustrations. <strong>Routing is a policy table</strong>, not a model's choice, and it carries the rule that restricted sources may only be processed by the organization-approved model. Every artifact records which model and version produced it; each model has a fallback chain.</li>
+      <li><strong>Formal engines are real:</strong> OPA (Rego), Z3, SWI-Prolog, a Datalog engine, and an LTL checker over the trace — the same stack I have already run end to end in an earlier assignment.</li>
+      <li><strong>Managed services</strong> for moderation and retrieval, reached through ports so the implementation stays replaceable.</li>
+      <li><strong>Persistent course state</strong> (JSON/SQLite): sessions resume and the trace stays continuous across months.</li>
+      <li><strong>Scope:</strong> a fixed small course — two modules, a handful of nodes, one exam, a couple of images — with the effort spent on verification depth rather than feature breadth. The editor surface is a wizard rendered from the state machine, not a full UI.</li>
+      <li><strong>Hygiene:</strong> secrets outside the repository, configuration separated from code, and versioning for policies, prompts, and state definitions.</li>
+    </ul>
+  </section>
+
+  <section id="s15">
+    <div class="eyebrow">Section 15</div>
+    <h2>Limits, stated honestly</h2>
+    <ul class="plain">
+      <li><strong>Pixels are not formally verifiable.</strong> An image passes moderation and provenance checks; the visual itself is a human decision, and the architecture says so rather than pretending otherwise.</li>
+      <li><strong>Managed moderation is no judge of pedagogy.</strong> It knows nothing about coverage, dependencies, or the organization's permission model — those never leave the formal layer.</li>
+      <li><strong>A formal guarantee is only as good as the model of the world.</strong> If the catalog or the permission closure is wrong, the proof is about the wrong thing — which is why both are read from the platform rather than restated.</li>
+      <li><strong>Every extra hop costs latency and money.</strong> Checks sit at generation boundaries, verdicts are cached by content hash, and cheap tasks go to the light model.</li>
+    </ul>
+  </section>
+
+  <section id="s16">
+    <div class="eyebrow">Section 16</div>
+    <h2>Open questions</h2>
+    <ol class="questions">
+      <li><strong>Is a published course mutable?</strong> With learners partway through it, editing in place is not obviously acceptable. The alternative — an immutable published edition, a draft successor, and a pointer flip — changes both state machines and raises learner migration.</li>
+      <li><strong>How deep should the live integration go</strong> in the prototype: real service calls throughout, or an adapter over recorded fixtures with one live run demonstrated?</li>
+      <li><strong>Where does the re-validation queue belong</strong> in the editor's day — a notification, a dashboard, or a blocking gate on the next publish?</li>
+    </ol>
   </section>
 
   <div class="callout">
-    <div class="eyebrow">Open questions</div>
-    <p><strong>1.</strong> Is the problem read correctly — that semantics and modalities should be configured through managed services rather than written in code, leaving our code the formal core and the glue between layers?<br>
-    <strong>2.</strong> Still open from the proposal: the code submission date (is 4 October the defense only?), solo or group work, and the submission channel.<br>
-    <strong>3.</strong> How deep should the live integration go in the prototype — real service calls, or an adapter over recorded cassettes?</p>
+    <div class="eyebrow">How to read this specification</div>
+    <p>This page is the high-level contract: what the system is for, which layer answers which question, and what the architecture guarantees. It is meant to be readable end to end in about ten minutes.</p>
+    <p>Everything operational — full state tables, transition rules, concrete policies, the action registry, the test suite — lives in the detailed specifications linked at the top, which grow as the build proceeds.</p>
   </div>
 
-  <p class="footer-note">Spec v2 · 25 July 2026 · v1 remains the record of the approved proposal</p>
+  <p class="footer-note">Specification v2 · <a href="states.html">state model</a> · updated 26 July 2026</p>
 </div>
 
 <script type="module">
