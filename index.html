@@ -347,7 +347,7 @@
       </a>
       <span class="card">
         <span class="card-title">Transitions &amp; guards <span class="status planned">next</span></span>
-        <span class="card-desc">The full transition table — current state, event, guard, validation layer, next state — with valid and forbidden event chains.</span>
+        <span class="card-desc">The full transition table — current state, event, guard, validation layer, next state. <strong>Owns the event chains:</strong> worked examples of legal sequences, and of forbidden ones with the guard that refuses each, including every attempt to edit a published revision.</span>
       </span>
       <span class="card">
         <span class="card-title">Validation layers <span class="status planned">planned</span></span>
@@ -363,7 +363,7 @@
       </span>
       <span class="card">
         <span class="card-title">Implementation plan <span class="status planned">planned</span></span>
-        <span class="card-desc">Build order, scope boundaries, what is real and what is modeled in the prototype, and the demo script.</span>
+        <span class="card-desc">Build order, scope boundaries, and what is real versus modeled in the prototype. <strong>Owns the demo:</strong> the step-by-step script shown at the defense, with the failure it deliberately triggers and the recovery it shows.</span>
       </span>
     </div>
   </div>
@@ -393,7 +393,7 @@
   <section id="s1">
     <div class="eyebrow">Section 1</div>
     <h2>Context</h2>
-    <p><strong>Sylla</strong> is a production learning experience platform I work on. Organizations run employee training on it: courses, learning paths, assessments, a per-organization skills catalog, a Knowledge Base of internal documents, role- and data-level permissions, and human approvals. Courses are built by hand in a block editor — sections, lessons, and typed blocks (text, media, quizzes) — with adaptive branching now being added.</p>
+    <p><strong>Sylla</strong> is a production learning experience platform I work on. Organizations run employee training on it: courses, learning paths, assessments, a per-organization skills catalog, a Knowledge Base of internal documents, role- and data-level permissions, and human approvals. Courses are built by hand in a block editor — sections, lessons, and typed blocks (text, media, quizzes); adaptive branching is planned per the builder specification and is not in the codebase today.</p>
     <p>The generator described here is a standalone prototype on that domain. It does not touch production code; it models the same entities and the same permission rules, and it is designed so its architecture can graduate into the product.</p>
   </section>
 
@@ -408,7 +408,7 @@
       <li>content can be published <strong>without review</strong>;</li>
       <li>a course lives across sessions, so editing one approved lesson silently <strong>desynchronizes</strong> the exam that tests it;</li>
       <li>a generator with Knowledge Base access can pull <strong>restricted</strong> material into a course seen by an audience without rights to it;</li>
-      <li>adaptive branching can be structurally broken — unreachable branches, prerequisite cycles.</li>
+      <li>a course structure can be broken in ways only a graph check catches — prerequisite cycles, unreachable material, an exam that tests a lesson nobody reaches.</li>
     </ul>
     <p><strong>Users:</strong> course authors and training administrators. <strong>Cost of a wrong action:</strong> unverified, stale, or restricted content delivered to an entire workforce.</p>
     <div class="thesis">
@@ -497,7 +497,7 @@
     <div class="eyebrow">Section 6</div>
     <h2>State model</h2>
     <p>The lifecycle is an explicit two-level state machine, not a pipeline. The <strong>course</strong> machine survives editor sessions and aggregates the state of its nodes; each <strong>node</strong> — lesson, topic, exam — runs its own cycle of drafting, guardrail screening, checks, repair, and approval.</p>
-    <p>Two properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. And approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it.</p>
+    <p>Three properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. Approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it. And <strong>a published course is immutable</strong> — what everyone calls editing a live course forks a new revision beside it, so the cascade never runs against content a learner is reading, and rollback is a pointer move rather than a recovery procedure.</p>
     <p><strong>The state machine is the editor's interface.</strong> In every state the system says what is available, what is blocked and why, and what to do next — the next best action is derived from uncovered objectives and stale nodes, not suggested by a model.</p>
     <p>→ <a href="states.html"><strong>State model — detailed specification</strong></a>: every course and node state, the event catalog, guards, temporal invariants, and the fields each artifact persists.</p>
   </section>
@@ -610,7 +610,7 @@ flowchart TD
           </tr>
           <tr>
             <td class="role">Anything published can be taken back</td>
-            <td>Publication is reversible: withdrawing a course returns it to its approved state and is itself an audited event carrying a reason. The same applies one level up — policies, prompts, and catalogs are versioned, so reverting one is a normal operation that re-validates exactly what that version touched, rather than a migration.</td>
+            <td><strong>A published revision is immutable</strong> — no transition edits it, so rollback is a pointer move to an earlier revision that still exists and still carries the approvals and versions it was cleared under. Nothing is regenerated and nothing is restored from a backup. The same applies one level up: policies, prompts, and catalogs are versioned, so reverting one re-validates exactly what that version touched rather than being a migration.</td>
           </tr>
           <tr>
             <td class="role">Every action is reconstructable</td>
@@ -701,7 +701,7 @@ flowchart TD
     <div class="eyebrow">Section 16</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>Is a published course mutable?</strong> With learners partway through it, editing in place is not obviously acceptable. The alternative — an immutable published edition, a draft successor, and a pointer flip — changes both state machines and raises learner migration.</li>
+      <li><strong>Which revision does a learner finish on?</strong> A published revision is immutable, so nothing is ever rewritten under someone reading it, and the revision they started survives as <code>Superseded</code>. What remains is a product decision: offer the newer revision, move them at a chapter boundary, or leave them alone — and the answer differs for a <code>Withdrawn</code> revision, where “let them finish” may be exactly what compliance was trying to prevent.</li>
       <li><strong>How deep should the live integration go</strong> in the prototype: real service calls throughout, or an adapter over recorded fixtures with one live run demonstrated?</li>
       <li><strong>Where does the re-validation queue belong</strong> in the editor's day — a notification, a dashboard, or a blocking gate on the next publish?</li>
     </ol>

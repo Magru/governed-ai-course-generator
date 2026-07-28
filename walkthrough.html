@@ -338,7 +338,7 @@
     <h1>One course, end to end</h1>
     <p class="kicker">Twenty-four steps from an empty brief to a published course: every state change, every check, every stop — in the order they actually happen.</p>
     <div class="thesis">
-      <p><strong>First how it drives, then how it breaks.</strong> The <a href="states.html">state model</a> inventories what exists and, in its eight situations, what goes wrong. This page does the other half: a single run that succeeds, followed step by step — because the order of the layers <em>is</em> the design.</p>
+      <p><strong>First how it drives, then how it breaks.</strong> The <a href="states.html">state model</a> inventories what exists and, in its nine situations, what goes wrong. This page does the other half: a single run that succeeds, followed step by step — because the order of the layers <em>is</em> the design.</p>
     </div>
     <div class="meta-row">
       <span class="meta-chip">Steps: <b>24</b></span>
@@ -578,27 +578,45 @@ the course is stamped as a whole, the same way each node was</div>
   <section id="s7">
     <div class="eyebrow">Section 7 · Act VI</div>
     <h2>After publication — where a pipeline would have ended</h2>
-    <p class="act-head"><code>Published</code> is quasi-terminal, not terminal. Three things still reach into it, and all three use the same machinery: the version stamps written at approval, and the dependency graph.</p>
+    <p class="act-head">Step 24 published <strong>revision 1</strong>, and revision 1 will never change again. Three things still reach into a live course, and none of them edits it: the machinery is the version stamps written at every approval, the dependency graph, and a fork.</p>
+
+    <div class="thesis">
+      <p><strong>A published revision is immutable.</strong> There is no transition out of <code>Published</code> that touches content. A learner who opens a lesson is reading exactly the bytes a person approved, under versions that are still on record — for as long as that revision is live, and afterwards too.</p>
+    </div>
 
     <h3>The editor fixes a sentence in an approved topic</h3>
-    <div class="mv">T2: NodeApproved → <b>NeedsRevalidation</b>
-E1, and T2's images: → <b>NeedsRevalidation</b>   reason: dependency changed → T2
-course: ReadyForReview → <b>ContentInProgress</b></div>
-    <p>Nobody wrote this cascade. The exam is stale because it was traced to T2 when it was written; the image is stale because its prompt came from T2's content. It is the same dependency graph that hunts permission leaks, used for a second purpose.</p>
+    <p>Not an edit of the live course — a <strong>fork</strong>. Every node is copied with its state and its stamps, so the new revision starts with everything approved and nothing stale, and the editor works where no learner can see.</p>
+    <div class="mv">ReviseRequested            rev 2 created: <b>ContentInProgress</b>
+                           rev 1: unchanged, still Published, still live
+
+NodeEdited(T2) in rev 2    T2: NodeApproved → <b>NeedsRevalidation</b>
+                           E1 and T2's images follow — <b>in rev 2 only</b>
+                           reason: dependency changed → T2</div>
+    <p>Nobody wrote that cascade. The exam is stale because it was traced to T2 when it was written; the image is stale because its prompt came from T2's content. It is the same dependency graph that hunts permission leaks, used for a second purpose — and now it only ever fires inside a draft.</p>
+
+    <h3>The revision goes live, and the old one survives</h3>
+    <div class="mv">guard: differs_from_live(rev 2) ∧ all_nodes_approved ∧ no_stale
+rev 2: → ReadyForReview → WholeCourseChecks → Approved → <b>Published</b>
+live pointer: rev 1 → rev 2
+rev 1: → <b>Superseded</b>   intact, still stamped, still readable
+
+rollback = move the pointer back to rev 1
+           nothing regenerated, nothing restored from a backup</div>
+    <p>That last line is the whole return on the decision. Rollback — which the brief asks for under production readiness — stops being a recovery procedure and becomes a pointer move to something that was never damaged.</p>
 
     <h3>A compliance officer changes a policy</h3>
     <div class="mv">PolicyChanged(v7 → v8)
-courses stamped policy_version=v7 AND touched by the new rule
+revisions stamped policy_version=v7 AND touched by the new rule
   → <b>StaleReview</b>
-every other course: untouched, still Published</div>
-    <p>This is what the stamps are for. Without them, the honest answer to “which published courses does this new rule affect?” is “all of them”, and the only safe action is to stop everything.</p>
+every other revision: untouched, still Published
+
+re-judged against v8 — <b>no content is regenerated</b>
+  passes → back to Published, re-stamped v8
+  fails  → <span class="warnc">Withdrawn</span>, and the fix is a new revision</div>
+    <p>This is what the stamps are for. Without them, the honest answer to “which published courses does this new rule affect?” is “all of them”, and the only safe action is to stop everything. And note what the re-check cannot do: it cannot quietly amend the course to make it comply. A live revision either passes under the new rule or stops being served.</p>
 
     <h3>The Knowledge Base is updated</h3>
-    <p>Identical mechanism, different stamp: nodes grounded against a <code>kb_snapshot</code> whose chunks have changed become stale, because grounding was a claim about a specific state of the sources — not about the sources in general.</p>
-
-    <div class="thesis warn">
-      <p><strong>An assumption, stated rather than smuggled.</strong> All three cases above are written as if a published course is edited <em>in place</em>. Whether that is acceptable with learners partway through it is <a href="states.html#s10">open question&nbsp;1</a> of the state model, and it is genuinely open. The alternative — <code>Published</code> is immutable, an edit creates a new revision beside it, publication moves a pointer — would leave the cascade logic intact but change every state name in this section.</p>
-    </div>
+    <p>Identical mechanism, different stamp: nodes grounded against a <code>kb_snapshot</code> whose chunks have changed are flagged, because grounding was a claim about a specific state of the sources — not about the sources in general. As above, the flag routes to re-verification, and any repair happens in a fork.</p>
   </section>
 
   <section id="s8" class="wrap-wide">
@@ -650,7 +668,7 @@ every other course: untouched, still Published</div>
 
     <div class="callout">
       <div class="eyebrow">Where to go next</div>
-      <p><strong><a href="states.html">State model</a></strong> — the full inventory this run walks through, plus the eight situations where it goes wrong.</p>
+      <p><strong><a href="states.html">State model</a></strong> — the full inventory this run walks through, plus the nine situations where it goes wrong.</p>
       <p><strong><a href="configuration.html">Configuration</a></strong> — the catalogs, policies, thresholds and stamps that every step above reads at runtime.</p>
       <p><strong>Transitions &amp; guards</strong> <span class="status planned">next</span> — the formal table: current state, event, guard, layer, next state, with valid and forbidden event chains.</p>
     </div>

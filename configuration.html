@@ -539,6 +539,7 @@ metadata, titles   → light</div>
       <div class="thesis">
         <p><strong>A stamp is a claim about the past, not a lock on the future.</strong> It does not prevent the rule from changing — it makes the consequence of the change computable, and small.</p>
       </div>
+      <p>Immutability is what makes the claim hold. Because a published revision is never edited, its stamps stay true for as long as it exists: the versions recorded on it are the versions it was actually judged under, not the versions it was judged under before someone amended it. That is also why <strong>rollback is a pointer move</strong> — an earlier revision is still intact and still carries its own stamps, so returning to it restores a known, explainable state rather than an approximation of one.</p>
     </div>
   </section>
 
@@ -578,7 +579,7 @@ metadata, titles   → light</div>
           </tr>
           <tr>
             <td class="role">A block type is withdrawn from the catalog</td>
-            <td>Nodes stamped with the older <code>catalog_version</code> stay valid and keep rendering; new generation cannot propose the type; affected courses go to <code>StaleReview</code></td>
+            <td>Published revisions are immutable, so they keep rendering under their stamped <code>catalog_version</code>; new generation cannot propose the type; affected revisions go to <code>StaleReview</code> and any repair happens in a fork</td>
             <td>A withdrawal is a policy change like any other — it must be reviewed, not applied retroactively in silence</td>
           </tr>
           <tr>
@@ -662,6 +663,7 @@ metadata, titles   → light</div>
       <li><strong>May an organization waive visual review?</strong> If yes, it is a threshold. If no, it belongs in <a href="#s9">Section&nbsp;9</a> — and the argument for “no” is that the flag exists precisely for the cases no automated layer can close.</li>
       <li><strong>Does a threshold change invalidate approved work, or only apply forward?</strong> Tightening the repair budget arguably should not un-approve anything; tightening a size limit arguably should.</li>
       <li><strong>Is the routing table visible to the editor?</strong> Showing which model wrote a node is honest and useful for review; it also invites the editor to argue with the routing rather than with the content.</li>
+      <li><strong>Does a revision need its own publication signature?</strong> A fork copies its predecessor's approvals so unchanged nodes are not re-reviewed. An organization may nonetheless want every publication signed afresh, however small the change — that is an <code>approval_chain</code> setting, and it is the one place where configuration reaches into the state machine's human stops.</li>
       <li><strong>Are catalog entries ever hard-removed, or only deprecated?</strong> Hard removal makes older stamps unresolvable, which quietly breaks the ability to explain a published course.</li>
     </ol>
 
