@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Walkthrough: one course, end to end — Governed AI Course Generator</title>
+<meta name="description" content="Twenty-four steps from an empty brief to a published course: every state change, every check and every human stop, in order.">
+<meta property="og:title" content="Walkthrough: one course, end to end — Governed AI Course Generator">
+<meta property="og:description" content="A single successful run through the generator, step by step — three refusals before the first token, three kinds of human stop, and what happens after publication.">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128260;</text></svg>">
+</head>
+<body>
+
+<style>
+  /* Deliberately single-theme: this document always renders light (paper). */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    color-scheme: light;
+    --paper: #FAF9F5;
+    --ink: #202A35;
+    --muted: #5C6873;
+    --hairline: #DFE2DA;
+    --accent: #0E6E5C;
+    --accent-soft: #E3EFEA;
+    --blocked: #A6512B;
+    --blocked-soft: #F4E7DD;
+    --hitl: #8A6A1F;
+    --hitl-soft: #F3ECD8;
+    --panel: #F2F3EE;
+    --code-bg: #EDEFE8;
+    --diagram-bg: #F4F5F0;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.4rem 5rem; }
+  .wrap-wide { max-width: 54rem; margin: 0 auto; }
+
+  h1, h2, h3, .sans {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; margin: 0.6rem 0 0.9rem; text-wrap: balance; }
+  h2 { font-size: 1.32rem; font-weight: 650; letter-spacing: -0.008em; margin: 0 0 0.9rem; text-wrap: balance; }
+  h3 { font-size: 1.02rem; font-weight: 650; margin: 1.4rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  section { margin-top: 3.2rem; }
+
+  .eyebrow {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .kicker { color: var(--muted); font-size: 1.06rem; margin-bottom: 1.4rem; }
+
+  /* series nav */
+  .series {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--hairline); color: var(--muted);
+  }
+  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
+  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  .series a:hover { border-color: var(--accent); }
+  .series .here { color: var(--ink); font-weight: 650; }
+  .series .soon { color: var(--muted); opacity: 0.75; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.3rem 0 0; }
+  .meta-chip {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 550; color: var(--muted);
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 0.28rem 0.75rem;
+    background: var(--panel);
+  }
+  .meta-chip b { color: var(--ink); font-weight: 650; }
+
+  .thesis {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 0.9rem 1.1rem; border-radius: 0 8px 8px 0;
+    margin: 1.4rem 0;
+  }
+  .thesis p { margin: 0; }
+  .thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
+
+  nav.toc {
+    margin-top: 2.6rem; padding: 1.1rem 1.2rem;
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
+  }
+  nav.toc .toc-title { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.7rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  nav.toc ol { columns: 2; column-gap: 2rem; margin: 0; padding: 0 0 0 1.2rem; font-size: 0.92rem; }
+  nav.toc li { margin-bottom: 0.32rem; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 620px) { nav.toc ol { columns: 1; } }
+
+  ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
+  ul.plain li { margin-bottom: 0.45rem; }
+  ol.steps { padding-left: 1.3rem; margin: 0 0 1rem; }
+  ol.steps li { margin-bottom: 0.55rem; }
+
+  strong { font-weight: 650; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em; background: var(--code-bg);
+    padding: 0.1em 0.38em; border-radius: 4px;
+  }
+  .formula {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0.6rem 0 1rem;
+    line-height: 1.9;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--hairline); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 640px; }
+  thead th {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: left; color: var(--muted); background: var(--panel);
+    padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--hairline);
+  }
+  tbody td { padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.state {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 600; font-size: 0.82rem; white-space: nowrap; color: var(--accent);
+  }
+  td.state.hitl-s { color: var(--hitl); }
+  td.state.blocked-s { color: var(--blocked); }
+  td.ev { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; white-space: nowrap; color: var(--ink); }
+  td small, .muted { color: var(--muted); }
+
+  .diagram {
+    background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 1rem; margin: 1.2rem 0; overflow-x: auto;
+  }
+  .diagram .caption {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.75rem; color: #5C6873; letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 600;
+  }
+  .diagram pre.mermaid { margin: 0; background: transparent; }
+  .diagram .edgeLabel,
+  .diagram .edgeLabel p,
+  .diagram .edgeLabel span,
+  .diagram .edgeLabel div {
+    color: #202A35 !important;
+    background: #F4F5F0 !important;
+  }
+  .diagram svg .labelBkg { background: #F4F5F0 !important; }
+  .diagram svg .edgeLabel rect { fill: #F4F5F0 !important; opacity: 1 !important; }
+  .diagram svg .flowchart-link { stroke: #8B958F !important; }
+  .diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; margin-top: 0.6rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; color: #5C6873; }
+  .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
+
+  .principles { list-style: none; padding: 0; margin: 1.3rem 0; counter-reset: pr; }
+  .principles li {
+    position: relative; padding: 0.75rem 0 0.75rem 2.4rem; border-bottom: 1px solid var(--hairline);
+    counter-increment: pr;
+  }
+  .principles li:last-child { border-bottom: none; }
+  .principles li::before {
+    content: counter(pr);
+    position: absolute; left: 0; top: 0.85rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 650; color: var(--muted);
+    width: 1.7rem; height: 1.7rem; border: 1px solid var(--hairline); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; background: var(--panel);
+  }
+
+  .callout {
+    border: 1px solid var(--accent); border-radius: 12px;
+    background: var(--accent-soft); padding: 1.2rem 1.3rem; margin-top: 3rem;
+  }
+  .callout .eyebrow { margin-bottom: 0.3rem; }
+  .callout p { margin: 0 0 0.7rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .questions { padding-left: 1.3rem; margin: 0; }
+  .questions li { margin-bottom: 0.7rem; }
+
+  .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  .footer-note a { color: var(--accent); }
+
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 2.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* sticky section rail */
+  .rail {
+    position: fixed;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    padding: 0.35rem 0;
+    max-height: 86vh;
+    overflow: hidden;
+  }
+  .rail a {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 0.16rem 0;
+    border: 0;
+  }
+  .rail .tick {
+    display: block;
+    width: 0.85rem;
+    height: 2px;
+    background: var(--hairline);
+    border-radius: 2px;
+    flex: none;
+    transition: width 0.18s ease, background-color 0.18s ease;
+  }
+  .rail .lbl {
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-0.25rem);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .rail:hover .lbl,
+  .rail a:focus-visible .lbl,
+  .rail a.active .lbl { opacity: 1; transform: none; }
+  .rail a:hover .tick { width: 1.5rem; background: var(--accent); }
+  .rail a:hover { color: var(--ink); }
+  .rail a.active .tick { width: 1.5rem; background: var(--accent); }
+  .rail a.active { color: var(--accent); font-weight: 650; }
+  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  .rail .rail-home {
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+  .rail .rail-home .lbl { opacity: 1; transform: none; }
+  @media (min-width: 1280px) { .rail { display: flex; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rail .tick, .rail .lbl { transition: none; }
+  }
+
+  a { color: var(--accent); }
+  ::selection { background: var(--accent-soft); }
+</style>
+
+<style>
+  /* page-local: the numbered run */
+  ol.run { list-style: none; margin: 1.6rem 0 0; padding: 0 0 0 0.9rem; }
+  ol.run > li {
+    position: relative;
+    padding: 0 0 1.5rem 2.4rem;
+    border-left: 2px solid var(--hairline);
+  }
+  ol.run > li:last-child { border-left-color: transparent; padding-bottom: 0.2rem; }
+  ol.run > li::before {
+    content: counter(list-item);
+    position: absolute; left: -0.9rem; top: -0.2rem;
+    width: 1.7rem; height: 1.7rem; border-radius: 999px;
+    background: var(--paper); border: 1px solid var(--hairline);
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.74rem; font-weight: 650; color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.run > li > p { margin: 0 0 0.5rem; }
+  ol.run > li > p:last-child { margin-bottom: 0; }
+  ol.run h4 {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.95rem; font-weight: 650; margin: 0 0 0.35rem;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.55rem;
+  }
+  .actor {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.13rem 0.5rem; border-radius: 999px; white-space: nowrap;
+  }
+  .actor.auto  { background: var(--accent-soft); color: var(--accent); }
+  .actor.human { background: var(--hitl-soft); color: var(--hitl); }
+  .actor.model { background: #E9EBE4; color: var(--muted); }
+  .mv {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.79rem; line-height: 1.75; color: var(--accent);
+    background: var(--code-bg); border: 1px solid var(--hairline); border-radius: 7px;
+    padding: 0.5rem 0.7rem; margin: 0.5rem 0; overflow-x: auto;
+  }
+  .mv b { color: var(--ink); font-weight: 650; }
+  .mv .warnc { color: var(--blocked); }
+  .act-head { color: var(--muted); font-size: 0.95rem; max-width: 46rem; }
+</style>
+
+<nav class="rail" aria-label="Sections">
+  <a class="rail-home" href="./"><span class="tick"></span><span class="lbl">← Specification</span></a>
+  <a href="#s1"><span class="tick"></span><span class="lbl">The run</span></a>
+  <a href="#s2"><span class="tick"></span><span class="lbl">Brief</span></a>
+  <a href="#s3"><span class="tick"></span><span class="lbl">Skeleton</span></a>
+  <a href="#s4"><span class="tick"></span><span class="lbl">Nodes</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Exam</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">Whole course</span></a>
+  <a href="#s7"><span class="tick"></span><span class="lbl">After publication</span></a>
+  <a href="#s8"><span class="tick"></span><span class="lbl">On one screen</span></a>
+  <a href="#s9"><span class="tick"></span><span class="lbl">What it shows</span></a>
+</nav>
+
+<div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Detailed specifications</span>
+    <a href="./">← Specification</a>
+    <a href="states.html">State model</a>
+    <span class="here">Walkthrough</span>
+    <a href="configuration.html">Configuration</a>
+    <span class="soon">Transitions &amp; guards — next</span>
+  </div>
+
+  <header>
+    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <h1>One course, end to end</h1>
+    <p class="kicker">Twenty-four steps from an empty brief to a published course: every state change, every check, every stop — in the order they actually happen.</p>
+    <div class="thesis">
+      <p><strong>First how it drives, then how it breaks.</strong> The <a href="states.html">state model</a> inventories what exists and, in its eight situations, what goes wrong. This page does the other half: a single run that succeeds, followed step by step — because the order of the layers <em>is</em> the design.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">Steps: <b>24</b></span>
+      <span class="meta-chip">Kinds of human stop: <b>3</b></span>
+      <span class="meta-chip">Refusals available before the first token: <b>3</b></span>
+      <span class="meta-chip">Status: <b>draft for discussion</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#s1">The run</a></li>
+      <li><a href="#s2">Act I — The brief</a></li>
+      <li><a href="#s3">Act II — The skeleton</a></li>
+      <li><a href="#s4">Act III — The nodes</a></li>
+      <li><a href="#s5">Act IV — The exam</a></li>
+      <li><a href="#s6">Act V — The course as a whole</a></li>
+      <li><a href="#s7">Act VI — After publication</a></li>
+      <li><a href="#s8">The run on one screen</a></li>
+      <li><a href="#s9">What only an end-to-end run shows</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1">
+    <div class="eyebrow">Section 1</div>
+    <h2>The run</h2>
+    <p>One editor, one course, no adversary. Everything below is the ordinary case — the interesting part is how much structure the ordinary case already needs.</p>
+    <div class="formula">course     Incident Response for Support Engineers
+audience   support-team
+nodes      T1 Detection · T2 Triage · T3 Escalation · E1 Exam
+sources    the organization's Knowledge Base, already filtered
+           to what support-team is allowed to see
+</div>
+    <p>Three actors appear in the margin of every step, and they are never interchangeable: <span class="actor auto">automatic</span> a deterministic layer or a guard, <span class="actor model">model</span> a generation call, <span class="actor human">editor</span> a person deciding something no layer can decide.</p>
+  </section>
+
+  <section id="s2">
+    <div class="eyebrow">Section 2 · Act I</div>
+    <h2>The brief — three refusals before the first token</h2>
+    <p class="act-head">Nothing here costs a cent. That is the point: every refusal the system can make cheaply, it makes before the model is ever called.</p>
+
+    <ol class="run">
+      <li>
+        <h4>The course is created <span class="actor human">editor</span></h4>
+        <p>A course row exists and nothing else — an identifier and an owner. No brief, no nodes, no history.</p>
+        <div class="mv">course: <b>AwaitingBrief</b></div>
+      </li>
+      <li>
+        <h4>The brief is submitted <span class="actor auto">automatic</span></h4>
+        <p>Three checks run in order, cheapest first: the <strong>JSON schema</strong> of the brief (shape), <strong>OPA</strong> (may this editor author for <code>support-team</code>, is the request inside the organization's limits), and the <strong>guardrail</strong> (topic and personal data in the brief text itself).</p>
+        <div class="mv">course: AwaitingBrief → <b>BriefValidation</b>
+writes: policy_version=v7 · guardrail_version=g3 · verdict + reason
+on failure: → <span class="warnc">BlockedFinal</span>, permanently</div>
+        <p>If it fails here the trace carries no <code>model_id</code> and no token count, because there was no model call. A policy refusal that costs nothing is the cheapest kind of safety there is.</p>
+      </li>
+      <li>
+        <h4>The brief is checked for feasibility <span class="actor auto">automatic</span></h4>
+        <p><strong>Z3</strong> pre-flight: “forty lessons, two hours total, fifteen minutes each” is unsatisfiable arithmetic, and it is unsatisfiable <em>before</em> anything is generated.</p>
+        <div class="mv">course: BriefValidation → <b>BriefFeasibility</b>
+sat   → on to generation
+unsat → <span class="warnc">BlockedRecoverable</span> + the unsat core: the exact requirements
+        that cannot hold together</div>
+      </li>
+    </ol>
+
+    <div class="thesis">
+      <p><strong>Two refusals, two different words.</strong> A policy violation is terminal; an arithmetic contradiction is the editor's to fix. Calling both of them “blocked” would be a lie told to the person who has to act next.</p>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="eyebrow">Section 3 · Act II</div>
+    <h2>The skeleton — the first meeting with the model</h2>
+    <p class="act-head">The model proposes a structure. Four layers decide whether that structure is allowed to exist, and one of them sends it back once.</p>
+
+    <ol class="run" start="4">
+      <li>
+        <h4>The outline is drafted <span class="actor model">model</span></h4>
+        <p>Retrieval runs over the Knowledge Base <em>already narrowed by rights</em>, and the model is called with a forced JSON schema. What comes back is a structure — topics, objectives, prerequisites — not prose.</p>
+        <div class="mv">course: BriefFeasibility → <b>OutlineDrafting</b>
+writes: idempotency_key · model_id · kb_snapshot</div>
+      </li>
+      <li>
+        <h4>The outline passes the guardrail <span class="actor auto">automatic</span></h4>
+        <p>A separate hop, and therefore a separate state. Not because “a check deserves a state”, but because this is a network call the editor may close the laptop in the middle of, and recovery must know the run was inside one.</p>
+        <div class="mv">course: OutlineDrafting → <b>OutlineGuardrail</b> → OutlineChecks</div>
+      </li>
+      <li>
+        <h4>Four formal layers examine it <span class="actor auto">automatic</span></h4>
+        <div class="mv">schema   the outline has the shape a course must have
+Datalog  every claimed skill is derivable from the catalog — not invented
+OPA      the structure obeys the organization's rules
+Z3       the counters add up: duration, node count, objective spread</div>
+        <p>Say Datalog objects: the model wrote <code>post-mortem facilitation</code>, and no such skill exists.</p>
+      </li>
+      <li>
+        <h4>The outline is repaired, once <span class="actor auto">automatic</span> <span class="actor model">model</span></h4>
+        <div class="mv">course: OutlineChecks → <b>OutlineRepair</b> → OutlineDrafting
+course.repair_count: 0 → 1
+the prompt now carries the explanation, not just "try again"</div>
+        <p>The second pass is clean. The distinction matters: a retry repeats a request, a repair changes it — the failure is fed back as a specific, machine-produced reason.</p>
+      </li>
+      <li>
+        <h4>The editor reviews the skeleton <span class="actor human">editor</span></h4>
+        <p><strong>First kind of stop.</strong> The screen shows three topics and an exam, plus what was repaired and why. The editor renames two topics, deletes a fourth, and approves.</p>
+        <div class="mv">course: OutlineChecks → <b>OutlineReview</b></div>
+      </li>
+      <li>
+        <h4>Nodes come into existence <span class="actor auto">automatic</span></h4>
+        <div class="mv">course: OutlineReview → <b>ContentInProgress</b>
+T1, T2, T3, E1: <b>Planned</b></div>
+        <p>Not one node could have existed before this moment. That is not a UI convention — it is the invariant <code>G(content_generated(N) → O outline_approved)</code>, checked over the trace at the end.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="s4">
+    <div class="eyebrow">Section 4 · Act III</div>
+    <h2>The nodes — the cycle that repeats</h2>
+    <p class="act-head">From here the node FSM runs, and it runs <strong>per node</strong>: T1 can sit approved while T3 is still being repaired. Nothing about one node's trouble touches another.</p>
+
+    <ol class="run" start="10">
+      <li>
+        <h4>T1 is drafted <span class="actor model">model</span></h4>
+        <p>Retrieval is now narrowed to this topic rather than the whole course, and the model assembles blocks against the schemas in the catalog — text, example, image, quiz.</p>
+        <div class="mv">T1: Planned → <b>ContentDrafting</b>
+writes: idempotency_key for this operation</div>
+      </li>
+      <li>
+        <h4>Its output passes the guardrail <span class="actor auto">automatic</span></h4>
+        <p>Text <strong>and</strong> images, in one call, with no model invoked to do it.</p>
+        <div class="mv">T1: ContentDrafting → Generated → <b>OutputGuardrail</b></div>
+      </li>
+      <li>
+        <h4>Four questions are asked of the content <span class="actor auto">automatic</span></h4>
+        <div class="mv">schemas   every block validates against its catalog schema
+grounding every claim hangs on a chunk id (Datalog)
+rights    those chunk ids are ones support-team may see
+coverage  the node closes its own learning objectives (Prolog)</div>
+        <p>The third one is the quiet one. A node can be perfectly accurate and still be a leak, because the source it quoted belongs to a team the audience is not in.</p>
+      </li>
+      <li>
+        <h4>T1 is formally clean <span class="actor auto">automatic</span></h4>
+        <div class="mv">T1: NodeChecks → <b>Validated</b></div>
+        <p><code>Validated</code> means every layer that can produce a proof has produced one. It does not mean the node is good.</p>
+      </li>
+      <li>
+        <h4>The editor approves T1 <span class="actor human">editor</span></h4>
+        <p><strong>Second kind of stop.</strong> One block in T1 is an illustration, and the catalog marks that block type <code>requires_visual_review</code> — so the node cannot leave <code>Validated</code> until a person has actually looked at the picture. The approval screen shows two things: the formal verdict, and the queue of visuals waiting for an eye.</p>
+        <div class="mv">T1: Validated → <b>NodeApproved</b>
+stamped: policy_version · guardrail_version · catalog_version
+         model_id + version · kb_snapshot
+appended: approvals[] — who, when, and what they were shown</div>
+        <p>An approval is not a boolean. It is a set of stamps that says <em>approved against these named versions</em> — and that is what makes step 24 and everything after it possible.</p>
+      </li>
+      <li>
+        <h4>T2 runs the same cycle <span class="actor model">model</span> <span class="actor auto">automatic</span> <span class="actor human">editor</span></h4>
+        <div class="mv">T2: Planned → … → <b>NodeApproved</b>   (clean on the first pass)</div>
+      </li>
+      <li>
+        <h4>T3 times out <span class="actor auto">automatic</span></h4>
+        <p>The provider does not answer. This is not a failure — it is an <em>unknown</em>, and the two are handled differently.</p>
+        <div class="mv">T3: ContentDrafting → <b>ErrorRecovery</b>
+first action: check idempotency_key
+  the write landed     → move on, do not regenerate
+  it did not           → one bounded retry
+the editor is not told anything yet</div>
+      </li>
+      <li>
+        <h4>T3 completes and is approved <span class="actor human">editor</span></h4>
+        <div class="mv">T3: → NodeChecks → Validated → <b>NodeApproved</b></div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="s5">
+    <div class="eyebrow">Section 5 · Act IV</div>
+    <h2>The exam — a node with a precondition</h2>
+    <p class="act-head">Every node so far could have been generated in any order. The exam could not.</p>
+
+    <ol class="run" start="18">
+      <li>
+        <h4>The exam waits on its topics <span class="actor auto">automatic</span></h4>
+        <p>E1 has been <code>Planned</code> since step 9, but its generation is fenced: an exam may not be written before the topics it examines are approved. The button is not merely greyed out — the transition does not exist.</p>
+        <div class="mv">guard: content_approved(topics(E1))
+invariant: G(exam_generated(E) → O content_approved(topics(E)))</div>
+      </li>
+      <li>
+        <h4>The exam is drafted and checked <span class="actor model">model</span> <span class="actor auto">automatic</span></h4>
+        <p>The same cycle as any node, plus two checks only an exam needs.</p>
+        <div class="mv">Z3       the points per question sum to the stated maximum
+Datalog  every question traces to an approved topic —
+         not to the Knowledge Base at large</div>
+      </li>
+      <li>
+        <h4>The exam is approved <span class="actor human">editor</span></h4>
+        <div class="mv">E1: Validated → <b>NodeApproved</b>
+T1, T2, T3, E1: all at rest</div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow">Section 6 · Act V</div>
+    <h2>The course as a whole</h2>
+    <p class="act-head">Node-level checks cannot see the course. These four can.</p>
+
+    <ol class="run" start="21">
+      <li>
+        <h4>The course becomes ready by itself <span class="actor auto">automatic</span></h4>
+        <p>Nobody pressed “done”. A guard over the node states became true, and the course state followed. This is what it means for the course FSM to be derived rather than driven.</p>
+        <div class="mv">guard: all_nodes_approved(C) ∧ no_stale_nodes(C)
+course: ContentInProgress → <b>ReadyForReview</b></div>
+      </li>
+      <li>
+        <h4>The whole course is checked <span class="actor auto">automatic</span></h4>
+        <div class="mv">completeness  every objective in the brief is covered by some node
+ordering      the prerequisite graph is acyclic and agrees with lesson order
+rights        no chunk anywhere in the course leaks past the audience
+temporal      the trace itself is replayed against the invariants</div>
+        <p>The last line is the one that has no equivalent at node level: it checks <em>history</em>, not current state. Did the exam really come after its topics were approved? Did every generated artifact really pass a guardrail? A system can be in a perfect state and still have got there illegally.</p>
+      </li>
+      <li>
+        <h4>A person takes responsibility <span class="actor human">editor</span></h4>
+        <p><strong>Third kind of stop</strong>, and the only one that is about accountability rather than content.</p>
+        <div class="mv">course: WholeCourseChecks → PendingApproval → <b>Approved</b>
+the course is stamped as a whole, the same way each node was</div>
+      </li>
+      <li>
+        <h4>The course is published <span class="actor human">editor</span></h4>
+        <div class="mv">course: Approved → <b>Published</b></div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="s7">
+    <div class="eyebrow">Section 7 · Act VI</div>
+    <h2>After publication — where a pipeline would have ended</h2>
+    <p class="act-head"><code>Published</code> is quasi-terminal, not terminal. Three things still reach into it, and all three use the same machinery: the version stamps written at approval, and the dependency graph.</p>
+
+    <h3>The editor fixes a sentence in an approved topic</h3>
+    <div class="mv">T2: NodeApproved → <b>NeedsRevalidation</b>
+E1, and T2's images: → <b>NeedsRevalidation</b>   reason: dependency changed → T2
+course: ReadyForReview → <b>ContentInProgress</b></div>
+    <p>Nobody wrote this cascade. The exam is stale because it was traced to T2 when it was written; the image is stale because its prompt came from T2's content. It is the same dependency graph that hunts permission leaks, used for a second purpose.</p>
+
+    <h3>A compliance officer changes a policy</h3>
+    <div class="mv">PolicyChanged(v7 → v8)
+courses stamped policy_version=v7 AND touched by the new rule
+  → <b>StaleReview</b>
+every other course: untouched, still Published</div>
+    <p>This is what the stamps are for. Without them, the honest answer to “which published courses does this new rule affect?” is “all of them”, and the only safe action is to stop everything.</p>
+
+    <h3>The Knowledge Base is updated</h3>
+    <p>Identical mechanism, different stamp: nodes grounded against a <code>kb_snapshot</code> whose chunks have changed become stale, because grounding was a claim about a specific state of the sources — not about the sources in general.</p>
+
+    <div class="thesis warn">
+      <p><strong>An assumption, stated rather than smuggled.</strong> All three cases above are written as if a published course is edited <em>in place</em>. Whether that is acceptable with learners partway through it is <a href="states.html#s10">open question&nbsp;1</a> of the state model, and it is genuinely open. The alternative — <code>Published</code> is immutable, an edit creates a new revision beside it, publication moves a pointer — would leave the cascade logic intact but change every state name in this section.</p>
+    </div>
+  </section>
+
+  <section id="s8" class="wrap-wide">
+    <div class="eyebrow">Section 8</div>
+    <h2>The run on one screen</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>The same twenty-four steps with the prose removed — closer to what the trace actually looks like.</p>
+    </div>
+    <div class="formula"> 1  (created)              course: AwaitingBrief
+ 2  BriefSubmitted         course: → BriefValidation      schema · OPA · guardrail
+ 3  (auto)                 course: → BriefFeasibility     Z3 pre-flight
+ 4  (auto)                 course: → OutlineDrafting      model call #1
+ 5  OutlineGenerated       course: → OutlineGuardrail
+ 6  GuardrailVerdict       course: → OutlineChecks        schema · Datalog · OPA · Z3
+ 7  CheckFailed(datalog)   course: → OutlineRepair → OutlineDrafting   repair_count 0→1
+                                                          model call #2
+ 8  (checks pass)          course: → OutlineReview        ← EDITOR
+ 9  OutlineApproved        course: → ContentInProgress    T1 T2 T3 E1: Planned
+10  (auto)                 T1: → ContentDrafting          model call #3
+11  NodeGenerated          T1: → OutputGuardrail          text + images
+12  GuardrailVerdict       T1: → NodeChecks               schemas · grounding · rights · coverage
+13  (checks pass)          T1: → Validated
+14  NodeApproved           T1: → NodeApproved             ← EDITOR  + visual review
+                                                          stamps written
+15  …                      T2: → NodeApproved             model call #4  ← EDITOR
+16  Timeout                T3: → ErrorRecovery            idempotency_key checked first
+17  …                      T3: → NodeApproved             model call #5  ← EDITOR
+18  (guard holds)          E1: generation unfenced        topics approved
+19  NodeGenerated          E1: → NodeChecks               + Z3 points · Datalog traceability
+20  NodeApproved           E1: → NodeApproved             ← EDITOR
+21  (guard)                course: → ReadyForReview       derived, not pressed
+22  (auto)                 course: → WholeCourseChecks    completeness · ordering · rights · LTL
+23  ApprovalGranted        course: → Approved             ← EDITOR
+24  PublishRequested       course: → Published
+
+    5 model calls · 3 kinds of human stop · 1 repair · 1 timeout · 0 surprises
+</div>
+  </section>
+
+  <section id="s9">
+    <div class="eyebrow">Section 9</div>
+    <h2>What only an end-to-end run shows</h2>
+    <ol class="principles">
+      <li><strong>The three human stops are three different questions.</strong> The skeleton stop asks “is this the right course?”, the node stops ask “is this the right content?”, the publication stop asks “am I willing to sign this?”. None of them is a confirmation dialog, and none could be merged into another without losing the question it asks.</li>
+      <li><strong>Money is spent at step 4, and steps 1–3 are already complete refusals.</strong> The ordering of the layers is economic as much as it is logical: schema before policy, policy before arithmetic, all of them before the model. A system that calls the model first and validates afterwards pays for every rejection.</li>
+      <li><strong>The course state is never set by hand.</strong> Every course-level transition in this run except three approvals and the publish click was derived from node states by a guard. That is the difference between a state machine and a status field.</li>
+      <li><strong>Two failures in the run were handled without telling anyone.</strong> The outline repair and the timeout both resolved inside the machine. Bounded automatic recovery is what earns the right to interrupt a human when something genuinely needs them — an agent that escalates everything trains its editor to approve everything.</li>
+    </ol>
+
+    <div class="callout">
+      <div class="eyebrow">Where to go next</div>
+      <p><strong><a href="states.html">State model</a></strong> — the full inventory this run walks through, plus the eight situations where it goes wrong.</p>
+      <p><strong><a href="configuration.html">Configuration</a></strong> — the catalogs, policies, thresholds and stamps that every step above reads at runtime.</p>
+      <p><strong>Transitions &amp; guards</strong> <span class="status planned">next</span> — the formal table: current state, event, guard, layer, next state, with valid and forbidden event chains.</p>
+    </div>
+  </section>
+
+  <p class="footer-note">Walkthrough · draft v0.1 · 28 July 2026 · companion to the <a href="./">spec v2</a> and the <a href="states.html">state model</a></p>
+</div>
+
+<script>
+  (function () {
+    var rail = document.querySelector('.rail');
+    if (!rail) return;
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a[href^="#"]'));
+    var targets = links.map(function (a) {
+      return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+    }).filter(function (t) { return t.el; });
+    if (!targets.length) return;
+
+    var current = null;
+    var apply = function (t) {
+      if (t === current) return;
+      current = t;
+      targets.forEach(function (x) {
+        var on = x === t;
+        x.link.classList.toggle('active', on);
+        if (on) { x.link.setAttribute('aria-current', 'true'); }
+        else { x.link.removeAttribute('aria-current'); }
+      });
+    };
+
+    var update = function () {
+      var mid = window.innerHeight * 0.4;
+      var pick = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].el.getBoundingClientRect().top <= mid) pick = targets[i];
+      }
+      // at the very bottom of the page the last section wins
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+        pick = targets[targets.length - 1];
+      }
+      apply(pick);
+    };
+
+    // rAF-throttled, but never able to wedge: if a frame never arrives
+    // (background tab, throttled timers) the age guard flushes directly.
+    var queued = false;
+    var lastRun = 0;
+    var flush = function () {
+      queued = false;
+      lastRun = Date.now();
+      update();
+    };
+    var onScroll = function () {
+      if (Date.now() - lastRun > 300) { flush(); return; }
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(flush);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('hashchange', function () { setTimeout(update, 60); });
+    window.addEventListener('load', function () { setTimeout(update, 50); });
+    // diagrams render after load and shift every offset below them
+    setTimeout(update, 900);
+    update();
+  })();
+</script>
+</body>
+</html>

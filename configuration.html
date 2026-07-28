@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configuration: what the generator reads at runtime — Governed AI Course Generator</title>
+<meta name="description" content="The seven configuration sources behind the generator: block catalog, skills, Knowledge Base access, guardrail policy, policy bundle, thresholds and model routing — with owners, record shapes and version stamps.">
+<meta property="og:title" content="Configuration: what the generator reads at runtime — Governed AI Course Generator">
+<meta property="og:description" content="Semantics are configuration and vocabulary is data: exactly which data, owned by whom, and what is deliberately left as code.">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#9881;</text></svg>">
+</head>
+<body>
+
+<style>
+  /* Deliberately single-theme: this document always renders light (paper). */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    color-scheme: light;
+    --paper: #FAF9F5;
+    --ink: #202A35;
+    --muted: #5C6873;
+    --hairline: #DFE2DA;
+    --accent: #0E6E5C;
+    --accent-soft: #E3EFEA;
+    --blocked: #A6512B;
+    --blocked-soft: #F4E7DD;
+    --hitl: #8A6A1F;
+    --hitl-soft: #F3ECD8;
+    --panel: #F2F3EE;
+    --code-bg: #EDEFE8;
+    --diagram-bg: #F4F5F0;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.4rem 5rem; }
+  .wrap-wide { max-width: 54rem; margin: 0 auto; }
+
+  h1, h2, h3, .sans {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; margin: 0.6rem 0 0.9rem; text-wrap: balance; }
+  h2 { font-size: 1.32rem; font-weight: 650; letter-spacing: -0.008em; margin: 0 0 0.9rem; text-wrap: balance; }
+  h3 { font-size: 1.02rem; font-weight: 650; margin: 1.4rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  section { margin-top: 3.2rem; }
+
+  .eyebrow {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .kicker { color: var(--muted); font-size: 1.06rem; margin-bottom: 1.4rem; }
+
+  /* series nav */
+  .series {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--hairline); color: var(--muted);
+  }
+  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
+  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  .series a:hover { border-color: var(--accent); }
+  .series .here { color: var(--ink); font-weight: 650; }
+  .series .soon { color: var(--muted); opacity: 0.75; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.3rem 0 0; }
+  .meta-chip {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 550; color: var(--muted);
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 0.28rem 0.75rem;
+    background: var(--panel);
+  }
+  .meta-chip b { color: var(--ink); font-weight: 650; }
+
+  .thesis {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 0.9rem 1.1rem; border-radius: 0 8px 8px 0;
+    margin: 1.4rem 0;
+  }
+  .thesis p { margin: 0; }
+  .thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
+
+  nav.toc {
+    margin-top: 2.6rem; padding: 1.1rem 1.2rem;
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
+  }
+  nav.toc .toc-title { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.7rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  nav.toc ol { columns: 2; column-gap: 2rem; margin: 0; padding: 0 0 0 1.2rem; font-size: 0.92rem; }
+  nav.toc li { margin-bottom: 0.32rem; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 620px) { nav.toc ol { columns: 1; } }
+
+  ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
+  ul.plain li { margin-bottom: 0.45rem; }
+  ol.steps { padding-left: 1.3rem; margin: 0 0 1rem; }
+  ol.steps li { margin-bottom: 0.55rem; }
+
+  strong { font-weight: 650; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em; background: var(--code-bg);
+    padding: 0.1em 0.38em; border-radius: 4px;
+  }
+  .formula {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0.6rem 0 1rem;
+    line-height: 1.9;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--hairline); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 640px; }
+  thead th {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: left; color: var(--muted); background: var(--panel);
+    padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--hairline);
+  }
+  tbody td { padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.state {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 600; font-size: 0.82rem; white-space: nowrap; color: var(--accent);
+  }
+  td.state.hitl-s { color: var(--hitl); }
+  td.state.blocked-s { color: var(--blocked); }
+  td.ev { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; white-space: nowrap; color: var(--ink); }
+  td small, .muted { color: var(--muted); }
+
+  .diagram {
+    background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 1rem; margin: 1.2rem 0; overflow-x: auto;
+  }
+  .diagram .caption {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.75rem; color: #5C6873; letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 600;
+  }
+  .diagram pre.mermaid { margin: 0; background: transparent; }
+  .diagram .edgeLabel,
+  .diagram .edgeLabel p,
+  .diagram .edgeLabel span,
+  .diagram .edgeLabel div {
+    color: #202A35 !important;
+    background: #F4F5F0 !important;
+  }
+  .diagram svg .labelBkg { background: #F4F5F0 !important; }
+  .diagram svg .edgeLabel rect { fill: #F4F5F0 !important; opacity: 1 !important; }
+  .diagram svg .flowchart-link { stroke: #8B958F !important; }
+  .diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; margin-top: 0.6rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; color: #5C6873; }
+  .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
+
+  .principles { list-style: none; padding: 0; margin: 1.3rem 0; counter-reset: pr; }
+  .principles li {
+    position: relative; padding: 0.75rem 0 0.75rem 2.4rem; border-bottom: 1px solid var(--hairline);
+    counter-increment: pr;
+  }
+  .principles li:last-child { border-bottom: none; }
+  .principles li::before {
+    content: counter(pr);
+    position: absolute; left: 0; top: 0.85rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 650; color: var(--muted);
+    width: 1.7rem; height: 1.7rem; border: 1px solid var(--hairline); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; background: var(--panel);
+  }
+
+  .callout {
+    border: 1px solid var(--accent); border-radius: 12px;
+    background: var(--accent-soft); padding: 1.2rem 1.3rem; margin-top: 3rem;
+  }
+  .callout .eyebrow { margin-bottom: 0.3rem; }
+  .callout p { margin: 0 0 0.7rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .questions { padding-left: 1.3rem; margin: 0; }
+  .questions li { margin-bottom: 0.7rem; }
+
+  .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  .footer-note a { color: var(--accent); }
+
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 2.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* sticky section rail */
+  .rail {
+    position: fixed;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    padding: 0.35rem 0;
+    max-height: 86vh;
+    overflow: hidden;
+  }
+  .rail a {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 0.16rem 0;
+    border: 0;
+  }
+  .rail .tick {
+    display: block;
+    width: 0.85rem;
+    height: 2px;
+    background: var(--hairline);
+    border-radius: 2px;
+    flex: none;
+    transition: width 0.18s ease, background-color 0.18s ease;
+  }
+  .rail .lbl {
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-0.25rem);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .rail:hover .lbl,
+  .rail a:focus-visible .lbl,
+  .rail a.active .lbl { opacity: 1; transform: none; }
+  .rail a:hover .tick { width: 1.5rem; background: var(--accent); }
+  .rail a:hover { color: var(--ink); }
+  .rail a.active .tick { width: 1.5rem; background: var(--accent); }
+  .rail a.active { color: var(--accent); font-weight: 650; }
+  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  .rail .rail-home {
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+  .rail .rail-home .lbl { opacity: 1; transform: none; }
+  @media (min-width: 1280px) { .rail { display: flex; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rail .tick, .rail .lbl { transition: none; }
+  }
+
+  a { color: var(--accent); }
+  ::selection { background: var(--accent-soft); }
+</style>
+
+<style>
+  /* page-local */
+  .status {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.13rem 0.5rem; border-radius: 999px; white-space: nowrap;
+  }
+  .status.live     { background: var(--accent-soft); color: var(--accent); }
+  .status.proposed { background: var(--hitl-soft); color: var(--hitl); }
+  .status.assumed  { background: #E9EBE4; color: var(--muted); }
+  h3 .status { margin-left: 0.45rem; vertical-align: 0.12em; }
+  .src-note {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem; color: var(--muted); margin: 0.2rem 0 0.9rem;
+  }
+  .owner-row {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 1rem;
+  }
+  .owner-row .meta-chip { font-size: 0.74rem; }
+</style>
+
+<nav class="rail" aria-label="Sections">
+  <a class="rail-home" href="./"><span class="tick"></span><span class="lbl">← Specification</span></a>
+  <a href="#s1"><span class="tick"></span><span class="lbl">Boundary test</span></a>
+  <a href="#s2"><span class="tick"></span><span class="lbl">The seven sources</span></a>
+  <a href="#s3"><span class="tick"></span><span class="lbl">Vocabulary</span></a>
+  <a href="#s4"><span class="tick"></span><span class="lbl">Sources &amp; rights</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Meaning</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">Rules &amp; numbers</span></a>
+  <a href="#s7"><span class="tick"></span><span class="lbl">Models</span></a>
+  <a href="#s8"><span class="tick"></span><span class="lbl">Binding</span></a>
+  <a href="#s9"><span class="tick"></span><span class="lbl">Not configuration</span></a>
+  <a href="#s10"><span class="tick"></span><span class="lbl">When it fails</span></a>
+  <a href="#s11"><span class="tick"></span><span class="lbl">Today</span></a>
+  <a href="#s12"><span class="tick"></span><span class="lbl">Open questions</span></a>
+</nav>
+
+<div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Detailed specifications</span>
+    <a href="./">← Specification</a>
+    <a href="states.html">State model</a>
+    <a href="walkthrough.html">Walkthrough</a>
+    <span class="here">Configuration</span>
+    <span class="soon">Transitions &amp; guards — next</span>
+  </div>
+
+  <header>
+    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <h1>What lives in configuration</h1>
+    <p class="kicker">The generator's vocabulary, its notion of meaning, its limits and its models are organizational data read at runtime — not constants inside a release. This page says exactly which data, in what shape, owned by whom, and what happens the moment any of it changes.</p>
+    <div class="thesis">
+      <p><strong>If a rule can change without a developer, it is data.</strong> If it changes only with a release, it is code — and it had better be an invariant worth freezing. This page is the inventory of the first kind; <a href="#s9">Section&nbsp;9</a> is the deliberate inventory of the second.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">Configuration sources: <b>7</b></span>
+      <span class="meta-chip">Already exist in the platform: <b>3</b></span>
+      <span class="meta-chip">Added by this project: <b>4</b></span>
+      <span class="meta-chip">Status: <b>draft for discussion</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#s1">The boundary test</a></li>
+      <li><a href="#s2">The seven sources</a></li>
+      <li><a href="#s3">Vocabulary — blocks and skills</a></li>
+      <li><a href="#s4">Sources and who may see them</a></li>
+      <li><a href="#s5">Meaning — the guardrail policy</a></li>
+      <li><a href="#s6">Rules and numbers</a></li>
+      <li><a href="#s7">Models — the routing table</a></li>
+      <li><a href="#s8">How configuration binds to an artifact</a></li>
+      <li><a href="#s9">What is deliberately not configuration</a></li>
+      <li><a href="#s10">When configuration fails</a></li>
+      <li><a href="#s11">Where this stands against the platform today</a></li>
+      <li><a href="#s12">Open questions</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1">
+    <div class="eyebrow">Section 1</div>
+    <h2>The boundary test</h2>
+    <p>The specification's <a href="./#s4">division of responsibility</a> states the rule; this page is its consequence, written out as records. Three questions decide where anything belongs:</p>
+    <ol class="principles">
+      <li><strong>Does it differ between organizations?</strong> Two customers with different compliance regimes must be able to disagree about it without forking the product. If yes — data.</li>
+      <li><strong>Must it change without a deployment?</strong> A compliance officer who has to file a ticket and wait for a release is a compliance officer who will instead disable the feature. If yes — data.</li>
+      <li><strong>Does answering it require understanding a text or looking at an image?</strong> Then it is not merely data, it is <em>managed</em> data: configured in a service that owns the judgment, with its own version history. Hand-writing that judgment as code is the mistake this whole page exists to avoid.</li>
+    </ol>
+    <div class="thesis">
+      <p><strong>The failure this prevents has a name.</strong> A banned-topic list written as string matching inside the application is the canonical bad guardrail: it is bypassed by paraphrase, it cannot see images, it needs a developer and a deploy to change, and it leaves no version history to audit. Everything in Section&nbsp;5 exists because that is the tempting way to build it.</p>
+    </div>
+  </section>
+
+  <section id="s2" class="wrap-wide">
+    <div class="eyebrow">Section 2</div>
+    <h2>The seven sources</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Everything the generator reads at runtime and does not compile in. The status marks whether the source exists in the platform today, is proposed by this project, or is assumed to be reachable.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Source</th><th>What it holds</th><th>Who owns it</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="role">Block catalog</td>
+            <td>Every block type, its settings schema, its modality, where it may be used, whether it needs a human eye</td>
+            <td>Platform team</td>
+            <td><span class="status live">exists, as code</span></td>
+          </tr>
+          <tr>
+            <td class="role">Skills catalog</td>
+            <td>Skills, categories, qualifications, and how they attach to learning items</td>
+            <td>Organization</td>
+            <td><span class="status live">exists</span></td>
+          </tr>
+          <tr>
+            <td class="role">Knowledge Base access</td>
+            <td>Categories, team restrictions, individual grants, and the inheritance closure over the tree</td>
+            <td>Organization admin</td>
+            <td><span class="status live">exists</span></td>
+          </tr>
+          <tr>
+            <td class="role">Guardrail policy</td>
+            <td>Forbidden topics as meaning, personal-data handling, image content rules — managed service, own version history</td>
+            <td>Compliance</td>
+            <td><span class="status proposed">added here</span></td>
+          </tr>
+          <tr>
+            <td class="role">Policy bundle</td>
+            <td>Structural rules evaluated by OPA: who may author for whom, what a course must contain</td>
+            <td>Compliance</td>
+            <td><span class="status proposed">added here</span></td>
+          </tr>
+          <tr>
+            <td class="role">Thresholds</td>
+            <td>Repair budget, size limits, whether visual review is mandatory, whether publication needs a second approver</td>
+            <td>Organization admin</td>
+            <td><span class="status proposed">added here</span></td>
+          </tr>
+          <tr>
+            <td class="role">Model routing</td>
+            <td>Which model serves which generation task, at which cost tier</td>
+            <td>Platform team</td>
+            <td><span class="status assumed">partly exists</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>The first three are not ours to invent — they exist, they have owners, and the generator's job is to <em>consume</em> them rather than grow its own copy. That is the whole argument of the next two sections.</p>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="eyebrow">Section 3</div>
+    <h2>Vocabulary — blocks and skills</h2>
+
+    <h3>The block catalog <span class="status live">exists, as code</span></h3>
+    <p>Today the platform holds one exhaustive row per block type in a compile-time registry: category, whether the learner can answer it, whether it needs a live backend, whether the Knowledge Base offers it, whether it is edited in a modal. The set the Knowledge Base exposes is derived from those rows rather than hand-listed, so a new block type cannot be added without deciding where it belongs — the row will not compile without the flag. Backend validators mirror the same set, and a test guards the parity between the two.</p>
+    <p class="src-note">frontend/src/shared/components/block-builder/block-meta-registry.ts · allowed-blocks.ts</p>
+    <p>That design is sound for two consumers who share a compile step. <strong>The generator is a third consumer, and it does not share one.</strong> A copy of the block list inside the generator would be a third mirror of a set that already needs a test to stay in sync twice — and mirrors drift silently, in the direction of the copy nobody edits. So the catalog is read at runtime, and three fields are added to what a row carries:</p>
+    <div class="formula">{
+  "type": "interactive_image",
+  "category": "media",                  // exists today
+  "interactive": true,                  // exists today
+  "system": false,                      // exists today
+  "kb": true,                           // exists today
+  "content_modal": true,                // exists today
+
+  "modality": "image",                  // added: what a guardrail must inspect
+  "requires_visual_review": true,       // added: gates NodeApproved
+  "settings_schema": "catalog://schemas/interactive_image@3",
+  "applicability": { "surfaces": ["course", "kb"] },
+  "version": 3
+}</div>
+    <p>The consequence is the one worth defending: <strong>a new modality is a catalog entry, not a release.</strong> Video arrives as a row; the generator may propose it, its schema validates it, its <code>modality</code> tells the guardrail what kind of thing to inspect, its review flag decides whether a person must look. No branch in the generator says the word “video”.</p>
+
+    <h3>The skills catalog <span class="status live">exists</span></h3>
+    <p>Skills, their categories, the links from skills to learning items, and qualifications with their team assignments are real models in the platform. The generator does not extend them and does not cache them — it reads them as facts, and the Datalog check in <a href="walkthrough.html#s3">step&nbsp;6</a> is exactly the question “is this claimed skill derivable from these facts?”.</p>
+    <p class="src-note">backend/apps/skills/models.py — Skill · LearningItemSkill · Qualification · TeamQualification</p>
+    <p>This is what makes “the model invented a skill” a <em>detectable</em> event rather than an editorial opinion.</p>
+  </section>
+
+  <section id="s4">
+    <div class="eyebrow">Section 4</div>
+    <h2>Sources and who may see them <span class="status live">exists</span></h2>
+    <p>The Knowledge Base already has a single-source-of-truth visibility predicate, and it is more subtle than a permission flag. An article is visible if its chain is unrestricted, or the viewer's team is named on the article, or the viewer holds an individual grant, or the viewer's team is inherited from the category tree, or they authored it, or they are a local admin. Team restrictions <strong>inherit downward</strong> through the category tree via a materialized closure; individual grants do <strong>not</strong> — a person granted a category sees that category and its direct articles, not its subcategories.</p>
+    <p class="src-note">backend/apps/knowledge_base/acl.py · KbCategoryEffectiveTeam</p>
+    <div class="thesis">
+      <p><strong>The generator must not re-implement this.</strong> It would be the block-catalog mistake with worse consequences: the copy that drifts would be the one deciding who sees restricted material. The permission check in <a href="walkthrough.html#s4">step&nbsp;12</a> asks the platform's own predicate, over the same closure, and treats the answer as a fact.</p>
+    </div>
+    <p>What the generator adds is a direction, not a rule: the platform asks <em>“may this person see this article?”</em>, one viewer at a time. A course asks the harder question — <em>“is there any source in this course that some member of the intended audience may not see?”</em> That is a quantified query over the same facts, and it is why the check lives in the formal layer rather than in a request handler.</p>
+  </section>
+
+  <section id="s5">
+    <div class="eyebrow">Section 5</div>
+    <h2>Meaning — the guardrail policy <span class="status proposed">added here</span></h2>
+    <p>Everything that requires understanding a text or looking at an image is configured in a managed guardrail service and versioned outside the application. A compliance officer states a forbidden topic as a definition, not as a word list; the service handles the paraphrase, the indirection, and the picture.</p>
+    <div class="formula">guardrail        course-generator-guardrail
+version          g3               // own history, own audit, changed without a deploy
+owner            compliance
+denied topics    stated as definitions in natural language
+personal data    detect and block: email · phone · national id
+image policy     evaluated on every generated image
+applied at       4 hops — brief in · outline out · node out · image out
+unreachable      fail closed: the run stalls, nothing is published</div>
+    <p>Two properties of the verdict matter more than its content. It enters the system as a <strong>fact for the formal layer</strong> — the guardrail decides nothing on its own; a state transition consumes its verdict alongside the other layers' proofs. And its <strong>version is stamped</strong> onto whatever it approved, which is what makes <a href="walkthrough.html#s7">Act VI</a> possible.</p>
+
+    <h3>Why the hop is explicit</h3>
+    <p>The platform talks to the model through the Anthropic Messages API rather than the AWS SDK, so there is no transparent wrapper that could apply a guardrail invisibly on the way past. The evaluation has to be its own call.</p>
+    <p class="src-note">backend/apps/agent/client.py — AnthropicBedrock / AnthropicBedrockMantle</p>
+    <p>That constraint turned out to be an advantage. An invisible guardrail is a guardrail you cannot point to in a trace; an explicit hop is a state in the machine, a row in the audit, and a thing that can be shown to fail closed. The four evaluation points are visible in the state model as <code>BriefValidation</code>, <code>OutlineGuardrail</code> and <code>OutputGuardrail</code> — they are there because the call is real, not because a diagram wanted a box.</p>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow">Section 6</div>
+    <h2>Rules and numbers</h2>
+
+    <h3>The policy bundle <span class="status proposed">added here</span></h3>
+    <p>Structural rules — the ones stated about graphs, sets, orderings and roles — are an OPA bundle with its own version. They answer questions the guardrail cannot, and they answer them with a reason rather than a score.</p>
+    <div class="formula">may_author(editor, audience)          // role and scope
+required_sections(course_type)        // what a compliance course must contain
+max_audience_breadth(source_class)    // how far a restricted source may travel
+approval_chain(course_type)           // who signs, and in what order</div>
+
+    <h3>Thresholds <span class="status proposed">added here</span></h3>
+    <p>The numbers the state machine obeys are organizational data, for the same reason as everything else on this page: an organization that wants three repair attempts instead of two should not need a release. This also settles <a href="states.html#s10">open question&nbsp;6</a> of the state model — the repair budget is a parameter, not a constant.</p>
+    <div class="formula">{
+  "repair_budget": 2,                    // retries before BlockedRecoverable
+  "max_nodes_per_course": 40,
+  "max_minutes_per_lesson": 15,          // feeds the Z3 feasibility check
+  "visual_review": "required",           // may an org waive it? see open question 3
+  "publish_requires_second_approver": false
+}</div>
+    <p>Note what the second and third entries do: they are not enforcement, they are <em>inputs to the solver</em>. The feasibility refusal in <a href="walkthrough.html#s2">step&nbsp;3</a> is computed against them, which is why the same code refuses a different brief for a different organization.</p>
+  </section>
+
+  <section id="s7">
+    <div class="eyebrow">Section 7</div>
+    <h2>Models — the routing table <span class="status assumed">partly exists</span></h2>
+    <p>The platform already routes between two models — a default and a cheaper, latency-sensitive one — plus a transport flag, all as deployment settings resolved per call.</p>
+    <p class="src-note">backend/config/settings.py · apps/agent/client.py — resolve_model_id(light=…)</p>
+    <p>The generator needs the same idea one level up: routing by <em>task</em>, not by a boolean, and visible as data rather than as environment.</p>
+    <div class="formula">outline drafting   → default      // structure, worth the stronger model
+node content       → default
+repair pass        → default      // a repair that fails twice is expensive
+summarization      → light
+metadata, titles   → light</div>
+    <p>Whatever the table says, the resolved <code>model_id</code> and version are stamped onto every node — so “which model wrote this paragraph, under which policy” is answerable six months later, and a model swap is a stamp change that the staleness cascade can act on like any other.</p>
+  </section>
+
+  <section id="s8" class="wrap-wide">
+    <div class="eyebrow">Section 8</div>
+    <h2>How configuration binds to an artifact</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Configuration would be a liability rather than a feature if changing it silently changed the meaning of everything already approved. It does not, because approval writes down what it was approved against.</p>
+      <div class="formula">every node and course carries:
+
+  policy_version      which OPA bundle judged it
+  guardrail_version   which managed policy cleared it
+  catalog_version     which block vocabulary validated it
+  model_id + version  which model produced it
+  kb_snapshot         which state of the sources it was grounded against
+  threshold_set       which numbers its budgets came from
+  trace_id            where its full history is
+  approvals[]         who signed, when, and what they were shown</div>
+      <p>Changing configuration therefore touches <strong>no course at all</strong>. What it does is make one query answerable: <em>which artifacts were approved against a version that no longer exists?</em> The dependency graph answers it, and only those courses move to <code>StaleReview</code>. Everything else keeps running, which is the difference between governance and an outage.</p>
+      <div class="thesis">
+        <p><strong>A stamp is a claim about the past, not a lock on the future.</strong> It does not prevent the rule from changing — it makes the consequence of the change computable, and small.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s9">
+    <div class="eyebrow">Section 9</div>
+    <h2>What is deliberately not configuration</h2>
+    <p>A page arguing that most things are data owes an equally explicit list of what is not — otherwise “configurable” quietly becomes “defeatable”.</p>
+    <ul class="plain">
+      <li><strong>The two state machines and their transitions.</strong> Which states exist and which moves are legal is the architecture, not a setting. An organization may tune a budget; it may not invent a path from <code>ContentDrafting</code> to <code>Published</code>.</li>
+      <li><strong>The temporal invariants.</strong> That an exam follows its topics, that every generated artifact passed a guardrail, that a published course has no stale node — these are checked over the trace and cannot be waived by anyone.</li>
+      <li><strong>Fail-closed behaviour.</strong> No configuration value turns an unreachable guardrail into a pass. The absence of a verdict is never a permissive verdict.</li>
+      <li><strong>The boundary itself.</strong> What may be configured is not, in turn, configurable. There is no setting that moves a decision from the formal layer to the model.</li>
+      <li><strong>The audit record.</strong> Append-only, not a preference, and not something an admin can shorten.</li>
+      <li><strong>The order of evaluation.</strong> Cheap and deterministic first, the model last. This is a property of the gateway, not a tuning knob — an organization that could reorder it could make itself pay for every refusal.</li>
+    </ul>
+    <div class="thesis warn">
+      <p><strong>The rule that keeps the list honest:</strong> configuration is the seam through which an organization changes <em>behaviour</em> without a release. Anything that would let configuration remove a <em>guarantee</em> is not configuration.</p>
+    </div>
+  </section>
+
+  <section id="s10" class="wrap-wide">
+    <div class="eyebrow">Section 10</div>
+    <h2>When configuration fails</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Every source above is a dependency, and dependencies fail. What matters is that each failure has one obvious safe answer.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Failure</th><th>What happens</th><th>Why that is right</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="role">The guardrail service is unreachable</td>
+            <td>The gateway fails closed. The run stalls in <code>ErrorRecovery</code>; nothing reaches an editor and nothing is published</td>
+            <td>The absence of a verdict is not a permissive verdict</td>
+          </tr>
+          <tr>
+            <td class="role">A block type is withdrawn from the catalog</td>
+            <td>Nodes stamped with the older <code>catalog_version</code> stay valid and keep rendering; new generation cannot propose the type; affected courses go to <code>StaleReview</code></td>
+            <td>A withdrawal is a policy change like any other — it must be reviewed, not applied retroactively in silence</td>
+          </tr>
+          <tr>
+            <td class="role">Two policy rules contradict each other</td>
+            <td>Caught when the bundle is loaded, not when a course is generated</td>
+            <td>An unsatisfiable bundle would refuse every course with an incomprehensible reason. Better to refuse the bundle</td>
+          </tr>
+          <tr>
+            <td class="role">Configuration changes mid-run</td>
+            <td>The run finishes against the versions it started with; the new versions apply to the next run and to the staleness sweep</td>
+            <td>A single run must be judged against one consistent world, or its trace cannot be replayed</td>
+          </tr>
+          <tr>
+            <td class="role">The Knowledge Base moved under a grounded node</td>
+            <td>The node's <code>kb_snapshot</code> no longer matches; it becomes <code>NeedsRevalidation</code></td>
+            <td>Grounding was a claim about a specific state of the sources, not about the sources in general</td>
+          </tr>
+          <tr>
+            <td class="role">An admin sets a threshold that makes generation impossible</td>
+            <td>The Z3 pre-flight refuses the <em>brief</em> with an unsat core naming the threshold</td>
+            <td>The refusal should point at the setting that caused it, not at the author who tripped over it</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s11" class="wrap-wide">
+    <div class="eyebrow">Section 11</div>
+    <h2>Where this stands against the platform today</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Stated plainly, because a specification that blurs the line between what exists and what it proposes cannot be defended.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Thing</th><th>In the platform today</th><th>What this project needs</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="role">Block catalog</td>
+            <td>A compile-time registry, one exhaustive row per type; the KB subset derived from it; backend validators mirroring the set; a test guarding the parity</td>
+            <td>Served at runtime, plus modality and visual-review fields. The generator is a third consumer and shares no compile step with the other two</td>
+          </tr>
+          <tr>
+            <td class="role">Skills</td>
+            <td>Real models with categories, item links and qualifications</td>
+            <td>Nothing new — read as facts</td>
+          </tr>
+          <tr>
+            <td class="role">KB access</td>
+            <td>A six-clause visibility predicate as the single source of truth; team inheritance through a materialized closure, individual grants without it</td>
+            <td>Consumed, not reimplemented; asked in the quantified direction (“any source, any member of the audience”)</td>
+          </tr>
+          <tr>
+            <td class="role">Model routing</td>
+            <td>A default and a light model plus a transport flag, resolved per call from deployment settings</td>
+            <td>A per-organization table keyed by task, and the resolved id stamped on the artifact</td>
+          </tr>
+          <tr>
+            <td class="role">Guardrails</td>
+            <td>None in the generation path. The client is the Anthropic SDK, so nothing is wrapped invisibly</td>
+            <td>Explicit evaluation hops at four points — which is why they are visible in the state machine and in the trace</td>
+          </tr>
+          <tr>
+            <td class="role">Policy bundle, thresholds</td>
+            <td>Do not exist</td>
+            <td>Added by this project, with versions that artifacts are stamped against</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s12">
+    <div class="eyebrow">Section 12</div>
+    <h2>Open questions</h2>
+    <ol class="questions">
+      <li><strong>One bundle version, or a version per source?</strong> A single stamp is simpler to reason about; per-source stamps make the staleness cascade far narrower, because a catalog change stops implicating courses that only a policy change should have touched.</li>
+      <li><strong>Who may change what?</strong> The list assigns owners, but the platform's role model may not have a seat between organization admin and compliance. If it does not, either the roles grow or the boundary between the policy bundle and the thresholds moves.</li>
+      <li><strong>May an organization waive visual review?</strong> If yes, it is a threshold. If no, it belongs in <a href="#s9">Section&nbsp;9</a> — and the argument for “no” is that the flag exists precisely for the cases no automated layer can close.</li>
+      <li><strong>Does a threshold change invalidate approved work, or only apply forward?</strong> Tightening the repair budget arguably should not un-approve anything; tightening a size limit arguably should.</li>
+      <li><strong>Is the routing table visible to the editor?</strong> Showing which model wrote a node is honest and useful for review; it also invites the editor to argue with the routing rather than with the content.</li>
+      <li><strong>Are catalog entries ever hard-removed, or only deprecated?</strong> Hard removal makes older stamps unresolvable, which quietly breaks the ability to explain a published course.</li>
+    </ol>
+
+    <div class="callout">
+      <div class="eyebrow">Related pages</div>
+      <p><strong><a href="./#s4">Specification § 4 — Division of responsibility</a></strong> — the principle this page implements: semantics are configuration, vocabulary is data.</p>
+      <p><strong><a href="states.html">State model</a></strong> — where the version stamps are written and how the staleness cascade consumes them.</p>
+      <p><strong><a href="walkthrough.html">Walkthrough</a></strong> — the same configuration seen from inside a single run.</p>
+    </div>
+  </section>
+
+  <p class="footer-note">Configuration · draft v0.1 · 28 July 2026 · companion to the <a href="./">spec v2</a></p>
+</div>
+
+<script>
+  (function () {
+    var rail = document.querySelector('.rail');
+    if (!rail) return;
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a[href^="#"]'));
+    var targets = links.map(function (a) {
+      return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+    }).filter(function (t) { return t.el; });
+    if (!targets.length) return;
+
+    var current = null;
+    var apply = function (t) {
+      if (t === current) return;
+      current = t;
+      targets.forEach(function (x) {
+        var on = x === t;
+        x.link.classList.toggle('active', on);
+        if (on) { x.link.setAttribute('aria-current', 'true'); }
+        else { x.link.removeAttribute('aria-current'); }
+      });
+    };
+
+    var update = function () {
+      var mid = window.innerHeight * 0.4;
+      var pick = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].el.getBoundingClientRect().top <= mid) pick = targets[i];
+      }
+      // at the very bottom of the page the last section wins
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+        pick = targets[targets.length - 1];
+      }
+      apply(pick);
+    };
+
+    // rAF-throttled, but never able to wedge: if a frame never arrives
+    // (background tab, throttled timers) the age guard flushes directly.
+    var queued = false;
+    var lastRun = 0;
+    var flush = function () {
+      queued = false;
+      lastRun = Date.now();
+      update();
+    };
+    var onScroll = function () {
+      if (Date.now() - lastRun > 300) { flush(); return; }
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(flush);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('hashchange', function () { setTimeout(update, 60); });
+    window.addEventListener('load', function () { setTimeout(update, 50); });
+    // diagrams render after load and shift every offset below them
+    setTimeout(update, 900);
+    update();
+  })();
+</script>
+</body>
+</html>
