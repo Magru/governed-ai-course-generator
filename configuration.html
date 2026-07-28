@@ -323,7 +323,8 @@
     <div class="meta-row">
       <span class="meta-chip">Configuration sources: <b>7</b></span>
       <span class="meta-chip">Already exist in the platform: <b>3</b></span>
-      <span class="meta-chip">Added by this project: <b>4</b></span>
+      <span class="meta-chip">Added by this project: <b>3</b></span>
+      <span class="meta-chip">Extended: <b>1</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -364,7 +365,7 @@
     <div class="eyebrow">Section 2</div>
     <h2>The seven sources</h2>
     <div class="wrap" style="padding:0; max-width:46rem;">
-      <p>Everything the generator reads at runtime and does not compile in. The status marks whether the source exists in the platform today, is proposed by this project, or is assumed to be reachable.</p>
+      <p>Everything the generator reads at runtime and does not compile in. The status marks whether the source exists in the platform today, is added by this project, or exists in a narrower form that this project extends.</p>
     </div>
     <div class="table-scroll">
       <table>
@@ -412,7 +413,7 @@
             <td class="role">Model routing</td>
             <td>Which model serves which generation task, at which cost tier</td>
             <td>Platform team</td>
-            <td><span class="status assumed">partly exists</span></td>
+            <td><span class="status assumed">extended here</span></td>
           </tr>
         </tbody>
       </table>
@@ -431,19 +432,20 @@
     <p class="src-note">frontend/src/shared/components/block-builder/block-meta-registry.ts · allowed-blocks.ts</p>
     <p>That design is sound for two consumers who share a compile step. <strong>The generator is a third consumer, and it does not share one.</strong> A copy of the block list inside the generator would be a third mirror of a set that already needs a test to stay in sync twice — and mirrors drift silently, in the direction of the copy nobody edits. So the catalog is read at runtime, and three fields are added to what a row carries:</p>
     <div class="formula">{
-  "type": "interactive_image",
-  "category": "media",                  // exists today
-  "interactive": true,                  // exists today
+  "type": "image",
+  "category": "image",                  // exists today
+  "interactive": false,                 // exists today — the learner does not answer it
   "system": false,                      // exists today
   "kb": true,                           // exists today
   "content_modal": true,                // exists today
 
   "modality": "image",                  // added: what a guardrail must inspect
   "requires_visual_review": true,       // added: gates NodeApproved
-  "settings_schema": "catalog://schemas/interactive_image@3",
+  "settings_schema": "catalog://schemas/image@3",
   "applicability": { "surfaces": ["course", "kb"] },
   "version": 3
 }</div>
+    <p>One caveat before that becomes a slogan: a catalog read at runtime is <em>metadata the generator trusts</em>, and trusted metadata is a supply chain. Entries are authored inside the platform, reviewed and versioned like policy — the registry is never imported from an external source, and a catalog change is stamped and swept exactly like a policy change.</p>
     <p>The consequence is the one worth defending: <strong>a new modality is a catalog entry, not a release.</strong> Video arrives as a row; the generator may propose it, its schema validates it, its <code>modality</code> tells the guardrail what kind of thing to inspect, its review flag decides whether a person must look. No branch in the generator says the word “video”.</p>
 
     <h3>The skills catalog <span class="status live">exists</span></h3>
@@ -455,7 +457,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Sources and who may see them <span class="status live">exists</span></h2>
-    <p>The Knowledge Base already has a single-source-of-truth visibility predicate, and it is more subtle than a permission flag. An article is visible if its chain is unrestricted, or the viewer's team is named on the article, or the viewer holds an individual grant, or the viewer's team is inherited from the category tree, or they authored it, or they are a local admin. Team restrictions <strong>inherit downward</strong> through the category tree via a materialized closure; individual grants do <strong>not</strong> — a person granted a category sees that category and its direct articles, not its subcategories.</p>
+    <p>The Knowledge Base already has a single-source-of-truth visibility predicate, and it is more subtle than a permission flag. An article is visible if its chain is unrestricted, or the viewer's team is named on the article, or the viewer holds an individual grant on that article, or the viewer's team is inherited from the category tree, or the viewer holds a grant on the category, or they authored it, or they are a local admin — seven clauses, and the two grant clauses are genuinely different rules. Team restrictions <strong>inherit downward</strong> through the category tree via a materialized closure; individual grants do <strong>not</strong> — a person granted a category sees that category and its direct articles, not its subcategories.</p>
     <p class="src-note">backend/apps/knowledge_base/acl.py · KbCategoryEffectiveTeam</p>
     <div class="thesis">
       <p><strong>The generator must not re-implement this.</strong> It would be the block-catalog mistake with worse consequences: the copy that drifts would be the one deciding who sees restricted material. The permission check in <a href="walkthrough.html#s4">step&nbsp;12</a> asks the platform's own predicate, over the same closure, and treats the answer as a fact.</p>
@@ -473,14 +475,16 @@ owner            compliance
 denied topics    stated as definitions in natural language
 personal data    detect and block: email · phone · national id
 image policy     evaluated on every generated image
-applied at       4 hops — brief in · outline out · node out · image out
+applied at       4 evaluation points — brief in · outline out · node out · image out
+                 node text and its images are screened in one call, so the
+                 four points occupy three states in the machine
 unreachable      fail closed: the run stalls, nothing is published</div>
     <p>Two properties of the verdict matter more than its content. It enters the system as a <strong>fact for the formal layer</strong> — the guardrail decides nothing on its own; a state transition consumes its verdict alongside the other layers' proofs. And its <strong>version is stamped</strong> onto whatever it approved, which is what makes <a href="walkthrough.html#s7">Act VI</a> possible.</p>
 
     <h3>Why the hop is explicit</h3>
     <p>The platform talks to the model through the Anthropic Messages API rather than the AWS SDK, so there is no transparent wrapper that could apply a guardrail invisibly on the way past. The evaluation has to be its own call.</p>
     <p class="src-note">backend/apps/agent/client.py — AnthropicBedrock / AnthropicBedrockMantle</p>
-    <p>That constraint turned out to be an advantage. An invisible guardrail is a guardrail you cannot point to in a trace; an explicit hop is a state in the machine, a row in the audit, and a thing that can be shown to fail closed. The four evaluation points are visible in the state model as <code>BriefValidation</code>, <code>OutlineGuardrail</code> and <code>OutputGuardrail</code> — they are there because the call is real, not because a diagram wanted a box.</p>
+    <p>That constraint turned out to be an advantage. An invisible guardrail is a guardrail you cannot point to in a trace; an explicit hop is a state in the machine, a row in the audit, and a thing that can be shown to fail closed. The four evaluation points occupy three states in the model — <code>BriefValidation</code>, <code>OutlineGuardrail</code> and <code>OutputGuardrail</code>, the last of which screens a node's text and its images together — they are there because the call is real, not because a diagram wanted a box.</p>
   </section>
 
   <section id="s6">
@@ -508,7 +512,7 @@ approval_chain(course_type)           // who signs, and in what order</div>
 
   <section id="s7">
     <div class="eyebrow">Section 7</div>
-    <h2>Models — the routing table <span class="status assumed">partly exists</span></h2>
+    <h2>Models — the routing table <span class="status assumed">extended here</span></h2>
     <p>The platform already routes between two models — a default and a cheaper, latency-sensitive one — plus a transport flag, all as deployment settings resolved per call.</p>
     <p class="src-note">backend/config/settings.py · apps/agent/client.py — resolve_model_id(light=…)</p>
     <p>The generator needs the same idea one level up: routing by <em>task</em>, not by a boolean, and visible as data rather than as environment.</p>
@@ -631,7 +635,7 @@ metadata, titles   → light</div>
           </tr>
           <tr>
             <td class="role">KB access</td>
-            <td>A six-clause visibility predicate as the single source of truth; team inheritance through a materialized closure, individual grants without it</td>
+            <td>A seven-clause visibility predicate as the single source of truth; team inheritance through a materialized closure, individual grants without it</td>
             <td>Consumed, not reimplemented; asked in the quantified direction (“any source, any member of the audience”)</td>
           </tr>
           <tr>
@@ -641,7 +645,7 @@ metadata, titles   → light</div>
           </tr>
           <tr>
             <td class="role">Guardrails</td>
-            <td>None in the generation path. The client is the Anthropic SDK, so nothing is wrapped invisibly</td>
+            <td>No managed guardrail anywhere. The client is the Anthropic SDK, so nothing is wrapped invisibly; what exists is hand-written — query DSL checks and prompt envelopes, which is precisely the pattern this project is arguing against</td>
             <td>Explicit evaluation hops at four points — which is why they are visible in the state machine and in the trace</td>
           </tr>
           <tr>

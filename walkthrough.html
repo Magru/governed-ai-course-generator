@@ -343,7 +343,7 @@
     <div class="meta-row">
       <span class="meta-chip">Steps: <b>24</b></span>
       <span class="meta-chip">Kinds of human stop: <b>3</b></span>
-      <span class="meta-chip">Refusals available before the first token: <b>3</b></span>
+      <span class="meta-chip">Kinds of refusal before the first token: <b>3</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -392,8 +392,10 @@ sources    the organization's Knowledge Base, already filtered
         <p>Three checks run in order, cheapest first: the <strong>JSON schema</strong> of the brief (shape), <strong>OPA</strong> (may this editor author for <code>support-team</code>, is the request inside the organization's limits), and the <strong>guardrail</strong> (topic and personal data in the brief text itself).</p>
         <div class="mv">course: AwaitingBrief → <b>BriefValidation</b>
 writes: policy_version=v7 · guardrail_version=g3 · verdict + reason
-on failure: → <span class="warnc">BlockedFinal</span>, permanently</div>
-        <p>If it fails here the trace carries no <code>model_id</code> and no token count, because there was no model call. A policy refusal that costs nothing is the cheapest kind of safety there is.</p>
+
+schema invalid          → <span class="warnc">BlockedRecoverable</span>, fix the brief and resubmit
+OPA deny / denied topic → <span class="warnc">BlockedFinal</span>, permanently</div>
+        <p>The two outcomes are deliberately different: a malformed brief is the author's typo, a forbidden one is the organization's answer. Either way the trace carries no <code>model_id</code> and no token count, because there was no model call. A refusal that costs nothing is the cheapest kind of safety there is.</p>
       </li>
       <li>
         <h4>The brief is checked for feasibility <span class="actor auto">automatic</span></h4>
@@ -627,6 +629,8 @@ re-judged against v8 — <b>no content is regenerated</b>
     </div>
     <div class="formula"> 1  (created)              course: AwaitingBrief
  2  BriefSubmitted         course: → BriefValidation      schema · OPA · guardrail
+                                                          malformed → recoverable
+                                                          forbidden → terminal
  3  (auto)                 course: → BriefFeasibility     Z3 pre-flight
  4  (auto)                 course: → OutlineDrafting      model call #1
  5  OutlineGenerated       course: → OutlineGuardrail

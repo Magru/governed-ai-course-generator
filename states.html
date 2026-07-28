@@ -339,7 +339,7 @@
     <h2>Course FSM</h2>
 
     <div class="diagram">
-      <div class="caption">Course lifecycle — happy path, repair loops, blocked and stale states</div>
+      <div class="caption">One revision's lifecycle — happy path, repair loops, blocked and stale states</div>
       <pre class="mermaid">
 flowchart TD
   AB["AwaitingBrief"] --> BV["BriefValidation — schema, OPA, guardrail"]
@@ -355,8 +355,9 @@ flowchart TD
   PA --> AP["Approved — stamped with versions"]
   AP --> PUB["Published — immutable"]
   PUB --> ARC["Archived"]
-  PUB -- "ReviseRequested — forks revision n+1" --> CIP
   PUB -- "a successor revision goes live" --> SUP["Superseded"]
+  PUB -. "ReviseRequested — spawns a new revision; this one stays Published" .-> CIP2["rev n+1 · ContentInProgress"]
+  SUP -. "RollbackRequested" .-> SR
 
   BV -- "denied topic or policy" --> BFin["BlockedFinal"]
   BF -- "unsat, core shown" --> BRec["BlockedRecoverable"]
@@ -367,10 +368,13 @@ flowchart TD
   OR -- "reject with notes" --> OD
   WCC -- "fails, offending nodes marked" --> CIP
   PA -- "reject with notes" --> CIP
-  PUB -- "policy or catalog change" --> SR["StaleReview"]
+  PUB -- "policy or catalog change" --> SR["StaleReview — re-verified, never rewritten"]
   SR -- "still compliant, re-stamped" --> PUB
   SR -- "now violating" --> WD["Withdrawn"]
-  WD -- "ReviseRequested" --> CIP
+  WD -. "ReviseRequested" .-> CIP2
+  OC -- "policy violation" --> BFin
+  BRec -- "input fixed by a human" --> BV
+  AP -- "sent back to work" --> CIP
   OD -- "model error or timeout" --> ER["ErrorRecovery"]
   ER -- "idempotency check, then backoff" --> OD
 
@@ -386,6 +390,7 @@ flowchart TD
         <span><span class="dot" style="background:#E3EFEA;border:1px solid #0E6E5C;"></span>approved / published / terminal</span>
         <span><span class="dot" style="background:#F3ECD8;border:1px solid #8A6A1F;"></span>waiting on a human</span>
         <span><span class="dot" style="background:#F4E7DD;border:1px solid #A6512B;"></span>blocked, repairing, or stale</span>
+        <span><span class="dot" style="background:transparent;border:0;border-bottom:2px dotted #8B958F;border-radius:0;height:0;"></span>dotted: spawns or targets a <em>different</em> revision — this one does not move</span>
       </div>
     </div>
 
@@ -409,9 +414,9 @@ flowchart TD
           <tr><td class="state hitl-s">PendingApproval</td><td><strong>Human.</strong> The final publication decision, with everything the approver needs on screen.</td><td>Approve, reject with notes</td></tr>
           <tr><td class="state terminal">Approved</td><td>Approved and <strong>stamped</strong> with the policy, guardrail, catalog, and model versions it passed under.</td><td>Publish, or send back to work</td></tr>
           <tr><td class="state terminal">Published</td><td>Live for its audience, and <strong>immutable</strong>: no transition edits its content. A change forks a new revision beside it.</td><td>Request a revision; archive</td></tr>
-          <tr><td class="state blocked-s">StaleReview</td><td><strong>New in v2.</strong> A policy, catalog, or source change touched this published revision. It is not silently wrong and not silently stopped — it is queued for re-verification against the new versions.</td><td>Wait for the re-check; withdraw early</td></tr>
+          <tr><td class="state blocked-s">StaleReview</td><td><strong>New in v2.</strong> A revision is being re-verified against the current versions — because a policy, catalog, or source change touched it, or because a rollback wants to put it back on air. It is never rewritten here, only re-judged.</td><td>Wait for the re-check; withdraw early</td></tr>
           <tr><td class="state terminal">Withdrawn</td><td><strong>New.</strong> Terminal for this revision: re-verification failed, so it no longer serves. The explanation names what changed.</td><td>Request a revision that complies</td></tr>
-          <tr><td class="state terminal">Superseded</td><td><strong>New.</strong> Terminal for this revision: a later revision took the live pointer. Kept intact, still stamped, still readable by learners who started on it.</td><td>Read only; the pointer can be moved back</td></tr>
+          <tr><td class="state">Superseded</td><td><strong>New.</strong> A later revision took the live pointer. Kept intact, still stamped, still readable by learners who started on it. <strong>Quasi-terminal:</strong> its only exit is a rollback, and only through re-verification.</td><td>Read; request a rollback</td></tr>
           <tr><td class="state terminal">Archived</td><td>Terminal: deliberately retired, kept for audit.</td><td>Clone as the basis for a new course</td></tr>
           <tr><td class="state blocked-s">BlockedFinal</td><td>Terminal: a policy violation (OPA deny or a denied topic). Carries the deny reason and the audit entry.</td><td>Read only</td></tr>
           <tr><td class="state blocked-s">BlockedRecoverable</td><td>The process stopped and needs a human move: retries exhausted, a contradictory brief, a rights refusal.</td><td>Fix the input and re-enter the relevant state</td></tr>
@@ -422,7 +427,9 @@ flowchart TD
 
     <div class="wrap" style="padding:0; max-width:46rem;">
       <h3>Where a course starts and where it ends</h3>
-      <p><strong>Initial:</strong> <code>AwaitingBrief</code> — the only state a course can be created in. <strong>Terminal:</strong> <code>Archived</code> (deliberately retired), <code>Withdrawn</code> (re-verification failed), <code>Superseded</code> (a later revision went live), and <code>BlockedFinal</code> (a policy violation, read-only from then on). <strong>Quasi-terminal:</strong> <code>Published</code> — a revision rests here indefinitely and leaves only through one of those four exits, or through <code>StaleReview</code> and back. Every other state is transient by design: it either advances, repairs, or waits on a person.</p>
+      <p>One clarification first, because it decides how the rest of this section reads: <strong>this machine runs per revision, not per course.</strong> A course is an identity that owns an ordered list of revisions; every state named above describes one revision. Where this page says “the course” without qualification, it means the revision currently being worked on or served.</p>
+      <p><strong>Initial — there are two.</strong> <code>AwaitingBrief</code> is where a course's <em>first</em> revision is created, and the only way to start from nothing. <code>ContentInProgress</code> is where every <em>later</em> revision is born: <code>ReviseRequested</code> forks it with its predecessor's nodes already approved, so there is no brief to validate and no skeleton to draft. A machine with two entry points is worth stating outright rather than leaving the reader to infer it from a fork arrow.</p>
+      <p><strong>Terminal:</strong> <code>Archived</code> (deliberately retired), <code>Withdrawn</code> (re-verification failed), and <code>BlockedFinal</code> (a policy violation, read-only from then on). <strong>Quasi-terminal:</strong> <code>Published</code> and <code>Superseded</code> — a revision rests in either indefinitely, and each has exactly one way back to the other. Every remaining state is transient by design: it either advances, repairs, or waits on a person.</p>
 
       <h3>A published course is immutable</h3>
       <p>This is the decision the rest of the model hangs on, so it is worth stating flatly: <strong>once a revision is published, nothing in it ever changes.</strong> There is no transition out of <code>Published</code> that edits content — not for an editor fixing a typo, not for a policy change, not for the staleness cascade. A learner who opens a lesson is reading exactly the bytes a human approved, under versions that are still recorded.</p>
@@ -433,15 +440,29 @@ at most one revision holds the live pointer at a time
   rev 1  Published   ──ReviseRequested──▶  rev 2  ContentInProgress
   rev 1  Superseded  ◀──pointer moves───   rev 2  Published
 
-rollback = move the pointer back. Nothing is regenerated, because
-rev 1 was never modified and is still stamped with what cleared it.</div>
+rollback = move the pointer back, after re-verifying rev 1 against
+today's versions. Nothing is ever regenerated: rev 1 was never
+modified and still carries the stamps it was cleared under.</div>
       <p>Three consequences, and none of them cost a new mechanism:</p>
       <ul class="plain">
         <li><strong>The node FSM does not change at all.</strong> The same ten states, the same cascade — they simply never run against live content any more. That is the strongest argument for the decision: it removes a class of problem rather than adding machinery.</li>
-        <li><strong>Rollback becomes trivially expressible</strong>, which is what the brief asks for under production readiness. It is a pointer move to a revision that still exists, still holds its approvals, and still carries the versions it was cleared under — not a regeneration and not a restore from backup.</li>
+        <li><strong>Rollback becomes expressible at all</strong>, which is what the brief asks for under production readiness. It is a pointer move to a revision that still exists, still holds its approvals, and still carries the versions it was cleared under — not a regeneration and not a restore from backup. It is not a free move, though: the returning revision is re-verified first, for the reason given below.</li>
         <li><strong>One guard has to be added:</strong> <code>differs_from_live(revision)</code>. A fork that has not been edited is byte-identical to what is already serving, and publishing it would be a no-op that nonetheless moves the pointer and rewrites history. The guard keeps such a revision out of <code>ReadyForReview</code>.</li>
       </ul>
-      <p><code>StaleReview</code> changes meaning accordingly. It can no longer mean “opened for editing”, because a published revision cannot be edited. It means <em>under re-verification while still live</em>, with exactly two outcomes: the revision still complies and returns to <code>Published</code> re-stamped with the new versions, or it does not and moves to <code>Withdrawn</code>. Fixing it is a revision like any other.</p>
+      <p><code>StaleReview</code> changes meaning accordingly. It can no longer mean “opened for editing”, because a published revision cannot be edited. It means <em>being re-judged against the current versions</em>, with exactly two outcomes: the revision still complies and returns to <code>Published</code> re-stamped, or it does not and moves to <code>Withdrawn</code>. Fixing it is a revision like any other.</p>
+
+      <h3>Rolling back is a re-verification, not a bypass</h3>
+      <p>“Move the pointer back” is easy to say and easy to get wrong, so it is worth being exact about what happens to both revisions. Rollback is an explicit human event — <code>RollbackRequested</code>, carrying a reason and landing in the audit like every other decision — and it does <strong>not</strong> put the old revision straight back on air:</p>
+      <div class="formula">RollbackRequested(rev 1)   rev 1: Superseded → StaleReview
+                           rev 2: still Published, still live — nothing moved yet
+
+re-judged against today's policy, guardrail, catalog and KB versions
+  passes → rev 1: → Published, re-stamped   rev 2: → Superseded
+           LivePointerMoved
+  fails  → rev 1: → Withdrawn, with what changed named
+           rev 2: unaffected, still live — you cannot roll back to it</div>
+      <p>The reason for the detour is the same fail-closed instinct that governs the gateway. Revision 1 was cleared under the versions of the day it was approved; the day you want it back may be a different world. A rollback that skipped the check would be the one path in the system through which content nobody re-approved could reach an audience — and it would be the path people reach for precisely when something has already gone wrong.</p>
+      <p>Two consequences follow. <code>Superseded</code> is <strong>quasi-terminal rather than terminal</strong> — a mirror of <code>Published</code>, with exactly one exit, guarded. And <code>StaleReview</code> earns its second entry point: it is the state a revision sits in whenever its right to be live is in question, whether the question came from a policy change or from a person asking for yesterday's version back.</p>
 
       <h3>Why <code>ErrorRecovery</code> is not just "retry"</h3>
       <p>Generating a node is an operation <strong>with side effects</strong>: it writes into course state and spends money. So the exit from this state is not "send the request again" — it is: check the <code>idempotency_key</code>, find out whether the operation actually completed, and only then retry with backoff. A timeout is an unknown, never a failure.</p>
@@ -512,6 +533,7 @@ flowchart TD
     <p>This is the centerpiece of the design, and the reason the machine is two-level rather than one long pipeline.</p>
     <p>Editing an approved node moves it to <code>NeedsRevalidation</code> — and Datalog marks the same status on everything that <strong>depends</strong> on it: the exam that tests this topic, the illustrations derived from this lesson's content, the nodes whose prerequisites point at it. A course cannot reach <code>ReadyForReview</code> while a single stale node remains.</p>
     <p>Because a published revision is immutable, this cascade never runs against live content: it runs inside a draft revision, where the only person who can see a half-repaired course is the editor repairing it. What reaches a <em>published</em> revision is the narrower question — is it still compliant under the new versions? — and that is <code>StaleReview</code>, which ends either in a re-stamp or in withdrawal, never in a silent rewrite.</p>
+    <p><strong>The sweep follows the readers, not the pointer.</strong> A superseded revision is still being read by whoever started on it, so a policy change has to reach it too — otherwise the kill mechanism stops exactly where content is still being consumed. Revisions with no active readers are re-verified lazily, when someone asks for them back; revisions with active readers are swept alongside the live one, and a failure there is the same product question as <a href="#s10">open question 1</a>: cut the readers off, or let them finish something a compliance officer has just called unacceptable.</p>
     <p>The same machinery answers a second question, added in v2: when an <strong>organizational policy changes</strong>, the artifacts stamped with the old version are found and marked exactly the same way. A rule change is an event inside the system, not a redeployment.</p>
   </section>
 
@@ -557,7 +579,7 @@ flowchart TD
           <tr>
             <td class="role">A node reaches for a restricted source</td>
             <td>stays <code>ContentInProgress</code></td>
-            <td><code>NodeChecks</code> → <code>NodeRepair</code>, and on a second failure <code>BlockedRecoverable</code></td>
+            <td><code>NodeChecks</code> → <code>NodeRepair</code>, and <code>BlockedRecoverable</code> once the repair budget is spent</td>
             <td>The leak path is recorded: node → source → the audience that lacks rights. The source is excluded from this node's retrieval on retry</td>
             <td>Narrow the audience, or accept the node without that source</td>
           </tr>
@@ -677,8 +699,10 @@ rollback   move the pointer back to rev 1. No regeneration, no restore.</div>
           <tr><td class="ev">NodeEdited</td><td>human</td><td>node, then the cascade</td></tr>
           <tr><td class="ev">PolicyChanged / CatalogChanged / KBUpdated</td><td>organization configuration</td><td>every stamped artifact</td></tr>
           <tr><td class="ev">PublishRequested / ApprovalGranted / ApprovalRejected</td><td>human</td><td>course</td></tr>
-          <tr><td class="ev">ReviseRequested</td><td>human</td><td>forks a new revision from a published one</td></tr>
-          <tr><td class="ev">LivePointerMoved</td><td>system, on publication</td><td>the previous revision → <code>Superseded</code></td></tr>
+          <tr><td class="ev">ReviseRequested</td><td>human</td><td>forks a new revision from a published or withdrawn one</td></tr>
+          <tr><td class="ev">RollbackRequested</td><td>human, with a reason</td><td>a superseded revision → <code>StaleReview</code>, to earn its way back</td></tr>
+          <tr><td class="ev">WithdrawRequested</td><td>human</td><td>pulls a live revision off air without waiting for the re-check</td></tr>
+          <tr><td class="ev">LivePointerMoved</td><td>system, on publication or rollback</td><td>the revision losing the pointer → <code>Superseded</code></td></tr>
           <tr><td class="ev">ModelError / Timeout</td><td>infrastructure</td><td>the current state</td></tr>
           <tr><td class="ev">ArchiveRequested</td><td>human</td><td>course</td></tr>
         </tbody>
@@ -702,7 +726,7 @@ idempotency_key_unused(operation)
 objectives_covered(course)
 is_draft_revision(course)       — nothing published may be edited
 differs_from_live(revision)     — an unchanged fork is not publishable</div>
-    <p>Each guard belongs to exactly one layer — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation. No guard is evaluated twice by two different tools.</p>
+    <p>Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
   </section>
 
   <section id="s8">
@@ -719,9 +743,10 @@ G(restricted_chunk_used(N) → O permission_checked(N))
 G(action              → F audit(action))
 
 G(published(R)        → G ¬node_edited(R))                       ← immutability
-G(live(C) = R         → published(R) ∨ superseded_after(R))
-G(superseded(R)       → O ∃R' (successor(R', R) ∧ published(R')))</div>
-    <p>The first of the three new lines is the immutability decision written formally, and it is the strongest statement on this page: <em>once a revision is published, no node in it is ever edited again — at any point in the future</em>. The nested <code>G</code> is what carries that “ever”. It is also cheap to check, because a single <code>NodeEdited</code> event against a published revision falsifies it.</p>
+G(live(C) = R         → published(R))
+G(superseded(R)       → O ∃R' (successor(R', R) ∧ published(R')))
+G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass</div>
+    <p>The first of the four new lines is the immutability decision written formally, and it is the strongest statement on this page: <em>once a revision is published, no node in it is ever edited again — at any point in the future</em>. The nested <code>G</code> is what carries that “ever”. It is also cheap to check, because a single <code>NodeEdited</code> event against a published revision falsifies it. The last line closes the one door through which unre-approved content could otherwise reach an audience: you may return to an old revision, but never without re-verifying it first.</p>
   </section>
 
   <section id="s9">
@@ -746,6 +771,7 @@ G(superseded(R)       → O ∃R' (successor(R', R) ∧ published(R')))</div>
     <h2>Open questions in this draft</h2>
     <ol class="questions">
       <li><strong>Which revision does a learner finish on?</strong> Immutability answers the hard half — the revision someone started is never rewritten under them, and it survives as <code>Superseded</code> rather than being deleted. What remains is a product decision: are learners offered the newer revision, moved to it at a chapter boundary, or left alone until they finish? And <code>Withdrawn</code> is the sharper case, because there the old revision is one a compliance officer has just ruled unacceptable — “let them finish” may be exactly wrong.</li>
+      <li><strong>Is a superseded revision with active readers swept like a live one?</strong> This draft says yes — the sweep follows the readers rather than the pointer — but it costs: a policy change now re-verifies every revision anyone is still reading, not just the live one. The cheaper alternative is to sweep only the live revision and cut readers of older ones over on any policy change, which is simpler and ruder.</li>
       <li><strong>Does a revision inherit its predecessor's approvals, or only its content?</strong> The fork copies stamps so that unchanged nodes are not re-reviewed, which is the whole point. But an organization may want a fresh publication signature regardless of how little changed — that is an <code>approval_chain</code> question, and it belongs in configuration.</li>
       <li><strong>Does the editor need a <code>Sandbox</code></strong> for experiments that should not appear in the audit log as publication attempts?</li>
       <li><strong>Is <code>BlockedFinal</code> truly terminal,</strong> or may an organization admin unblock with a justification — making that its own audited event?</li>
@@ -761,7 +787,7 @@ G(superseded(R)       → O ∃R' (successor(R', R) ∧ published(R')))</div>
     <p><strong>Transitions &amp; guards</strong> — next: the full table the brief asks for — current state, event, guard, validation layer, next state — plus examples of valid and forbidden event chains.</p>
   </div>
 
-  <p class="footer-note">State inventory · draft v0.1 · 25 July 2026 · companion to the <a href="./">spec v2</a>, the <a href="walkthrough.html">walkthrough</a> and the <a href="configuration.html">configuration</a></p>
+  <p class="footer-note">State inventory · draft v0.2 · 28 July 2026 · companion to the <a href="./">spec v2</a>, the <a href="walkthrough.html">walkthrough</a> and the <a href="configuration.html">configuration</a></p>
 </div>
 
 <script type="module">

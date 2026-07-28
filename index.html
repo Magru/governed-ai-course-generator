@@ -618,7 +618,7 @@ flowchart TD
           </tr>
           <tr>
             <td class="role">Side effects happen at most once</td>
-            <td>Generation and publication carry idempotency keys. A timeout is treated as <em>unknown</em>, never as failure: status is checked before any retry.</td>
+            <td>Generation and publication carry idempotency keys. A timeout is treated as <em>unknown</em>, never as failure: status is checked before any retry. Where an action half-completes, the registry names its compensation up front — publication is undone by moving the pointer, a generated node by discarding a draft revision, and the one action that cannot be taken back, notifying learners, is therefore compensated by a correction notice and an incident record rather than pretended away.</td>
           </tr>
           <tr>
             <td class="role">The model never holds credentials</td>
