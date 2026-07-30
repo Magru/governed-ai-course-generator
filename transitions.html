@@ -344,9 +344,9 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>42</b></span>
+      <span class="meta-chip">Revision transitions: <b>49</b></span>
       <span class="meta-chip">Node transitions: <b>17</b></span>
-      <span class="meta-chip">Guards: <b>24</b></span>
+      <span class="meta-chip">Guards: <b>27</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -394,50 +394,57 @@
           <tr class="phase"><td colspan="5">The brief — three refusals before the first token</td></tr>
           <tr><td class="st">AwaitingBrief</td><td class="evt">BriefSubmitted</td><td class="grd">—</td><td class="lyr">—</td><td class="st">BriefValidation</td></tr>
           <tr><td class="st">BriefValidation</td><td class="evt">(auto)</td><td class="grd">¬schema_valid(brief)</td><td class="lyr">JSON Schema</td><td class="st stop">BlockedRecoverable</td></tr>
-          <tr><td class="st">BriefValidation</td><td class="evt">(auto)</td><td class="grd">¬policy_allows(author, audience)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
-          <tr><td class="st">BriefValidation</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(brief)</td><td class="lyr">Guardrail</td><td class="st stop">BlockedFinal</td></tr>
+          <tr><td class="st">BriefValidation</td><td class="evt">(auto)</td><td class="grd">schema_valid ∧ ¬policy_allows(author, audience)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
+          <tr><td class="st">BriefValidation</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">schema_valid ∧ policy_allows ∧ ¬guardrail_clean(brief)</td><td class="lyr">Guardrail</td><td class="st stop">BlockedFinal</td></tr>
           <tr><td class="st">BriefValidation</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">schema_valid ∧ policy_allows</td><td class="lyr">Schema · OPA</td><td class="st">BriefFeasibility</td></tr>
+          <tr><td class="st">BriefValidation</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">feasible(brief)</td><td class="lyr">Z3</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">¬feasible(brief) — unsat core</td><td class="lyr">Z3</td><td class="st stop">BlockedRecoverable</td></tr>
-          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BriefSubmitted</td><td class="grd">—</td><td class="lyr">—</td><td class="st">BriefValidation</td></tr>
+          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BriefSubmitted</td><td class="grd">blocked_at = brief</td><td class="lyr">State store</td><td class="st">BriefValidation</td></tr>
+          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">(input fixed by a human)</td><td class="grd">blocked_at ≠ brief</td><td class="lyr">State store</td><td class="st">the state that blocked</td></tr>
 
           <tr class="phase"><td colspan="5">The skeleton</td></tr>
           <tr><td class="st">OutlineDrafting</td><td class="evt">OutlineGenerated</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutlineGuardrail</td></tr>
           <tr><td class="st">OutlineDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
+          <tr><td class="st">OutlineGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">OutlineGuardrail</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">guardrail_clean(outline)</td><td class="lyr">Guardrail</td><td class="st">OutlineChecks</td></tr>
           <tr><td class="st">OutlineGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(outline)</td><td class="lyr">Guardrail</td><td class="st stop">OutlineRepair</td></tr>
           <tr><td class="st">OutlineChecks</td><td class="evt">(auto)</td><td class="grd">schema_valid ∧ skills_grounded ∧ policy_allows ∧ feasible</td><td class="lyr">Schema · Datalog · OPA · Z3</td><td class="st human">OutlineReview</td></tr>
           <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(structure)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
-          <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">OutlineRepair</td></tr>
+          <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">OutlineRepair</td></tr>
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineApproved</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
 
           <tr class="phase"><td colspan="5">Content, and the guard that ends it</td></tr>
+          <tr><td class="st">ContentInProgress</td><td class="evt">(node → BlockedFinal)</td><td class="grd">∃ node: BlockedFinal</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st">ContentInProgress</td><td class="evt">(node state changed)</td><td class="grd">all_nodes_approved ∧ no_stale_nodes ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">ReadyForReview</td></tr>
           <tr><td class="st">ReadyForReview</td><td class="evt">NodeEdited(any)</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st">WholeCourseChecks · PendingApproval · Approved</td><td class="evt">NodeEdited(any)</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st">ReadyForReview</td><td class="evt">CourseChecksRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">WholeCourseChecks</td></tr>
           <tr><td class="st">WholeCourseChecks</td><td class="evt">(auto)</td><td class="grd">objectives_covered ∧ ordering_acyclic ∧ no_permission_leak ∧ trace_satisfies_ltl</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st human">PendingApproval</td></tr>
           <tr><td class="st">WholeCourseChecks</td><td class="evt">CheckFailed(layer, nodes)</td><td class="grd">any of the above fails</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st human">PendingApproval</td><td class="evt">ApprovalRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st human">PendingApproval</td><td class="evt">ApprovalGranted</td><td class="grd">approval_chain_satisfied</td><td class="lyr">OPA</td><td class="st">Approved</td></tr>
-          <tr><td class="st">Approved</td><td class="evt">(sent back to work)</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
-          <tr><td class="st">Approved</td><td class="evt">PublishRequested</td><td class="grd">versions_current ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">Published</td></tr>
+          <tr><td class="st">Approved</td><td class="evt">ReturnedToWork</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st">Approved</td><td class="evt">PublishRequested</td><td class="grd">all_nodes_approved ∧ no_stale_nodes ∧ versions_current ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">Published</td></tr>
 
           <tr class="phase"><td colspan="5">Live — where nothing is edited</td></tr>
           <tr><td class="st">Published</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn; this revision does not move)</small></td></tr>
           <tr><td class="st">Published</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision)</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
-          <tr><td class="st">Published</td><td class="evt">WithdrawRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
-          <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">successor published</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
-          <tr><td class="st">Published</td><td class="evt">ArchiveRequested</td><td class="grd">¬is_live(revision)</td><td class="lyr">State store</td><td class="st">Archived</td></tr>
-          <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
+          <tr><td class="st">Published</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
+          <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">successor_published(revision)</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
+                    <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">any of the above fails</td><td class="lyr">All layers</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st">Superseded</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
+          <tr><td class="st stop">Withdrawn</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn)</small></td></tr>
 
+          <tr><td class="st">any draft state</td><td class="evt">DraftDiscarded</td><td class="grd">is_draft_revision</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr class="phase"><td colspan="5">Infrastructure</td></tr>
           <tr><td class="st stop">ErrorRecovery</td><td class="evt">(auto)</td><td class="grd">¬idempotency_key_unused(op) — the write landed</td><td class="lyr">State store</td><td class="st">the state after the operation</td></tr>
           <tr><td class="st stop">ErrorRecovery</td><td class="evt">(auto)</td><td class="grd">idempotency_key_unused(op) ∧ retry_budget_left</td><td class="lyr">State store</td><td class="st">the state that issued the operation</td></tr>
@@ -446,6 +453,7 @@
       </table>
     </div>
     <div class="wrap" style="padding:0; max-width:46rem;">
+      <p><strong>A node blocked on policy stops the revision, recoverably.</strong> The row for it sends the revision to <code>BlockedRecoverable</code> rather than <code>BlockedFinal</code>, and the difference is deliberate: the policy violation is a terminal fact about that <em>node</em>, not about the course, and the editor has a real move — take the node out of the skeleton and carry on. Without the row the revision would sit in <code>ContentInProgress</code> forever, since its exit guard can never be satisfied while a blocked node exists. The stricter reading — one blocked node condemns the revision — is defensible too, and is the first open question below.</p>
       <p><code>BlockedFinal</code> and <code>Archived</code> have no outgoing rows. That is what terminal means here, and it is enforced by the absence of a row rather than by a check inside one.</p>
     </div>
   </section>
@@ -462,16 +470,16 @@
           <tr><th>From</th><th>Event</th><th>Guard</th><th>Layer</th><th>To</th></tr>
         </thead>
         <tbody>
-          <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">is_draft_revision ∧ policy_allows(generate, node)</td><td class="lyr">State store · OPA</td><td class="st">ContentDrafting</td></tr>
-          <tr><td class="st">Planned <small>(exam)</small></td><td class="evt">NodeGenerationRequested</td><td class="grd">content_approved(topics(exam))</td><td class="lyr">Datalog</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))</td><td class="lyr">State store · OPA · Datalog</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">—</td><td class="lyr">—</td><td class="st">Generated</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">Generated</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutputGuardrail</td></tr>
+          <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st">NodeChecks</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st stop">NodeRepair</td></tr>
-          <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Prolog</td><td class="st">Validated</td></tr>
+          <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Z3 · Prolog</td><td class="st">Validated</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(content)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
-          <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">NodeRepair</td></tr>
+          <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(node)</td><td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">course → BlockedRecoverable</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node)</td><td class="lyr">Catalog flag · Human</td><td class="st human">NodeApproved</td></tr>
@@ -484,6 +492,8 @@
     </div>
 
     <div class="wrap" style="padding:0; max-width:46rem;">
+      <h3>Why the exam has no row of its own</h3>
+      <p>An earlier draft gave the exam a second <code>Planned</code> row with its own guard, which was a mistake twice over: <code>Planned (exam)</code> is not a state, and two rows sharing a state and an event with guards that can both hold is exactly what <a href="#s8">Section 8</a> forbids. The fix is one guard that is <strong>vacuously true</strong> for a node with no topics beneath it — <code>content_approved(topics(node))</code> quantifies over the empty set for a topic and over the real set for an exam. One row, no special case, and the determinism claim survives.</p>
       <h3>Three events this table had to add</h3>
       <p>Writing a transition table is the exercise that finds the events an inventory missed, so it is worth naming them rather than quietly folding them in:</p>
       <ul class="plain">
@@ -498,7 +508,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need eleven more to be complete. All twenty-four, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need fourteen more to be complete. All twenty-seven, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -508,7 +518,7 @@
       <dd><span class="owner">OPA</span> — may this actor take this action, over this audience, in this state? Refuses with the rule that denied and a human-readable reason. <strong>The only guard whose refusal is terminal.</strong></dd>
 
       <dt>guardrail_clean(artifact)</dt>
-      <dd><span class="owner">Managed guardrail</span> — text and images carry nothing forbidden. Refuses with a category, never with a matched string. Unreachable service counts as refusal.</dd>
+      <dd><span class="owner">Managed guardrail</span> — text and images carry nothing forbidden. Refuses with a category, never with a matched string. An <em>explicit</em> deny is a refusal; an <em>unreachable</em> service is a timeout, which is an unknown and routes to <code>ErrorRecovery</code> — the run stalls either way, but the two are not the same event and must not be recorded as one.</dd>
 
       <dt>feasible(brief)</dt>
       <dd><span class="owner">Z3</span> — the brief's requirements are mutually satisfiable, and satisfiable against the organization's thresholds. Refuses with an unsat core: the smallest set of requirements that cannot hold together.</dd>
@@ -542,6 +552,12 @@
 
       <dt>all_visuals_reviewed(node)</dt>
       <dd><span class="owner">Catalog flag · Human</span> — every block whose type carries <code>requires_visual_review</code> has been looked at by a person. Refuses with the queue of unreviewed visuals.</dd>
+
+      <dt>arithmetic_consistent(node)</dt>
+      <dd><span class="owner">Z3</span> — the numbers inside a node add up: exam points reach the stated maximum, durations match the block count. Refuses with the failing sum.</dd>
+
+      <dt>successor_published(revision) · blocked_at(revision)</dt>
+      <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: which revision took the live pointer, and which state a recoverable block was entered from, so the fix returns there instead of to the beginning.</dd>
 
       <dt>all_nodes_approved(revision) · no_stale_nodes(revision)</dt>
       <dd><span class="owner">State store</span> — the two quantified conditions that lift a revision out of <code>ContentInProgress</code>. Refuse with the offending nodes.</dd>
@@ -587,7 +603,7 @@
   → CourseChecksRequested → (checks pass) → ApprovalGranted → PublishRequested
 
 AwaitingBrief → … → Published, no repair, no refusal</div>
-      <p>Notice what is <em>not</em> optional even here: three guardrail verdicts, two batches of formal checks, and three separate human decisions. The shortest legal path still cannot skip a layer.</p>
+      <p>Notice what is <em>not</em> optional even here: three guardrail verdicts, two batches of formal checks, and three <em>kinds</em> of human decision. The shortest legal path still cannot skip a layer.</p>
     </div>
 
     <div class="chain">
@@ -595,7 +611,7 @@ AwaitingBrief → … → Published, no repair, no refusal</div>
       <div class="formula">NodeGenerated → GuardrailVerdict(allow) → CheckFailed(datalog, ungrounded)
   → [retry_budget_left ✓] → NodeGenerationRequested
   → NodeGenerated → GuardrailVerdict(allow) → (checks pass) → NodeApproved</div>
-      <p>Legal because <code>retry_budget_left</code> held at the moment of the repair. The same chain with one more failure is <a href="#s6">forbidden chain 8</a> — the difference between them is a counter, not a category.</p>
+      <p>Legal because <code>retry_budget_left</code> held at the moment of the repair. The same chain once the budget is spent is <a href="#s6">forbidden chain 8</a> — at a budget of two that is the third failure, and the difference between legal and forbidden is a counter, not a category.</p>
     </div>
 
     <div class="chain">
@@ -645,7 +661,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
           </tr>
           <tr>
             <td class="role">2 · Write the exam before its topics are approved<br><small class="muted">NodeApproved(T1) → <b>NodeGenerationRequested(exam)</b></small></td>
-            <td><code>content_approved(topics(exam))</code> — Datalog</td>
+            <td><code>content_approved(topics(node))</code> — Datalog, inside the single <code>Planned</code> row</td>
             <td>“The exam covers T2 and T3, which are not approved yet” — with the two topics listed</td>
           </tr>
           <tr>
@@ -655,7 +671,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
           </tr>
           <tr>
             <td class="role">4 · Publish with a stale node<br><small class="muted">NodeEdited → <b>PublishRequested</b></small></td>
-            <td><code>no_stale_nodes</code> — the revision never reaches <code>ReadyForReview</code></td>
+            <td><code>no_stale_nodes</code>, twice: an edit after <code>ReadyForReview</code> drops the revision back to <code>ContentInProgress</code>, and the publish guard checks the condition again</td>
             <td>The publish action is unavailable, with the stale nodes named and a re-run offered</td>
           </tr>
           <tr>
@@ -716,6 +732,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
       <li><strong><code>BlockedFinal → *</code></strong> — no admin override. A terminal state an administrator can undo is terminal in name only.</li>
       <li><strong><code>Validated → Published</code></strong> — nodes are never published; revisions are. A node reaching <code>Validated</code> means the formal layers are satisfied, which is not the same as anyone having agreed to it.</li>
       <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in seventeen rows.</li>
+      <li><strong>Cloning an archived course</strong> — the state model offers it, and it is deliberately not a transition: a clone creates a <em>new course identity</em> with its own first revision in <code>AwaitingBrief</code>. Nothing about the archived revision changes, so it belongs to the layer above this machine.</li>
       <li><strong>A skip from <code>Generated</code> to <code>NodeChecks</code></strong> — there is no path that avoids the guardrail hop, which is what makes <code>G(generated(A) → O guardrail_checked(A))</code> checkable over the trace rather than merely intended.</li>
     </ul>
   </section>
@@ -728,7 +745,8 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <p>Most (state, event) pairs have no row. An event arriving where no row matches is <strong>recorded and discarded</strong> — it does not error, does not queue, and above all does not fall through to a default. A stale <code>GuardrailVerdict</code> arriving after the editor cancelled a run is the ordinary case for this, and the trace keeps it so that “why did nothing happen?” has an answer.</p>
 
     <h3>Determinism</h3>
-    <p>No (state, event) pair has two rows whose guards can both hold. Where two rows share a state and an event they are complementary branches of one evaluation — <code>p</code> and <code>¬p</code> — so the next state is a function of the current state, the event, and the guard results, with no ordering dependence and no first-match-wins rule to remember.</p>
+    <p>No (state, event) pair has two rows whose guards can both hold. Where two rows share a state and an event they are complementary branches of one evaluation, so the next state is a function of the current state, the event, and the guard results — with no ordering dependence and no first-match-wins rule to remember.</p>
+    <p>Making that true costs something, and the cost is visible in the tables: the three refusal rows in <code>BriefValidation</code> carry the earlier checks in their guards (<code>schema_valid ∧ ¬policy_allows</code>, not just <code>¬policy_allows</code>), and the repair rows carry <code>policy_allows ∧ constraint violated</code> so that a brief failing both a policy and a constraint has one destination rather than two. Ordering is then a <em>consequence</em> of the guards rather than a rule the reader has to hold separately — which is the point, because a rule held separately is a rule that drifts.</p>
     <p>The guards themselves are deterministic by construction: every one is owned by a formal layer or the state store. The single non-deterministic input to the whole system — the model — is not consulted by any guard. It produces artifacts that guards judge, and that asymmetry is the reason the machine can be reasoned about at all.</p>
 
     <h3>Two editors, one revision</h3>
@@ -739,10 +757,10 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <div class="eyebrow">Section 9</div>
     <h2>Open questions</h2>
     <ol class="questions">
+      <li><strong>Does one policy-blocked node condemn the whole revision?</strong> This draft says no — the revision stops recoverably and the editor can drop the node from the skeleton. The stricter reading is that content violating policy anywhere makes the revision unpublishable as a whole, which is simpler to defend and destroys more work. This is a product judgment the table cannot make for itself.</li>
       <li><strong>What if a course ends up with no serving revision?</strong> The live revision is withdrawn, the rollback target fails its own re-verification, and there is nothing to serve. Every state is individually correct and the course is unusable. This wants either a named state or an explicit statement that it is an acceptable outcome for an editor to resolve — and the tables above currently imply the latter without saying so.</li>
       <li><strong>Is <code>ErrorRecovery</code> one state or two?</strong> It appears in both tables, scoped once to a revision and once to a node. They behave identically and carry the same field, but a single state that can be entered from two machines is either an elegant reuse or a bookkeeping trap, depending on how recovery is implemented.</li>
       <li><strong>How much concurrency does the interface owe the editor?</strong> Serializing per node and per revision is correct at the data layer. What an editor should <em>see</em> when a colleague approves a node they are reading is a product question the state machine does not answer.</li>
-      <li><strong>Should <code>WithdrawRequested</code> require a reason?</strong> Every other human transition that removes something — rejection, rollback — carries an explanation into the audit. Withdrawal currently does not, which is inconsistent, and withdrawal is the one an auditor is most likely to ask about.</li>
     </ol>
 
     <div class="callout">

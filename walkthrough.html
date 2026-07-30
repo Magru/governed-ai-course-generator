@@ -465,9 +465,10 @@ T1, T2, T3, E1: <b>Planned</b></div>
 
     <ol class="run" start="10">
       <li>
-        <h4>T1 is drafted <span class="actor model">model</span></h4>
+        <h4>The editor starts T1, and the model drafts it <span class="actor human">editor</span> <span class="actor model">model</span></h4>
         <p>Retrieval is now narrowed to this topic rather than the whole course, and the model assembles blocks against the schemas in the catalog — text, example, image, quiz.</p>
-        <div class="mv">T1: Planned → <b>ContentDrafting</b>
+        <div class="mv">NodeGenerationRequested (the editor picks the node)
+T1: Planned → <b>ContentDrafting</b>
 writes: idempotency_key for this operation</div>
       </li>
       <li>
@@ -557,8 +558,12 @@ T1, T2, T3, E1: all at rest</div>
 course: ContentInProgress → <b>ReadyForReview</b></div>
       </li>
       <li>
-        <h4>The whole course is checked <span class="actor auto">automatic</span></h4>
-        <div class="mv">completeness  every objective in the brief is covered by some node
+        <h4>The editor declares it done, and the course is checked <span class="actor human">editor</span> <span class="actor auto">automatic</span></h4>
+        <div class="mv">CourseChecksRequested — the editor, not the machine: reaching
+  ReadyForReview means nothing is left to object to, not that
+  the editor has finished
+
+completeness  every objective in the brief is covered by some node
 ordering      the prerequisite graph is acyclic and agrees with lesson order
 rights        no chunk anywhere in the course leaks past the audience
 temporal      the trace itself is replayed against the invariants</div>
@@ -639,7 +644,7 @@ re-judged against v8 — <b>no content is regenerated</b>
                                                           model call #2
  8  (checks pass)          course: → OutlineReview        ← EDITOR
  9  OutlineApproved        course: → ContentInProgress    T1 T2 T3 E1: Planned
-10  (auto)                 T1: → ContentDrafting          model call #3
+10  NodeGenerationRequested T1: → ContentDrafting        ← EDITOR · model call #3
 11  NodeGenerated          T1: → OutputGuardrail          text + images
 12  GuardrailVerdict       T1: → NodeChecks               schemas · grounding · rights · coverage
 13  (checks pass)          T1: → Validated
@@ -652,7 +657,8 @@ re-judged against v8 — <b>no content is regenerated</b>
 19  NodeGenerated          E1: → NodeChecks               + Z3 points · Datalog traceability
 20  NodeApproved           E1: → NodeApproved             ← EDITOR
 21  (guard)                course: → ReadyForReview       derived, not pressed
-22  (auto)                 course: → WholeCourseChecks    completeness · ordering · rights · LTL
+22  CourseChecksRequested  course: → WholeCourseChecks    ← EDITOR
+                                                          completeness · ordering · rights · LTL
 23  ApprovalGranted        course: → Approved             ← EDITOR
 24  PublishRequested       course: → Published
 
@@ -674,7 +680,7 @@ re-judged against v8 — <b>no content is regenerated</b>
       <div class="eyebrow">Where to go next</div>
       <p><strong><a href="states.html">State model</a></strong> — the full inventory this run walks through, plus the nine situations where it goes wrong.</p>
       <p><strong><a href="configuration.html">Configuration</a></strong> — the catalogs, policies, thresholds and stamps that every step above reads at runtime.</p>
-      <p><strong>Transitions &amp; guards</strong> <span class="status planned">next</span> — the formal table: current state, event, guard, layer, next state, with valid and forbidden event chains.</p>
+      <p><strong><a href="transitions.html">Transitions &amp; guards</a></strong> — the formal table this run is a path through: every legal move with its guard, plus twelve chains that must be refused.</p>
     </div>
   </section>
 

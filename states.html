@@ -413,7 +413,7 @@ flowchart TD
           <tr><td class="state">WholeCourseChecks</td><td>Completeness, ordering, consistency, LTL over the trace, a permission sweep across all sources used.</td><td>Wait; on failure see which nodes are at fault</td></tr>
           <tr><td class="state hitl-s">PendingApproval</td><td><strong>Human.</strong> The final publication decision, with everything the approver needs on screen.</td><td>Approve, reject with notes</td></tr>
           <tr><td class="state terminal">Approved</td><td>Approved and <strong>stamped</strong> with the policy, guardrail, catalog, and model versions it passed under.</td><td>Publish, or send back to work</td></tr>
-          <tr><td class="state terminal">Published</td><td>Live for its audience, and <strong>immutable</strong>: no transition edits its content. A change forks a new revision beside it.</td><td>Request a revision; archive</td></tr>
+          <tr><td class="state terminal">Published</td><td>Live for its audience, and <strong>immutable</strong>: no transition edits its content. A change forks a new revision beside it.</td><td>Request a revision; withdraw it</td></tr>
           <tr><td class="state blocked-s">StaleReview</td><td><strong>New in v2.</strong> A revision is being re-verified against the current versions — because a policy, catalog, or source change touched it, or because a rollback wants to put it back on air. It is never rewritten here, only re-judged.</td><td>Wait for the re-check; withdraw early</td></tr>
           <tr><td class="state terminal">Withdrawn</td><td><strong>New.</strong> Terminal for this revision: re-verification failed, so it no longer serves — and unlike <code>Superseded</code>, readers part-way through <strong>lose access</strong>, because a rule violation is exactly the case where letting them finish defeats the purpose. The explanation names what changed.</td><td>Request a revision that complies</td></tr>
           <tr><td class="state">Superseded</td><td><strong>New.</strong> A later revision took the live pointer. Kept intact, still stamped, still readable by learners who started on it. <strong>Quasi-terminal:</strong> its only exit is a rollback, and only through re-verification. Learners who started on it finish on it.</td><td>Read; request a rollback</td></tr>
@@ -705,6 +705,9 @@ rollback   move the pointer back to rev 1. No regeneration, no restore.</div>
           <tr><td class="ev">ReviseRequested</td><td>human</td><td>forks a new revision from a published or withdrawn one</td></tr>
           <tr><td class="ev">RollbackRequested</td><td>human, with a reason</td><td>a superseded revision → <code>StaleReview</code>, to earn its way back</td></tr>
           <tr><td class="ev">WithdrawRequested</td><td>human</td><td>pulls a live revision off air without waiting for the re-check</td></tr>
+          <tr><td class="ev">ReturnedToWork</td><td>human</td><td>an approved revision is sent back to <code>ContentInProgress</code></td></tr>
+          <tr><td class="ev">DraftDiscarded</td><td>human</td><td>a draft revision is abandoned — the transition behind “cancel” and “discard”</td></tr>
+          <tr><td class="ev">ServiceUnreachable</td><td>infrastructure</td><td>a guardrail hop got no answer — an unknown, not a denial</td></tr>
           <tr><td class="ev">LivePointerMoved</td><td>system, on publication or rollback</td><td>the revision losing the pointer → <code>Superseded</code></td></tr>
           <tr><td class="ev">ModelError / Timeout</td><td>infrastructure</td><td>the current state</td></tr>
           <tr><td class="ev">ArchiveRequested</td><td>human</td><td>course</td></tr>

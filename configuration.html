@@ -499,7 +499,7 @@ max_audience_breadth(source_class)    // how far a restricted source may travel
 approval_chain(course_type)           // who signs, and in what order</div>
 
     <h3>Thresholds <span class="status proposed">added here</span></h3>
-    <p>The numbers the state machine obeys are organizational data, for the same reason as everything else on this page: an organization that wants three repair attempts instead of two should not need a release. This also settles <a href="states.html#s10">open question&nbsp;6</a> of the state model — the repair budget is a parameter, not a constant.</p>
+    <p>The numbers the state machine obeys are organizational data, for the same reason as everything else on this page: an organization that wants three repair attempts instead of two should not need a release. This is also why the repair budget is a parameter rather than a constant — see <a href="transitions.html#s4"><code>retry_budget_left</code></a>.</p>
     <div class="formula">{
   "repair_budget": 2,                    // retries before BlockedRecoverable
   "max_nodes_per_course": 40,
