@@ -497,7 +497,7 @@
     <div class="eyebrow">Section 6</div>
     <h2>State model</h2>
     <p>The lifecycle is an explicit two-level state machine, not a pipeline. The <strong>course</strong> machine survives editor sessions and aggregates the state of its nodes; each <strong>node</strong> — lesson, topic, exam — runs its own cycle of drafting, guardrail screening, checks, repair, and approval.</p>
-    <p>Three properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. Approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it. And <strong>a published course is immutable</strong> — what everyone calls editing a live course forks a new revision beside it, so the cascade never runs against content a learner is reading, and rollback is a pointer move rather than a recovery procedure.</p>
+    <p>Three properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. Approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it. And <strong>a published course is immutable</strong> — what everyone calls editing a live course forks a new revision beside it, so the cascade never runs against content a learner is reading, and rollback is a pointer move rather than a recovery procedure. A learner who has already started finishes on the revision they started; the new one serves everyone who starts after. The single exception is a revision <em>withdrawn</em> for violating a rule — there access is cut, because “let them finish” is precisely what the compliance officer was preventing.</p>
     <p><strong>The state machine is the editor's interface.</strong> In every state the system says what is available, what is blocked and why, and what to do next — the next best action is derived from uncovered objectives and stale nodes, not suggested by a model.</p>
     <p>→ <a href="states.html"><strong>State model — detailed specification</strong></a>: every course and node state, the event catalog, guards, temporal invariants, and the fields each artifact persists.</p>
   </section>
@@ -689,6 +689,7 @@ flowchart TD
   <section id="s15">
     <div class="eyebrow">Section 15</div>
     <h2>Limits, stated honestly</h2>
+    <p><strong>What the prototype actually runs.</strong> The five formal engines, the state machines, the gateway and the trace are real and run on every pass. Retrieval and model calls go through an adapter over recorded fixtures, so the behaviour under test is deterministic and reviewable — with one genuinely live end-to-end run demonstrated at the defense. The point of the project is the architecture that decides, not the provider that generates; making the demo depend on a network call would risk the former to prove the latter.</p>
     <ul class="plain">
       <li><strong>Pixels are not formally verifiable.</strong> An image passes guardrail and provenance checks; the visual itself is a human decision, and the architecture says so rather than pretending otherwise. Block types that need an eye are marked as such in the catalog, and a node cannot be approved while one of them is unseen — so the requirement travels with the vocabulary instead of being wired into the pipeline.</li>
       <li><strong>A managed guardrail is no judge of pedagogy.</strong> It knows nothing about coverage, dependencies, or the organization's permission model — those never leave the formal layer.</li>
@@ -701,9 +702,9 @@ flowchart TD
     <div class="eyebrow">Section 16</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>Which revision does a learner finish on?</strong> A published revision is immutable, so nothing is ever rewritten under someone reading it, and the revision they started survives as <code>Superseded</code>. What remains is a product decision: offer the newer revision, move them at a chapter boundary, or leave them alone — and the answer differs for a <code>Withdrawn</code> revision, where “let them finish” may be exactly what compliance was trying to prevent.</li>
-      <li><strong>How deep should the live integration go</strong> in the prototype: real service calls throughout, or an adapter over recorded fixtures with one live run demonstrated?</li>
-      <li><strong>Where does the re-validation queue belong</strong> in the editor's day — a notification, a dashboard, or a blocking gate on the next publish?</li>
+      <li><strong>How is a learner told their revision is no longer current?</strong> They keep reading it, which is settled — but silence is its own message, and a banner on every lesson is worse. This is the one place where a governance decision has to become a piece of learner-facing product.</li>
+      <li><strong>What does the staleness sweep cost at scale?</strong> Because superseded revisions with active readers are swept alongside the live one, a single policy change re-verifies more than one revision per course. The design is right; the bill is unmeasured.</li>
+      <li><strong>Does compliance need a role of its own?</strong> The platform has three organizational roles and none of them is a compliance officer; capabilities can be granted to an existing role through its permission set, but a distinct compliance identity in the audit trail is a schema change, not a configuration one.</li>
     </ol>
   </section>
 

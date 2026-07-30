@@ -429,7 +429,7 @@
 
     <h3>The block catalog <span class="status live">exists, as code</span></h3>
     <p>Today the platform holds one exhaustive row per block type in a compile-time registry: category, whether the learner can answer it, whether it needs a live backend, whether the Knowledge Base offers it, whether it is edited in a modal. The set the Knowledge Base exposes is derived from those rows rather than hand-listed, so a new block type cannot be added without deciding where it belongs — the row will not compile without the flag. Backend validators mirror the same set, and a test guards the parity between the two.</p>
-    <p class="src-note">frontend/src/shared/components/block-builder/block-meta-registry.ts · allowed-blocks.ts</p>
+    <p class="src-note">source: the platform's block-metadata registry and its derived Knowledge-Base subset</p>
     <p>That design is sound for two consumers who share a compile step. <strong>The generator is a third consumer, and it does not share one.</strong> A copy of the block list inside the generator would be a third mirror of a set that already needs a test to stay in sync twice — and mirrors drift silently, in the direction of the copy nobody edits. So the catalog is read at runtime, and three fields are added to what a row carries:</p>
     <div class="formula">{
   "type": "image",
@@ -450,7 +450,7 @@
 
     <h3>The skills catalog <span class="status live">exists</span></h3>
     <p>Skills, their categories, the links from skills to learning items, and qualifications with their team assignments are real models in the platform. The generator does not extend them and does not cache them — it reads them as facts, and the Datalog check in <a href="walkthrough.html#s3">step&nbsp;6</a> is exactly the question “is this claimed skill derivable from these facts?”.</p>
-    <p class="src-note">backend/apps/skills/models.py — Skill · LearningItemSkill · Qualification · TeamQualification</p>
+    <p class="src-note">source: the platform's skills models — skill, skill-to-item link, qualification, team qualification</p>
     <p>This is what makes “the model invented a skill” a <em>detectable</em> event rather than an editorial opinion.</p>
   </section>
 
@@ -458,7 +458,7 @@
     <div class="eyebrow">Section 4</div>
     <h2>Sources and who may see them <span class="status live">exists</span></h2>
     <p>The Knowledge Base already has a single-source-of-truth visibility predicate, and it is more subtle than a permission flag. An article is visible if its chain is unrestricted, or the viewer's team is named on the article, or the viewer holds an individual grant on that article, or the viewer's team is inherited from the category tree, or the viewer holds a grant on the category, or they authored it, or they are a local admin — seven clauses, and the two grant clauses are genuinely different rules. Team restrictions <strong>inherit downward</strong> through the category tree via a materialized closure; individual grants do <strong>not</strong> — a person granted a category sees that category and its direct articles, not its subcategories.</p>
-    <p class="src-note">backend/apps/knowledge_base/acl.py · KbCategoryEffectiveTeam</p>
+    <p class="src-note">source: the platform's Knowledge-Base ACL module and its materialized category-team closure</p>
     <div class="thesis">
       <p><strong>The generator must not re-implement this.</strong> It would be the block-catalog mistake with worse consequences: the copy that drifts would be the one deciding who sees restricted material. The permission check in <a href="walkthrough.html#s4">step&nbsp;12</a> asks the platform's own predicate, over the same closure, and treats the answer as a fact.</p>
     </div>
@@ -483,7 +483,7 @@ unreachable      fail closed: the run stalls, nothing is published</div>
 
     <h3>Why the hop is explicit</h3>
     <p>The platform talks to the model through the Anthropic Messages API rather than the AWS SDK, so there is no transparent wrapper that could apply a guardrail invisibly on the way past. The evaluation has to be its own call.</p>
-    <p class="src-note">backend/apps/agent/client.py — AnthropicBedrock / AnthropicBedrockMantle</p>
+    <p class="src-note">source: the platform's model client — Anthropic Messages API over Bedrock</p>
     <p>That constraint turned out to be an advantage. An invisible guardrail is a guardrail you cannot point to in a trace; an explicit hop is a state in the machine, a row in the audit, and a thing that can be shown to fail closed. The four evaluation points occupy three states in the model — <code>BriefValidation</code>, <code>OutlineGuardrail</code> and <code>OutputGuardrail</code>, the last of which screens a node's text and its images together — they are there because the call is real, not because a diagram wanted a box.</p>
   </section>
 
@@ -507,6 +507,7 @@ approval_chain(course_type)           // who signs, and in what order</div>
   "visual_review": "required",           // may an org waive it? see open question 3
   "publish_requires_second_approver": false
 }</div>
+    <p><strong>A threshold change applies forward only.</strong> Work already approved was approved under the versions stamped on it, which is the entire point of stamping; a tightened repair budget does not un-approve anything. The exception is not really an exception: if a change makes an existing course actually violate a rule, that is a policy version change, and the staleness machinery already handles it.</p>
     <p>Note what the second and third entries do: they are not enforcement, they are <em>inputs to the solver</em>. The feasibility refusal in <a href="walkthrough.html#s2">step&nbsp;3</a> is computed against them, which is why the same code refuses a different brief for a different organization.</p>
   </section>
 
@@ -514,13 +515,14 @@ approval_chain(course_type)           // who signs, and in what order</div>
     <div class="eyebrow">Section 7</div>
     <h2>Models — the routing table <span class="status assumed">extended here</span></h2>
     <p>The platform already routes between two models — a default and a cheaper, latency-sensitive one — plus a transport flag, all as deployment settings resolved per call.</p>
-    <p class="src-note">backend/config/settings.py · apps/agent/client.py — resolve_model_id(light=…)</p>
+    <p class="src-note">source: deployment settings plus a per-call model resolver with a “light” flag</p>
     <p>The generator needs the same idea one level up: routing by <em>task</em>, not by a boolean, and visible as data rather than as environment.</p>
     <div class="formula">outline drafting   → default      // structure, worth the stronger model
 node content       → default
 repair pass        → default      // a repair that fails twice is expensive
 summarization      → light
 metadata, titles   → light</div>
+    <p>The table is visible in the <em>trace</em> and not on the approval screen. Which model wrote a paragraph has to be answerable when something is being investigated; putting it in front of the editor at the moment of approval invites an argument about routing instead of about content.</p>
     <p>Whatever the table says, the resolved <code>model_id</code> and version are stamped onto every node — so “which model wrote this paragraph, under which policy” is answerable six months later, and a model swap is a stamp change that the staleness cascade can act on like any other.</p>
   </section>
 
@@ -540,6 +542,7 @@ metadata, titles   → light</div>
   trace_id            where its full history is
   approvals[]         who signed, when, and what they were shown</div>
       <p>Changing configuration therefore touches <strong>no course at all</strong>. What it does is make one query answerable: <em>which artifacts were approved against a version that no longer exists?</em> The dependency graph answers it, and only those courses move to <code>StaleReview</code>. Everything else keeps running, which is the difference between governance and an outage.</p>
+      <p><strong>Versions are stamped per source, not as one bundle number.</strong> A single stamp would be simpler to store and much blunter to use: a catalog change would implicate every course whose policy version also moved, and the sweep would lose most of its precision. Five fields buy a cascade that only ever touches what actually changed.</p>
       <div class="thesis">
         <p><strong>A stamp is a claim about the past, not a lock on the future.</strong> It does not prevent the rule from changing — it makes the consequence of the change computable, and small.</p>
       </div>
@@ -556,6 +559,7 @@ metadata, titles   → light</div>
       <li><strong>The temporal invariants.</strong> That an exam follows its topics, that every generated artifact passed a guardrail, that a published course has no stale node — these are checked over the trace and cannot be waived by anyone.</li>
       <li><strong>Fail-closed behaviour.</strong> No configuration value turns an unreachable guardrail into a pass. The absence of a verdict is never a permissive verdict.</li>
       <li><strong>The boundary itself.</strong> What may be configured is not, in turn, configurable. There is no setting that moves a decision from the formal layer to the model.</li>
+      <li><strong>The visual-review requirement.</strong> An organization may decide which block types carry the flag; it may not switch the flag off wholesale. It exists precisely for what no automated layer can close, so a setting that waives it would waive the only check an image ever gets.</li>
       <li><strong>The audit record.</strong> Append-only, not a preference, and not something an admin can shorten.</li>
       <li><strong>The order of evaluation.</strong> Cheap and deterministic first, the model last. This is a property of the gateway, not a tuning knob — an organization that could reorder it could make itself pay for every refusal.</li>
     </ul>
@@ -584,7 +588,7 @@ metadata, titles   → light</div>
           <tr>
             <td class="role">A block type is withdrawn from the catalog</td>
             <td>Published revisions are immutable, so they keep rendering under their stamped <code>catalog_version</code>; new generation cannot propose the type; affected revisions go to <code>StaleReview</code> and any repair happens in a fork</td>
-            <td>A withdrawal is a policy change like any other — it must be reviewed, not applied retroactively in silence</td>
+            <td>A withdrawal is a policy change like any other — it must be reviewed, not applied retroactively in silence. Entries are deprecated, never hard-deleted: a stamp that cannot be resolved is a published course that can no longer be explained</td>
           </tr>
           <tr>
             <td class="role">Two policy rules contradict each other</td>
@@ -662,11 +666,7 @@ metadata, titles   → light</div>
     <div class="eyebrow">Section 12</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>One bundle version, or a version per source?</strong> A single stamp is simpler to reason about; per-source stamps make the staleness cascade far narrower, because a catalog change stops implicating courses that only a policy change should have touched.</li>
-      <li><strong>Who may change what?</strong> The list assigns owners, but the platform's role model may not have a seat between organization admin and compliance. If it does not, either the roles grow or the boundary between the policy bundle and the thresholds moves.</li>
-      <li><strong>May an organization waive visual review?</strong> If yes, it is a threshold. If no, it belongs in <a href="#s9">Section&nbsp;9</a> — and the argument for “no” is that the flag exists precisely for the cases no automated layer can close.</li>
-      <li><strong>Does a threshold change invalidate approved work, or only apply forward?</strong> Tightening the repair budget arguably should not un-approve anything; tightening a size limit arguably should.</li>
-      <li><strong>Is the routing table visible to the editor?</strong> Showing which model wrote a node is honest and useful for review; it also invites the editor to argue with the routing rather than with the content.</li>
+      <li><strong>Which role owns each source, given that compliance has no seat?</strong> The platform has three organizational roles — admin, editor, member — and no compliance officer among them. Capabilities can be attached to an existing role through its permission set, so nothing is blocked; what is unresolved is whether an audit entry should be able to say “compliance changed this”, which needs a role of its own and therefore a schema change.</li>
       <li><strong>Does a revision need its own publication signature?</strong> A fork copies its predecessor's approvals so unchanged nodes are not re-reviewed. An organization may nonetheless want every publication signed afresh, however small the change — that is an <code>approval_chain</code> setting, and it is the one place where configuration reaches into the state machine's human stops.</li>
       <li><strong>Are catalog entries ever hard-removed, or only deprecated?</strong> Hard removal makes older stamps unresolvable, which quietly breaks the ability to explain a published course.</li>
     </ol>
