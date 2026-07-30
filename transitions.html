@@ -344,7 +344,7 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>49</b></span>
+      <span class="meta-chip">Revision transitions: <b>50</b></span>
       <span class="meta-chip">Node transitions: <b>17</b></span>
       <span class="meta-chip">Guards: <b>27</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
@@ -400,6 +400,7 @@
           <tr><td class="st">BriefValidation</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">feasible(brief)</td><td class="lyr">Z3</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">¬feasible(brief) — unsat core</td><td class="lyr">Z3</td><td class="st stop">BlockedRecoverable</td></tr>
+          <tr><td class="st">ContentInProgress · BlockedRecoverable</td><td class="evt">OutlineRevised</td><td class="grd">is_draft_revision</td><td class="lyr">Human</td><td class="st">OutlineChecks</td></tr>
           <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BriefSubmitted</td><td class="grd">blocked_at = brief</td><td class="lyr">State store</td><td class="st">BriefValidation</td></tr>
           <tr><td class="st stop">BlockedRecoverable</td><td class="evt">(input fixed by a human)</td><td class="grd">blocked_at ≠ brief</td><td class="lyr">State store</td><td class="st">the state that blocked</td></tr>
 
@@ -453,6 +454,7 @@
       </table>
     </div>
     <div class="wrap" style="padding:0; max-width:46rem;">
+      <p><strong>The skeleton stays editable after content exists.</strong> <code>OutlineRevised</code> sends the revision back through <code>OutlineChecks</code>: nodes that survive keep their states and their stamps, a node removed from the skeleton is discarded with its history retained, and anything that depended on it goes stale through the ordinary cascade. This row exists because of the decision below — telling an editor to “drop the blocked node from the skeleton” is empty advice if the machine has no move for it.</p>
       <p><strong>A node blocked on policy stops the revision, recoverably.</strong> The row for it sends the revision to <code>BlockedRecoverable</code> rather than <code>BlockedFinal</code>, and the difference is deliberate: the policy violation is a terminal fact about that <em>node</em>, not about the course, and the editor has a real move — take the node out of the skeleton and carry on. Without the row the revision would sit in <code>ContentInProgress</code> forever, since its exit guard can never be satisfied while a blocked node exists. The stricter reading — one blocked node condemns the revision — is defensible too, and is the first open question below.</p>
       <p><code>BlockedFinal</code> and <code>Archived</code> have no outgoing rows. That is what terminal means here, and it is enforced by the absence of a row rather than by a check inside one.</p>
     </div>
@@ -741,6 +743,8 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <div class="eyebrow">Section 8</div>
     <h2>Totality, determinism, concurrency</h2>
 
+    <h3>One recovery state, shared by two machines</h3>
+    <p><code>ErrorRecovery</code> appears in both tables and is <strong>one state, parameterized by the scope of the operation that failed</strong>, not two states with the same name. The exit rule is a single sentence in both cases — check <code>idempotency_key</code>, then decide about a retry — and splitting it would duplicate the only interesting logic in the model, which is how such rules drift apart. The cost is that a state belongs to two machines at once, which is unusual enough to say out loud rather than leave for a reader to notice: it is counted once, in neither total.</p>
     <h3>The transition function is partial, and that is explicit</h3>
     <p>Most (state, event) pairs have no row. An event arriving where no row matches is <strong>recorded and discarded</strong> — it does not error, does not queue, and above all does not fall through to a default. A stale <code>GuardrailVerdict</code> arriving after the editor cancelled a run is the ordinary case for this, and the trace keeps it so that “why did nothing happen?” has an answer.</p>
 
@@ -750,17 +754,16 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <p>The guards themselves are deterministic by construction: every one is owned by a formal layer or the state store. The single non-deterministic input to the whole system — the model — is not consulted by any guard. It produces artifacts that guards judge, and that asymmetry is the reason the machine can be reasoned about at all.</p>
 
     <h3>Two editors, one revision</h3>
-    <p>Node work is naturally partitioned — two editors on two nodes do not interact, and the course-level guard simply observes whatever the node states become. What genuinely conflicts is two editors on the same node, and the same revision-level action taken twice. The draft treats revision-level transitions as serialized per revision and node transitions as serialized per node, with <code>idempotency_key</code> making a repeated request a no-op rather than a second side effect. Whether that is enough at the interface level — one editor watching another's approval land under them — is the third open question below.</p>
+    <p>Node work is naturally partitioned — two editors on two nodes do not interact, and the course-level guard simply observes whatever the node states become. What genuinely conflicts is two editors on the same node, and the same revision-level action taken twice. Revision-level transitions are serialized per revision and node transitions per node, with <code>idempotency_key</code> making a repeated request a no-op rather than a second side effect.</p>
+    <p>At the interface the answer falls out of the model rather than needing a mechanism of its own: <strong>the screen follows the state machine, live.</strong> A colleague's approval is an ordinary node transition carrying who and when, so the state changes under the reader and the stamp says who changed it — the state <em>is</em> the notification. Nothing is locked, because “busy” is not a concept this model has; and an attempt to write over a state that has moved is a visible conflict rather than a silent overwrite, which is the one outcome a system that promises to lose nothing quietly cannot afford.</p>
   </section>
 
   <section id="s9">
     <div class="eyebrow">Section 9</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>Does one policy-blocked node condemn the whole revision?</strong> This draft says no — the revision stops recoverably and the editor can drop the node from the skeleton. The stricter reading is that content violating policy anywhere makes the revision unpublishable as a whole, which is simpler to defend and destroys more work. This is a product judgment the table cannot make for itself.</li>
-      <li><strong>What if a course ends up with no serving revision?</strong> The live revision is withdrawn, the rollback target fails its own re-verification, and there is nothing to serve. Every state is individually correct and the course is unusable. This wants either a named state or an explicit statement that it is an acceptable outcome for an editor to resolve — and the tables above currently imply the latter without saying so.</li>
-      <li><strong>Is <code>ErrorRecovery</code> one state or two?</strong> It appears in both tables, scoped once to a revision and once to a node. They behave identically and carry the same field, but a single state that can be entered from two machines is either an elegant reuse or a bookkeeping trap, depending on how recovery is implemented.</li>
-      <li><strong>How much concurrency does the interface owe the editor?</strong> Serializing per node and per revision is correct at the data layer. What an editor should <em>see</em> when a colleague approves a node they are reading is a product question the state machine does not answer.</li>
+      <li><strong>Does a revised skeleton have to stop at <code>OutlineReview</code> again?</strong> The table sends <code>OutlineRevised</code> to <code>OutlineChecks</code> and leaves the question of a second human approval open. Requiring it is more control and more clicks on a change the editor just made themselves; skipping it means the skeleton can move without anyone signing the new shape.</li>
+      <li><strong>Does a live-updating approval screen need to freeze once opened?</strong> The screen follows the state machine, which is right — until the thing being approved changes while it is being read. An approval records what the approver was shown, so either the screen holds still until the decision is made, or the record has to say which version they actually saw.</li>
     </ol>
 
     <div class="callout">

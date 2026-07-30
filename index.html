@@ -498,7 +498,7 @@
     <h2>State model</h2>
     <p>The lifecycle is an explicit two-level state machine, not a pipeline. The <strong>course</strong> machine survives editor sessions and aggregates the state of its nodes; each <strong>node</strong> — lesson, topic, exam — runs its own cycle of drafting, guardrail screening, checks, repair, and approval.</p>
     <p>Three properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. Approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it. And <strong>a published course is immutable</strong> — what everyone calls editing a live course forks a new revision beside it, so the cascade never runs against content a learner is reading, and rollback is a pointer move rather than a recovery procedure. A learner who has already started finishes on the revision they started; the new one serves everyone who starts after. The single exception is a revision <em>withdrawn</em> for violating a rule — there access is cut, because “let them finish” is precisely what the compliance officer was preventing.</p>
-    <p><strong>The state machine is the editor's interface.</strong> In every state the system says what is available, what is blocked and why, and what to do next — the next best action is derived from uncovered objectives and stale nodes, not suggested by a model.</p>
+    <p><strong>The state machine is the editor's interface.</strong> In every state the system says what is available, what is blocked and why, and what to do next — the next best action is derived from uncovered objectives and stale nodes, not suggested by a model. Re-validation is a gate rather than a notification: publication is unavailable while anything is stale, with the affected nodes listed beside it. That is not a UX preference — the invariant already forbids publishing a stale course, and the gate is that invariant made visible.</p>
     <p>→ <a href="states.html"><strong>State model — detailed specification</strong></a>: every course and node state, the event catalog, guards, temporal invariants, and the fields each artifact persists.</p>
   </section>
 
@@ -609,8 +609,8 @@ flowchart TD
             <td>Every approved artifact is stamped with the policy, guardrail, and catalog versions it passed under. When a rule changes, the dependency graph marks exactly the affected courses for re-validation — a rule change is an event in the system, not a release.</td>
           </tr>
           <tr>
-            <td class="role">Anything published can be taken back</td>
-            <td><strong>A published revision is immutable</strong> — no transition edits it, so rollback is a pointer move to an earlier revision that still exists and still carries the approvals and versions it was cleared under. Nothing is regenerated and nothing is restored from a backup. The same applies one level up: policies, prompts, and catalogs are versioned, so reverting one re-validates exactly what that version touched rather than being a migration.</td>
+            <td class="role">Nothing changes under a learner</td>
+            <td><strong>A published revision is immutable</strong>, so a learner finishes on the revision they started and is told only when a change lands ahead of them — never a banner, never a silent rewrite. And because nothing is edited, rollback is a pointer move to an earlier revision that still exists and still carries the approvals and versions it was cleared under: nothing regenerated, nothing restored from a backup. The same applies one level up — policies, prompts, and catalogs are versioned, so reverting one re-validates exactly what that version touched rather than being a migration.</td>
           </tr>
           <tr>
             <td class="role">Every action is reconstructable</td>
@@ -702,9 +702,9 @@ flowchart TD
     <div class="eyebrow">Section 16</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>How is a learner told their revision is no longer current?</strong> They keep reading it, which is settled — but silence is its own message, and a banner on every lesson is worse. This is the one place where a governance decision has to become a piece of learner-facing product.</li>
-      <li><strong>What does the staleness sweep cost at scale?</strong> Because superseded revisions with active readers are swept alongside the live one, a single policy change re-verifies more than one revision per course. The design is right; the bill is unmeasured.</li>
-      <li><strong>Does compliance need a role of its own?</strong> The platform has three organizational roles and none of them is a compliance officer; capabilities can be granted to an existing role through its permission set, but a distinct compliance identity in the audit trail is a schema change, not a configuration one.</li>
+      <li><strong>Over-refusal is invisible in a way under-refusal is not.</strong> A course that reaches an audience it should not have is a detectable failure; a course refused for a rule that should not have applied simply never gets made, and nobody files a report about it. Every guarantee on this page is about the first kind. The evaluation strategy has no equivalent instrument for the second.</li>
+      <li><strong>What actually blocks lifting this into the product?</strong> The prototype models the platform's rules on its own domain deliberately. Three things would have to become real for the architecture to move in: the catalog served at runtime, a managed guardrail in the generation path, and a policy permission distinct from general administration. None is hard; none has been scoped.</li>
+      <li><strong>The sweep is bounded but unmeasured.</strong> A reader grace window caps how far a policy change has to reach, which turns an open-ended cost into a number an organization chooses. What that number costs at real volumes is still a guess.</li>
     </ol>
   </section>
 

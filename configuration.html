@@ -491,6 +491,9 @@ unreachable      fail closed: the run stalls, nothing is published</div>
     <div class="eyebrow">Section 6</div>
     <h2>Rules and numbers</h2>
 
+    <h3>Who counts as “compliance” <span class="status live">exists</span></h3>
+    <p>The owner column above names compliance, and the platform has no such role — three organizational roles, none of them a compliance officer. Rather than add one, the capability is a <strong>permission granted to an existing role</strong>, which the role model already supports. The consequence is worth stating precisely rather than glossing: the audit records the <em>person</em> and the <em>permission they exercised</em>, so a change reads as “made by someone holding the policy permission” — accurate and traceable — but never as a role label. Ownership stays distinguishable; it just is not spelled with a job title.</p>
+
     <h3>The policy bundle <span class="status proposed">added here</span></h3>
     <p>Structural rules — the ones stated about graphs, sets, orderings and roles — are an OPA bundle with its own version. They answer questions the guardrail cannot, and they answer them with a reason rather than a score.</p>
     <div class="formula">may_author(editor, audience)          // role and scope
@@ -504,10 +507,16 @@ approval_chain(course_type)           // who signs, and in what order</div>
   "repair_budget": 2,                    // retries before BlockedRecoverable
   "max_nodes_per_course": 40,
   "max_minutes_per_lesson": 15,          // feeds the Z3 feasibility check
-  "visual_review": "required",           // may an org waive it? see open question 3
-  "publish_requires_second_approver": false
+  "reader_grace_days": 30,               // how long a learner keeps a superseded
+                                         // revision — and therefore how far the
+                                         // staleness sweep has to reach
+  "approval_chain": {
+    "inherit_node_approvals": true,      // unchanged nodes are not re-reviewed
+    "publication_signature": "always"    // every revision is signed on its own
+  }
 }</div>
     <p><strong>A threshold change applies forward only.</strong> Work already approved was approved under the versions stamped on it, which is the entire point of stamping; a tightened repair budget does not un-approve anything. The exception is not really an exception: if a change makes an existing course actually violate a rule, that is a policy version change, and the staleness machinery already handles it.</p>
+    <p><code>reader_grace_days</code> is the entry worth pausing on: it looks like a courtesy to learners and is in fact the only thing bounding the cost of a policy sweep. A revision past its window has no readers, so it leaves the sweep on its own — the number an organization picks here is the number of revisions its compliance changes will have to re-verify.</p>
     <p>Note what the second and third entries do: they are not enforcement, they are <em>inputs to the solver</em>. The feasibility refusal in <a href="walkthrough.html#s2">step&nbsp;3</a> is computed against them, which is why the same code refuses a different brief for a different organization.</p>
   </section>
 
@@ -666,9 +675,8 @@ metadata, titles   → light</div>
     <div class="eyebrow">Section 12</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>Which role owns each source, given that compliance has no seat?</strong> The platform has three organizational roles — admin, editor, member — and no compliance officer among them. Capabilities can be attached to an existing role through its permission set, so nothing is blocked; what is unresolved is whether an audit entry should be able to say “compliance changed this”, which needs a role of its own and therefore a schema change.</li>
-      <li><strong>Does a revision need its own publication signature?</strong> A fork copies its predecessor's approvals so unchanged nodes are not re-reviewed. An organization may nonetheless want every publication signed afresh, however small the change — that is an <code>approval_chain</code> setting, and it is the one place where configuration reaches into the state machine's human stops.</li>
-      <li><strong>Are catalog entries ever hard-removed, or only deprecated?</strong> Hard removal makes older stamps unresolvable, which quietly breaks the ability to explain a published course.</li>
+      <li><strong>How finely does the policy permission split?</strong> Compliance capability is a permission on an existing role, which works — but “may change the guardrail policy” and “may change the thresholds” are different powers with different blast radii, and granting them as one bundle makes the smaller one as heavy as the larger.</li>
+      <li><strong>Should <code>reader_grace_days</code> vary by course type?</strong> A thirty-day tail is generous for onboarding and questionable for a compliance course, where the whole point is that everyone is on the current rules. Varying it means the threshold stops being one number and starts being a policy — which may be the honest answer.</li>
     </ol>
 
     <div class="callout">
