@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transitions &amp; guards — Governed AI Course Generator</title>
+<meta name="description" content="The full transition table for both state machines: current state, event, guard, validation layer, next state — plus legal and forbidden event chains.">
+<meta property="og:title" content="Transitions &amp; guards — Governed AI Course Generator">
+<meta property="og:description" content="What may happen, what may not, and what has no transition at all.">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128279;</text></svg>">
+</head>
+<body>
+
+<style>
+  /* Deliberately single-theme: this document always renders light (paper). */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    color-scheme: light;
+    --paper: #FAF9F5;
+    --ink: #202A35;
+    --muted: #5C6873;
+    --hairline: #DFE2DA;
+    --accent: #0E6E5C;
+    --accent-soft: #E3EFEA;
+    --blocked: #A6512B;
+    --blocked-soft: #F4E7DD;
+    --hitl: #8A6A1F;
+    --hitl-soft: #F3ECD8;
+    --panel: #F2F3EE;
+    --code-bg: #EDEFE8;
+    --diagram-bg: #F4F5F0;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.4rem 5rem; }
+  .wrap-wide { max-width: 54rem; margin: 0 auto; }
+
+  h1, h2, h3, .sans {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; margin: 0.6rem 0 0.9rem; text-wrap: balance; }
+  h2 { font-size: 1.32rem; font-weight: 650; letter-spacing: -0.008em; margin: 0 0 0.9rem; text-wrap: balance; }
+  h3 { font-size: 1.02rem; font-weight: 650; margin: 1.4rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  section { margin-top: 3.2rem; }
+
+  .eyebrow {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .kicker { color: var(--muted); font-size: 1.06rem; margin-bottom: 1.4rem; }
+
+  /* series nav */
+  .series {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--hairline); color: var(--muted);
+  }
+  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
+  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  .series a:hover { border-color: var(--accent); }
+  .series .here { color: var(--ink); font-weight: 650; }
+  .series .soon { color: var(--muted); opacity: 0.75; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.3rem 0 0; }
+  .meta-chip {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 550; color: var(--muted);
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 0.28rem 0.75rem;
+    background: var(--panel);
+  }
+  .meta-chip b { color: var(--ink); font-weight: 650; }
+
+  .thesis {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 0.9rem 1.1rem; border-radius: 0 8px 8px 0;
+    margin: 1.4rem 0;
+  }
+  .thesis p { margin: 0; }
+  .thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
+
+  nav.toc {
+    margin-top: 2.6rem; padding: 1.1rem 1.2rem;
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
+  }
+  nav.toc .toc-title { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.7rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  nav.toc ol { columns: 2; column-gap: 2rem; margin: 0; padding: 0 0 0 1.2rem; font-size: 0.92rem; }
+  nav.toc li { margin-bottom: 0.32rem; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 620px) { nav.toc ol { columns: 1; } }
+
+  ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
+  ul.plain li { margin-bottom: 0.45rem; }
+  ol.steps { padding-left: 1.3rem; margin: 0 0 1rem; }
+  ol.steps li { margin-bottom: 0.55rem; }
+
+  strong { font-weight: 650; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em; background: var(--code-bg);
+    padding: 0.1em 0.38em; border-radius: 4px;
+  }
+  .formula {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0.6rem 0 1rem;
+    line-height: 1.9;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--hairline); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 640px; }
+  thead th {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: left; color: var(--muted); background: var(--panel);
+    padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--hairline);
+  }
+  tbody td { padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.state {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 600; font-size: 0.82rem; white-space: nowrap; color: var(--accent);
+  }
+  td.state.hitl-s { color: var(--hitl); }
+  td.state.blocked-s { color: var(--blocked); }
+  td.ev { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; white-space: nowrap; color: var(--ink); }
+  td small, .muted { color: var(--muted); }
+
+  .diagram {
+    background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 1rem; margin: 1.2rem 0; overflow-x: auto;
+  }
+  .diagram .caption {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.75rem; color: #5C6873; letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 600;
+  }
+  .diagram pre.mermaid { margin: 0; background: transparent; }
+  .diagram .edgeLabel,
+  .diagram .edgeLabel p,
+  .diagram .edgeLabel span,
+  .diagram .edgeLabel div {
+    color: #202A35 !important;
+    background: #F4F5F0 !important;
+  }
+  .diagram svg .labelBkg { background: #F4F5F0 !important; }
+  .diagram svg .edgeLabel rect { fill: #F4F5F0 !important; opacity: 1 !important; }
+  .diagram svg .flowchart-link { stroke: #8B958F !important; }
+  .diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; margin-top: 0.6rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; color: #5C6873; }
+  .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
+
+  .principles { list-style: none; padding: 0; margin: 1.3rem 0; counter-reset: pr; }
+  .principles li {
+    position: relative; padding: 0.75rem 0 0.75rem 2.4rem; border-bottom: 1px solid var(--hairline);
+    counter-increment: pr;
+  }
+  .principles li:last-child { border-bottom: none; }
+  .principles li::before {
+    content: counter(pr);
+    position: absolute; left: 0; top: 0.85rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 650; color: var(--muted);
+    width: 1.7rem; height: 1.7rem; border: 1px solid var(--hairline); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; background: var(--panel);
+  }
+
+  .callout {
+    border: 1px solid var(--accent); border-radius: 12px;
+    background: var(--accent-soft); padding: 1.2rem 1.3rem; margin-top: 3rem;
+  }
+  .callout .eyebrow { margin-bottom: 0.3rem; }
+  .callout p { margin: 0 0 0.7rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .questions { padding-left: 1.3rem; margin: 0; }
+  .questions li { margin-bottom: 0.7rem; }
+
+  .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  .footer-note a { color: var(--accent); }
+
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 2.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* sticky section rail */
+  .rail {
+    position: fixed;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    padding: 0.35rem 0;
+    max-height: 86vh;
+    overflow: hidden;
+  }
+  .rail a {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 0.16rem 0;
+    border: 0;
+  }
+  .rail .tick {
+    display: block;
+    width: 0.85rem;
+    height: 2px;
+    background: var(--hairline);
+    border-radius: 2px;
+    flex: none;
+    transition: width 0.18s ease, background-color 0.18s ease;
+  }
+  .rail .lbl {
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-0.25rem);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .rail:hover .lbl,
+  .rail a:focus-visible .lbl,
+  .rail a.active .lbl { opacity: 1; transform: none; }
+  .rail a:hover .tick { width: 1.5rem; background: var(--accent); }
+  .rail a:hover { color: var(--ink); }
+  .rail a.active .tick { width: 1.5rem; background: var(--accent); }
+  .rail a.active { color: var(--accent); font-weight: 650; }
+  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  .rail .rail-home {
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+  .rail .rail-home .lbl { opacity: 1; transform: none; }
+  @media (min-width: 1280px) { .rail { display: flex; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rail .tick, .rail .lbl { transition: none; }
+  }
+
+  a { color: var(--accent); }
+  ::selection { background: var(--accent-soft); }
+</style>
+
+<style>
+  /* page-local */
+  .status {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.13rem 0.5rem; border-radius: 999px; white-space: nowrap;
+  }
+  .status.planned { background: #E9EBE4; color: var(--muted); }
+  table.trans { font-size: 0.84rem; min-width: 860px; }
+  table.trans td { padding: 0.6rem 0.8rem; }
+  td.st {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; white-space: nowrap; font-weight: 600; color: var(--accent);
+  }
+  td.st.stop { color: var(--blocked); }
+  td.st.human { color: var(--hitl); }
+  td.evt {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.76rem; color: var(--ink);
+  }
+  td.grd {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.74rem; color: var(--muted);
+  }
+  td.lyr {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap;
+  }
+  tbody tr.phase td {
+    background: var(--panel); font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.68rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); padding: 0.45rem 0.8rem;
+  }
+  .guard-def { margin: 1.4rem 0; }
+  .guard-def dt {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem; font-weight: 600; color: var(--accent); margin-top: 0.9rem;
+  }
+  .guard-def dd { margin: 0.2rem 0 0; font-size: 0.94rem; }
+  .guard-def dd .owner {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  }
+  .chain { margin: 1.6rem 0; }
+  .chain h3 { margin-bottom: 0.3rem; }
+</style>
+
+<nav class="rail" aria-label="Sections">
+  <a class="rail-home" href="./"><span class="tick"></span><span class="lbl">← Specification</span></a>
+  <a href="#s1"><span class="tick"></span><span class="lbl">Reading the table</span></a>
+  <a href="#s2"><span class="tick"></span><span class="lbl">Revision transitions</span></a>
+  <a href="#s3"><span class="tick"></span><span class="lbl">Node transitions</span></a>
+  <a href="#s4"><span class="tick"></span><span class="lbl">Guards</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Legal chains</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">Forbidden chains</span></a>
+  <a href="#s7"><span class="tick"></span><span class="lbl">Non-transitions</span></a>
+  <a href="#s8"><span class="tick"></span><span class="lbl">Totality</span></a>
+  <a href="#s9"><span class="tick"></span><span class="lbl">Open questions</span></a>
+</nav>
+
+<div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Detailed specifications</span>
+    <a href="./">← Specification</a>
+    <a href="states.html">State model</a>
+    <a href="walkthrough.html">Walkthrough</a>
+    <a href="configuration.html">Configuration</a>
+    <span class="here">Transitions &amp; guards</span>
+  </div>
+
+  <header>
+    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <h1>Transitions &amp; guards</h1>
+    <p class="kicker">Every legal move in both machines: current state, event, the guard that permits it, the layer that evaluates the guard, and the next state — followed by the sequences that are legal, the sequences that must be refused, and the moves that do not exist at all.</p>
+    <div class="thesis">
+      <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">Revision transitions: <b>42</b></span>
+      <span class="meta-chip">Node transitions: <b>17</b></span>
+      <span class="meta-chip">Guards: <b>24</b></span>
+      <span class="meta-chip">Status: <b>draft for discussion</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#s1">How to read the table</a></li>
+      <li><a href="#s2">Revision transitions</a></li>
+      <li><a href="#s3">Node transitions</a></li>
+      <li><a href="#s4">Every guard, in full</a></li>
+      <li><a href="#s5">Legal event chains</a></li>
+      <li><a href="#s6">Forbidden event chains</a></li>
+      <li><a href="#s7">Moves that do not exist</a></li>
+      <li><a href="#s8">Totality, determinism, concurrency</a></li>
+      <li><a href="#s9">Open questions</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1">
+    <div class="eyebrow">Section 1</div>
+    <h2>How to read the table</h2>
+    <p>Five columns, and the middle three are the whole point.</p>
+    <ul class="plain">
+      <li><strong>From / To</strong> — states from the <a href="states.html">state model</a>. Remember that the course machine runs <em>per revision</em>: “the course” below means the revision being worked on or served.</li>
+      <li><strong>Event</strong> — what arrives. Three sources, never mixed: a person, the model, or the infrastructure. Events written <code>(auto)</code> are the machine's own continuation once a batch of checks returns — no external actor is involved.</li>
+      <li><strong>Guard</strong> — a predicate that must hold for the move to be legal. If it does not hold, <em>the transition does not happen</em> — not “happens and gets logged as a warning”.</li>
+      <li><strong>Layer</strong> — who evaluates the guard. Every guard has exactly one owner, and no guard is evaluated twice by two tools.</li>
+    </ul>
+    <div class="thesis">
+      <p><strong>Refusals are transitions too.</strong> A failed check is not an error path bolted onto a happy path — it is a row in this table with its own destination state, its own explanation, and its own next move for the editor. That is why the tables below are roughly half refusals: in a governed system that is the normal case, not the exception.</p>
+    </div>
+    <p>Two conventions worth stating before the tables. A guard written <code>¬p</code> is the refusing branch of the same evaluation as <code>p</code> — one check, two destinations. And where a row's <strong>To</strong> names a different revision, the row is a <em>spawn</em>: the revision the row is about does not move at all.</p>
+  </section>
+
+  <section id="s2" class="wrap-wide">
+    <div class="eyebrow">Section 2</div>
+    <h2>Revision transitions</h2>
+    <div class="table-scroll">
+      <table class="trans">
+        <thead>
+          <tr><th>From</th><th>Event</th><th>Guard</th><th>Layer</th><th>To</th></tr>
+        </thead>
+        <tbody>
+          <tr class="phase"><td colspan="5">The brief — three refusals before the first token</td></tr>
+          <tr><td class="st">AwaitingBrief</td><td class="evt">BriefSubmitted</td><td class="grd">—</td><td class="lyr">—</td><td class="st">BriefValidation</td></tr>
+          <tr><td class="st">BriefValidation</td><td class="evt">(auto)</td><td class="grd">¬schema_valid(brief)</td><td class="lyr">JSON Schema</td><td class="st stop">BlockedRecoverable</td></tr>
+          <tr><td class="st">BriefValidation</td><td class="evt">(auto)</td><td class="grd">¬policy_allows(author, audience)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
+          <tr><td class="st">BriefValidation</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(brief)</td><td class="lyr">Guardrail</td><td class="st stop">BlockedFinal</td></tr>
+          <tr><td class="st">BriefValidation</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">schema_valid ∧ policy_allows</td><td class="lyr">Schema · OPA</td><td class="st">BriefFeasibility</td></tr>
+          <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">feasible(brief)</td><td class="lyr">Z3</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">¬feasible(brief) — unsat core</td><td class="lyr">Z3</td><td class="st stop">BlockedRecoverable</td></tr>
+          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BriefSubmitted</td><td class="grd">—</td><td class="lyr">—</td><td class="st">BriefValidation</td></tr>
+
+          <tr class="phase"><td colspan="5">The skeleton</td></tr>
+          <tr><td class="st">OutlineDrafting</td><td class="evt">OutlineGenerated</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutlineGuardrail</td></tr>
+          <tr><td class="st">OutlineDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
+          <tr><td class="st">OutlineGuardrail</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">guardrail_clean(outline)</td><td class="lyr">Guardrail</td><td class="st">OutlineChecks</td></tr>
+          <tr><td class="st">OutlineGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(outline)</td><td class="lyr">Guardrail</td><td class="st stop">OutlineRepair</td></tr>
+          <tr><td class="st">OutlineChecks</td><td class="evt">(auto)</td><td class="grd">schema_valid ∧ skills_grounded ∧ policy_allows ∧ feasible</td><td class="lyr">Schema · Datalog · OPA · Z3</td><td class="st human">OutlineReview</td></tr>
+          <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(structure)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
+          <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">OutlineRepair</td></tr>
+          <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineApproved</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
+
+          <tr class="phase"><td colspan="5">Content, and the guard that ends it</td></tr>
+          <tr><td class="st">ContentInProgress</td><td class="evt">(node state changed)</td><td class="grd">all_nodes_approved ∧ no_stale_nodes ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">ReadyForReview</td></tr>
+          <tr><td class="st">ReadyForReview</td><td class="evt">NodeEdited(any)</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st">ReadyForReview</td><td class="evt">CourseChecksRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">WholeCourseChecks</td></tr>
+          <tr><td class="st">WholeCourseChecks</td><td class="evt">(auto)</td><td class="grd">objectives_covered ∧ ordering_acyclic ∧ no_permission_leak ∧ trace_satisfies_ltl</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st human">PendingApproval</td></tr>
+          <tr><td class="st">WholeCourseChecks</td><td class="evt">CheckFailed(layer, nodes)</td><td class="grd">any of the above fails</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st human">PendingApproval</td><td class="evt">ApprovalRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st human">PendingApproval</td><td class="evt">ApprovalGranted</td><td class="grd">approval_chain_satisfied</td><td class="lyr">OPA</td><td class="st">Approved</td></tr>
+          <tr><td class="st">Approved</td><td class="evt">(sent back to work)</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st">Approved</td><td class="evt">PublishRequested</td><td class="grd">versions_current ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">Published</td></tr>
+
+          <tr class="phase"><td colspan="5">Live — where nothing is edited</td></tr>
+          <tr><td class="st">Published</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn; this revision does not move)</small></td></tr>
+          <tr><td class="st">Published</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision)</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st">Published</td><td class="evt">WithdrawRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
+          <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">successor published</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
+          <tr><td class="st">Published</td><td class="evt">ArchiveRequested</td><td class="grd">¬is_live(revision)</td><td class="lyr">State store</td><td class="st">Archived</td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">any of the above fails</td><td class="lyr">All layers</td><td class="st stop">Withdrawn</td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
+          <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st stop">Withdrawn</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn)</small></td></tr>
+
+          <tr class="phase"><td colspan="5">Infrastructure</td></tr>
+          <tr><td class="st stop">ErrorRecovery</td><td class="evt">(auto)</td><td class="grd">¬idempotency_key_unused(op) — the write landed</td><td class="lyr">State store</td><td class="st">the state after the operation</td></tr>
+          <tr><td class="st stop">ErrorRecovery</td><td class="evt">(auto)</td><td class="grd">idempotency_key_unused(op) ∧ retry_budget_left</td><td class="lyr">State store</td><td class="st">the state that issued the operation</td></tr>
+          <tr><td class="st stop">ErrorRecovery</td><td class="evt">(auto)</td><td class="grd">idempotency_key_unused(op) ∧ ¬retry_budget_left</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p><code>BlockedFinal</code> and <code>Archived</code> have no outgoing rows. That is what terminal means here, and it is enforced by the absence of a row rather than by a check inside one.</p>
+    </div>
+  </section>
+
+  <section id="s3" class="wrap-wide">
+    <div class="eyebrow">Section 3</div>
+    <h2>Node transitions</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Seventeen rows, and every one of them runs inside a draft revision. There is no node transition that can fire against a published one — which is the immutability decision expressed as an absence rather than as a rule.</p>
+    </div>
+    <div class="table-scroll">
+      <table class="trans">
+        <thead>
+          <tr><th>From</th><th>Event</th><th>Guard</th><th>Layer</th><th>To</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">is_draft_revision ∧ policy_allows(generate, node)</td><td class="lyr">State store · OPA</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st">Planned <small>(exam)</small></td><td class="evt">NodeGenerationRequested</td><td class="grd">content_approved(topics(exam))</td><td class="lyr">Datalog</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">—</td><td class="lyr">—</td><td class="st">Generated</td></tr>
+          <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
+          <tr><td class="st">Generated</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutputGuardrail</td></tr>
+          <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st">NodeChecks</td></tr>
+          <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st stop">NodeRepair</td></tr>
+          <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Prolog</td><td class="st">Validated</td></tr>
+          <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(content)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
+          <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">NodeRepair</td></tr>
+          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(node)</td><td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">course → BlockedRecoverable</td></tr>
+          <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node)</td><td class="lyr">Catalog flag · Human</td><td class="st human">NodeApproved</td></tr>
+          <tr><td class="st">Validated</td><td class="evt">NodeRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">NodeRepair</td></tr>
+          <tr><td class="st human">NodeApproved</td><td class="evt">NodeEdited</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
+          <tr><td class="st human">NodeApproved</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited)</td><td class="lyr">Datalog</td><td class="st">NeedsRevalidation</td></tr>
+          <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">NodeChecks</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <h3>Three events this table had to add</h3>
+      <p>Writing a transition table is the exercise that finds the events an inventory missed, so it is worth naming them rather than quietly folding them in:</p>
+      <ul class="plain">
+        <li><code>NodeGenerationRequested</code> — the editor picking a node and starting it. The catalogue had <code>NodeGenerated</code>, which is the model <em>finishing</em>; the two were being conflated.</li>
+        <li><code>CourseChecksRequested</code> — the editor declaring the revision done. Without it, <code>ReadyForReview</code> would have to run whole-course checks the instant its guard turned true, which is both expensive and wrong: reaching the state means the machine has nothing left to object to, not that the editor has finished.</li>
+        <li><code>WithdrawRequested</code> — pulling a live revision off air without waiting for a re-check. The state model offered “withdraw early” as an action with no event behind it.</li>
+      </ul>
+      <p>Two of the three exist because a state can be <em>entered</em> automatically and still need a human to <em>leave</em> it. That distinction does not show up in a state list at all.</p>
+    </div>
+  </section>
+
+  <section id="s4">
+    <div class="eyebrow">Section 4</div>
+    <h2>Every guard, in full</h2>
+    <p>The state model named thirteen core guards; the tables above need eleven more to be complete. All twenty-four, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+
+    <dl class="guard-def">
+      <dt>schema_valid(artifact)</dt>
+      <dd><span class="owner">JSON Schema</span> — the brief, the outline, or a block has the shape it must have. Refuses with the failing path and the expected type.</dd>
+
+      <dt>policy_allows(action, role, state)</dt>
+      <dd><span class="owner">OPA</span> — may this actor take this action, over this audience, in this state? Refuses with the rule that denied and a human-readable reason. <strong>The only guard whose refusal is terminal.</strong></dd>
+
+      <dt>guardrail_clean(artifact)</dt>
+      <dd><span class="owner">Managed guardrail</span> — text and images carry nothing forbidden. Refuses with a category, never with a matched string. Unreachable service counts as refusal.</dd>
+
+      <dt>feasible(brief)</dt>
+      <dd><span class="owner">Z3</span> — the brief's requirements are mutually satisfiable, and satisfiable against the organization's thresholds. Refuses with an unsat core: the smallest set of requirements that cannot hold together.</dd>
+
+      <dt>skills_grounded(outline)</dt>
+      <dd><span class="owner">Datalog</span> — every skill the outline claims is derivable from the organization's catalog. Refuses by naming the invented skills.</dd>
+
+      <dt>grounded(node)</dt>
+      <dd><span class="owner">Datalog</span> — every claim in the node hangs on a retrieved chunk. Refuses by naming the unsupported claims.</dd>
+
+      <dt>no_permission_leak(scope)</dt>
+      <dd><span class="owner">Datalog</span> — no source used anywhere in the scope is invisible to any member of the intended audience. Refuses with the path: node → source → the audience that lacks rights.</dd>
+
+      <dt>ordering_acyclic(course)</dt>
+      <dd><span class="owner">Datalog</span> — the prerequisite graph has no cycles and agrees with lesson order. Refuses with the cycle.</dd>
+
+      <dt>objectives_covered(scope)</dt>
+      <dd><span class="owner">Prolog</span> — every learning objective is closed by some node. Refuses with the uncovered objectives, which is also what drives the editor's next-best-action.</dd>
+
+      <dt>content_approved(topics(exam))</dt>
+      <dd><span class="owner">Datalog</span> — an exam may not be generated before the topics it tests are approved. Refuses by naming the topics still outstanding.</dd>
+
+      <dt>depends_on(node, edited)</dt>
+      <dd><span class="owner">Datalog</span> — the staleness cascade, evaluated as a guard rather than run as a procedure. Returns the dependency path, which becomes the reason recorded on each withdrawn approval.</dd>
+
+      <dt>trace_satisfies_ltl(course)</dt>
+      <dd><span class="owner">Temporal logic</span> — the recorded history obeys every invariant. The only guard that reads the past rather than the present. Refuses with the violated formula and the event that broke it.</dd>
+
+      <dt>block_schemas_valid(node)</dt>
+      <dd><span class="owner">Catalog schema</span> — every block validates against the settings schema its catalog entry names, at the catalog version stamped on the revision.</dd>
+
+      <dt>all_visuals_reviewed(node)</dt>
+      <dd><span class="owner">Catalog flag · Human</span> — every block whose type carries <code>requires_visual_review</code> has been looked at by a person. Refuses with the queue of unreviewed visuals.</dd>
+
+      <dt>all_nodes_approved(revision) · no_stale_nodes(revision)</dt>
+      <dd><span class="owner">State store</span> — the two quantified conditions that lift a revision out of <code>ContentInProgress</code>. Refuse with the offending nodes.</dd>
+
+      <dt>retry_budget_left(scope)</dt>
+      <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. Refusing is what turns a repair loop into a stop.</dd>
+
+      <dt>idempotency_key_unused(operation)</dt>
+      <dd><span class="owner">State store</span> — has this side-effecting operation already landed? Asked <em>before</em> any retry, which is what makes a timeout an unknown rather than a failure.</dd>
+
+      <dt>versions_current(artifact)</dt>
+      <dd><span class="owner">State store</span> — the stamps on the artifact match the current policy, guardrail, catalog and KB versions. Refusing sends a live revision to <code>StaleReview</code> rather than blocking it.</dd>
+
+      <dt>is_draft_revision(revision)</dt>
+      <dd><span class="owner">State store</span> — this revision has never been published. Guards every editing transition in both machines; it is the single point at which immutability is enforced.</dd>
+
+      <dt>differs_from_live(revision)</dt>
+      <dd><span class="owner">State store</span> — this revision is not byte-identical to the one currently serving. Stops a fork nobody touched from being published and moving the pointer for nothing.</dd>
+
+      <dt>affected(revision) · has_active_readers(revision)</dt>
+      <dd><span class="owner">Datalog · State store</span> — which revisions a configuration change reaches, and whether anyone is still reading a superseded one. Together they scope the staleness sweep.</dd>
+
+      <dt>approval_chain_satisfied(revision)</dt>
+      <dd><span class="owner">OPA</span> — the signatures this organization requires for publication are present. Configuration decides how many and whose; the guard only checks.</dd>
+    </dl>
+
+    <div class="thesis">
+      <p><strong>Every guard refuses with an artifact, not a boolean.</strong> An unsat core, a dependency path, a violated formula, a named rule, a queue of unreviewed images. This is the property that makes the difference between a system that blocks and a system that can be worked with — and it is also what a repair loop consumes on its next attempt.</p>
+    </div>
+  </section>
+
+  <section id="s5">
+    <div class="eyebrow">Section 5</div>
+    <h2>Legal event chains</h2>
+    <p>Four sequences the machine must accept. Each is a path through the tables above, written as the trace would record it.</p>
+
+    <div class="chain">
+      <h3>1 · The shortest legal life of a course</h3>
+      <div class="formula">BriefSubmitted → GuardrailVerdict(allow) → (feasible) → OutlineGenerated
+  → GuardrailVerdict(allow) → (checks pass) → OutlineApproved
+  → NodeGenerationRequested ×N → NodeGenerated ×N → GuardrailVerdict(allow) ×N
+  → (checks pass) ×N → NodeApproved ×N
+  → CourseChecksRequested → (checks pass) → ApprovalGranted → PublishRequested
+
+AwaitingBrief → … → Published, no repair, no refusal</div>
+      <p>Notice what is <em>not</em> optional even here: three guardrail verdicts, two batches of formal checks, and three separate human decisions. The shortest legal path still cannot skip a layer.</p>
+    </div>
+
+    <div class="chain">
+      <h3>2 · A repair inside the budget</h3>
+      <div class="formula">NodeGenerated → GuardrailVerdict(allow) → CheckFailed(datalog, ungrounded)
+  → [retry_budget_left ✓] → NodeGenerationRequested
+  → NodeGenerated → GuardrailVerdict(allow) → (checks pass) → NodeApproved</div>
+      <p>Legal because <code>retry_budget_left</code> held at the moment of the repair. The same chain with one more failure is <a href="#s6">forbidden chain 8</a> — the difference between them is a counter, not a category.</p>
+    </div>
+
+    <div class="chain">
+      <h3>3 · Revising a live course, and rolling it back</h3>
+      <div class="formula">rev 1: Published
+ReviseRequested → rev 2 spawned in ContentInProgress
+  NodeEdited(T) [is_draft_revision ✓ — on rev 2]
+  → (cascade, checks, approvals inside rev 2)
+  → ApprovalGranted → PublishRequested [differs_from_live ✓]
+  → LivePointerMoved:  rev 2 → Published,  rev 1 → Superseded
+
+RollbackRequested(rev 1) → rev 1 → StaleReview
+  → (re-verified against current versions, passes)
+  → LivePointerMoved:  rev 1 → Published (re-stamped),  rev 2 → Superseded</div>
+      <p>The rollback is legal <em>because</em> it went through <code>StaleReview</code>. Written as a direct <code>Superseded → Published</code> it is <a href="#s6">forbidden chain 6</a>, and the same two revisions end in the same two states — the difference is entirely in whether a re-verification happened on the way.</p>
+    </div>
+
+    <div class="chain">
+      <h3>4 · A rule changes and nothing stops</h3>
+      <div class="formula">PolicyChanged(v7 → v8)
+  affected(rev A) ✓ → rev A: Published → StaleReview
+  affected(rev B) ✗ → rev B: untouched, still Published
+  affected(rev C) ✓ ∧ has_active_readers ✓ → rev C: Superseded → StaleReview
+
+rev A: (re-check passes) → Published, re-stamped v8
+rev C: (re-check fails)  → Withdrawn, readers cut over</div>
+      <p>Three revisions, one event, three different outcomes, no deployment and no downtime. This chain is the practical answer to “what happens when compliance changes its mind”, and it is legal precisely because none of it edits anything.</p>
+    </div>
+  </section>
+
+  <section id="s6" class="wrap-wide">
+    <div class="eyebrow">Section 6</div>
+    <h2>Forbidden event chains</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>The sequences the machine must refuse, each with the guard that refuses it and what the person attempting it is told. A governed system is defined more precisely by this table than by the previous one.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Attempted chain</th><th>Refused by</th><th>What the editor sees</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="role">1 · Generate a node before the skeleton is approved<br><small class="muted">BriefSubmitted → OutlineGenerated → <b>NodeGenerationRequested</b></small></td>
+            <td>No such transition — nodes do not exist before <code>OutlineApproved</code>. Caught after the fact by <code>G(content_generated(N) → O outline_approved)</code></td>
+            <td>Nothing to click: the nodes are not there yet</td>
+          </tr>
+          <tr>
+            <td class="role">2 · Write the exam before its topics are approved<br><small class="muted">NodeApproved(T1) → <b>NodeGenerationRequested(exam)</b></small></td>
+            <td><code>content_approved(topics(exam))</code> — Datalog</td>
+            <td>“The exam covers T2 and T3, which are not approved yet” — with the two topics listed</td>
+          </tr>
+          <tr>
+            <td class="role">3 · Edit a published course<br><small class="muted">Published → <b>NodeEdited</b></small></td>
+            <td><code>is_draft_revision</code> — state store</td>
+            <td>The edit control is replaced by “Revise” — which forks a new revision rather than refusing outright</td>
+          </tr>
+          <tr>
+            <td class="role">4 · Publish with a stale node<br><small class="muted">NodeEdited → <b>PublishRequested</b></small></td>
+            <td><code>no_stale_nodes</code> — the revision never reaches <code>ReadyForReview</code></td>
+            <td>The publish action is unavailable, with the stale nodes named and a re-run offered</td>
+          </tr>
+          <tr>
+            <td class="role">5 · Publish a fork nobody edited<br><small class="muted">ReviseRequested → <b>PublishRequested</b></small></td>
+            <td><code>differs_from_live</code> — state store</td>
+            <td>“This revision is identical to the one already live” — publishing would move the pointer and rewrite history for nothing</td>
+          </tr>
+          <tr>
+            <td class="role">6 · Roll back straight into service<br><small class="muted">Superseded → <b>Published</b></small></td>
+            <td>No such transition; <code>RollbackRequested</code> only ever reaches <code>StaleReview</code></td>
+            <td>Rollback is offered, but it runs a re-verification first and may end in <code>Withdrawn</code> instead</td>
+          </tr>
+          <tr>
+            <td class="role">7 · Approve a node whose image nobody looked at<br><small class="muted">Validated → <b>NodeApproved</b></small></td>
+            <td><code>all_visuals_reviewed</code> — catalog flag</td>
+            <td>The approval button stays disabled next to a queue of unreviewed visuals</td>
+          </tr>
+          <tr>
+            <td class="role">8 · A third repair attempt<br><small class="muted">CheckFailed → CheckFailed → <b>CheckFailed</b></small></td>
+            <td><code>retry_budget_left</code> — state store</td>
+            <td><code>BlockedRecoverable</code>, with all three failure explanations and the editor's options</td>
+          </tr>
+          <tr>
+            <td class="role">9 · Retry after a timeout without checking<br><small class="muted">Timeout → <b>NodeGenerationRequested</b></small></td>
+            <td><code>idempotency_key_unused</code> — state store</td>
+            <td>Nothing — the machine resolves it, and may not retry at all if the write landed</td>
+          </tr>
+          <tr>
+            <td class="role">10 · Approve a node citing a restricted source<br><small class="muted">NodeChecks → <b>Validated</b></small></td>
+            <td><code>no_permission_leak</code> — Datalog</td>
+            <td>The leak path: node → source → the audience that lacks rights, with the source excluded on retry</td>
+          </tr>
+          <tr>
+            <td class="role">11 · Reopen a policy-blocked course<br><small class="muted">BlockedFinal → <b>anything</b></small></td>
+            <td>No outgoing transition exists at all</td>
+            <td>Read-only, with the deny reason. The path forward is a new brief, not an unblock</td>
+          </tr>
+          <tr>
+            <td class="role">12 · Proceed while the guardrail is unreachable<br><small class="muted">NodeGenerated → <b>NodeChecks</b></small></td>
+            <td>No <code>GuardrailVerdict</code> arrives, and no transition leaves <code>OutputGuardrail</code> without one</td>
+            <td>The run stalls in <code>ErrorRecovery</code>. Absence of a verdict is never a permissive verdict</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Three of these — 1, 6 and 11 — are refused by <strong>the absence of a row</strong> rather than by a guard evaluating to false. That is the stronger form: a guard can be misconfigured, a missing transition cannot. Where a refusal matters most, prefer to make the move unrepresentable rather than merely disallowed.</p>
+    </div>
+  </section>
+
+  <section id="s7">
+    <div class="eyebrow">Section 7</div>
+    <h2>Moves that do not exist</h2>
+    <p>Worth listing separately, because each is a move a reasonable person would expect to find:</p>
+    <ul class="plain">
+      <li><strong><code>Published → ContentInProgress</code></strong> — the transition the model deliberately does not have. Revising a live course spawns a different revision; the live one never moves. On the diagram this edge is dotted for exactly that reason.</li>
+      <li><strong><code>Superseded → Published</code></strong> — rollback goes through re-verification or not at all.</li>
+      <li><strong><code>BlockedFinal → *</code></strong> — no admin override. A terminal state an administrator can undo is terminal in name only.</li>
+      <li><strong><code>Validated → Published</code></strong> — nodes are never published; revisions are. A node reaching <code>Validated</code> means the formal layers are satisfied, which is not the same as anyone having agreed to it.</li>
+      <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in seventeen rows.</li>
+      <li><strong>A skip from <code>Generated</code> to <code>NodeChecks</code></strong> — there is no path that avoids the guardrail hop, which is what makes <code>G(generated(A) → O guardrail_checked(A))</code> checkable over the trace rather than merely intended.</li>
+    </ul>
+  </section>
+
+  <section id="s8">
+    <div class="eyebrow">Section 8</div>
+    <h2>Totality, determinism, concurrency</h2>
+
+    <h3>The transition function is partial, and that is explicit</h3>
+    <p>Most (state, event) pairs have no row. An event arriving where no row matches is <strong>recorded and discarded</strong> — it does not error, does not queue, and above all does not fall through to a default. A stale <code>GuardrailVerdict</code> arriving after the editor cancelled a run is the ordinary case for this, and the trace keeps it so that “why did nothing happen?” has an answer.</p>
+
+    <h3>Determinism</h3>
+    <p>No (state, event) pair has two rows whose guards can both hold. Where two rows share a state and an event they are complementary branches of one evaluation — <code>p</code> and <code>¬p</code> — so the next state is a function of the current state, the event, and the guard results, with no ordering dependence and no first-match-wins rule to remember.</p>
+    <p>The guards themselves are deterministic by construction: every one is owned by a formal layer or the state store. The single non-deterministic input to the whole system — the model — is not consulted by any guard. It produces artifacts that guards judge, and that asymmetry is the reason the machine can be reasoned about at all.</p>
+
+    <h3>Two editors, one revision</h3>
+    <p>Node work is naturally partitioned — two editors on two nodes do not interact, and the course-level guard simply observes whatever the node states become. What genuinely conflicts is two editors on the same node, and the same revision-level action taken twice. The draft treats revision-level transitions as serialized per revision and node transitions as serialized per node, with <code>idempotency_key</code> making a repeated request a no-op rather than a second side effect. Whether that is enough at the interface level — one editor watching another's approval land under them — is the third open question below.</p>
+  </section>
+
+  <section id="s9">
+    <div class="eyebrow">Section 9</div>
+    <h2>Open questions</h2>
+    <ol class="questions">
+      <li><strong>What if a course ends up with no serving revision?</strong> The live revision is withdrawn, the rollback target fails its own re-verification, and there is nothing to serve. Every state is individually correct and the course is unusable. This wants either a named state or an explicit statement that it is an acceptable outcome for an editor to resolve — and the tables above currently imply the latter without saying so.</li>
+      <li><strong>Is <code>ErrorRecovery</code> one state or two?</strong> It appears in both tables, scoped once to a revision and once to a node. They behave identically and carry the same field, but a single state that can be entered from two machines is either an elegant reuse or a bookkeeping trap, depending on how recovery is implemented.</li>
+      <li><strong>How much concurrency does the interface owe the editor?</strong> Serializing per node and per revision is correct at the data layer. What an editor should <em>see</em> when a colleague approves a node they are reading is a product question the state machine does not answer.</li>
+      <li><strong>Should <code>WithdrawRequested</code> require a reason?</strong> Every other human transition that removes something — rejection, rollback — carries an explanation into the audit. Withdrawal currently does not, which is inconsistent, and withdrawal is the one an auditor is most likely to ask about.</li>
+    </ol>
+
+    <div class="callout">
+      <div class="eyebrow">Related pages</div>
+      <p><strong><a href="states.html">State model</a></strong> — what each state means, why it exists, and the nine situations the machine actually meets.</p>
+      <p><strong><a href="walkthrough.html">Walkthrough</a></strong> — these transitions taken in order, once, by a course that succeeds.</p>
+      <p><strong><a href="configuration.html">Configuration</a></strong> — where the thresholds inside these guards come from.</p>
+      <p><strong>Validation layers</strong> <span class="status planned">next</span> — the concrete rules behind each guard: the Rego, the Z3 constraints, the Datalog clauses, and the explanation each produces when it refuses.</p>
+    </div>
+  </section>
+
+  <p class="footer-note">Transitions &amp; guards · draft v0.1 · 28 July 2026 · companion to the <a href="./">spec v2</a> and the <a href="states.html">state model</a></p>
+</div>
+
+<script>
+  (function () {
+    var rail = document.querySelector('.rail');
+    if (!rail) return;
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a[href^="#"]'));
+    var targets = links.map(function (a) {
+      return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+    }).filter(function (t) { return t.el; });
+    if (!targets.length) return;
+
+    var current = null;
+    var apply = function (t) {
+      if (t === current) return;
+      current = t;
+      targets.forEach(function (x) {
+        var on = x === t;
+        x.link.classList.toggle('active', on);
+        if (on) { x.link.setAttribute('aria-current', 'true'); }
+        else { x.link.removeAttribute('aria-current'); }
+      });
+    };
+
+    var update = function () {
+      var mid = window.innerHeight * 0.4;
+      var pick = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].el.getBoundingClientRect().top <= mid) pick = targets[i];
+      }
+      // at the very bottom of the page the last section wins
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+        pick = targets[targets.length - 1];
+      }
+      apply(pick);
+    };
+
+    // rAF-throttled, but never able to wedge: if a frame never arrives
+    // (background tab, throttled timers) the age guard flushes directly.
+    var queued = false;
+    var lastRun = 0;
+    var flush = function () {
+      queued = false;
+      lastRun = Date.now();
+      update();
+    };
+    var onScroll = function () {
+      if (Date.now() - lastRun > 300) { flush(); return; }
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(flush);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('hashchange', function () { setTimeout(update, 60); });
+    window.addEventListener('load', function () { setTimeout(update, 50); });
+    // diagrams render after load and shift every offset below them
+    setTimeout(update, 900);
+    update();
+  })();
+</script>
+</body>
+</html>

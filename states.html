@@ -287,7 +287,7 @@
     <span class="here">State model</span>
     <a href="walkthrough.html">Walkthrough</a>
     <a href="configuration.html">Configuration</a>
-    <span class="soon">Transitions &amp; guards — next</span>
+    <a href="transitions.html">Transitions &amp; guards</a>
   </div>
 
   <header>
@@ -700,6 +700,8 @@ rollback   move the pointer back to rev 1. No regeneration, no restore.</div>
           <tr><td class="ev">NodeEdited</td><td>human</td><td>node, then the cascade</td></tr>
           <tr><td class="ev">PolicyChanged / CatalogChanged / KBUpdated</td><td>organization configuration</td><td>every stamped artifact</td></tr>
           <tr><td class="ev">PublishRequested / ApprovalGranted / ApprovalRejected</td><td>human</td><td>course</td></tr>
+          <tr><td class="ev">NodeGenerationRequested</td><td>human</td><td>node — the editor starts one, distinct from the model finishing it</td></tr>
+          <tr><td class="ev">CourseChecksRequested</td><td>human</td><td>course — the editor declares the revision done</td></tr>
           <tr><td class="ev">ReviseRequested</td><td>human</td><td>forks a new revision from a published or withdrawn one</td></tr>
           <tr><td class="ev">RollbackRequested</td><td>human, with a reason</td><td>a superseded revision → <code>StaleReview</code>, to earn its way back</td></tr>
           <tr><td class="ev">WithdrawRequested</td><td>human</td><td>pulls a live revision off air without waiting for the re-check</td></tr>
@@ -727,7 +729,7 @@ idempotency_key_unused(operation)
 objectives_covered(course)
 is_draft_revision(course)       — nothing published may be edited
 differs_from_live(revision)     — an unchanged fork is not publishable</div>
-    <p>Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
+    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all twenty-four, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
   </section>
 
   <section id="s8">
@@ -781,7 +783,7 @@ G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
     <div class="eyebrow">Companion pages</div>
     <p><strong><a href="walkthrough.html">Walkthrough — one course, end to end</a></strong> — these states seen from inside a single run that succeeds: twenty-four steps, three human stops, and what still reaches the course after publication.</p>
     <p><strong><a href="configuration.html">Configuration</a></strong> — the catalogs, policies and thresholds these states read, and the version stamps written at every approval.</p>
-    <p><strong>Transitions &amp; guards</strong> — next: the full table the brief asks for — current state, event, guard, validation layer, next state — plus examples of valid and forbidden event chains.</p>
+    <p><strong><a href="transitions.html">Transitions &amp; guards</a></strong> — the full table these states move through: every legal transition with its guard and layer, four legal event chains, twelve forbidden ones, and the moves that deliberately do not exist.</p>
   </div>
 
   <p class="footer-note">State inventory · draft v0.2 · 28 July 2026 · companion to the <a href="./">spec v2</a>, the <a href="walkthrough.html">walkthrough</a> and the <a href="configuration.html">configuration</a></p>

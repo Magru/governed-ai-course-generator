@@ -345,10 +345,10 @@
         <span class="card-title">Configuration <span class="status draft">draft</span></span>
         <span class="card-desc">The seven sources the generator reads at runtime — catalogs, access rules, guardrail policy, policy bundle, thresholds, model routing — their owners, their record shapes, and what is deliberately left as code.</span>
       </a>
-      <span class="card">
-        <span class="card-title">Transitions &amp; guards <span class="status planned">next</span></span>
-        <span class="card-desc">The full transition table — current state, event, guard, validation layer, next state. <strong>Owns the event chains:</strong> worked examples of legal sequences, and of forbidden ones with the guard that refuses each, including every attempt to edit a published revision.</span>
-      </span>
+      <a class="card" href="transitions.html">
+        <span class="card-title">Transitions &amp; guards <span class="status draft">draft</span></span>
+        <span class="card-desc">Every legal move in both machines — state, event, guard, layer, next state — with all twenty-four guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
+      </a>
       <span class="card">
         <span class="card-title">Validation layers <span class="status planned">planned</span></span>
         <span class="card-desc">Which engine owns which check, the concrete rules written out, and the explanation each layer produces when it refuses.</span>
@@ -714,7 +714,7 @@ flowchart TD
     <p>Everything operational — full state tables, transition rules, concrete policies, the action registry, the test suite — lives in the detailed specifications linked at the top, which grow as the build proceeds.</p>
   </div>
 
-  <p class="footer-note">Specification v2 · <a href="states.html">state model</a> · <a href="walkthrough.html">walkthrough</a> · <a href="configuration.html">configuration</a> · updated 28 July 2026</p>
+  <p class="footer-note">Specification v2 · <a href="states.html">state model</a> · <a href="walkthrough.html">walkthrough</a> · <a href="configuration.html">configuration</a> · <a href="transitions.html">transitions</a> · updated 28 July 2026</p>
 </div>
 
 <script type="module">
