@@ -227,6 +227,25 @@
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
   /* sticky section rail */
+  /* series strip — the same top navigation the drill-down pages carry */
+  .series {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--hairline); color: var(--muted);
+  }
+  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
+  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  .series a:hover { border-color: var(--accent); }
+  .series .here { color: var(--ink); font-weight: 650; }
+  .series .soon { color: var(--muted); opacity: 0.75; }
+
+  .drill-soon {
+    font-size: 0.85rem; color: var(--muted); line-height: 1.6;
+    margin: 0.8rem 0 0; padding-top: 0.8rem; border-top: 1px dashed var(--hairline);
+  }
+  .drill-soon b { color: var(--ink); font-weight: 650; }
+
   .rail {
     position: fixed;
     left: 1.75rem;
@@ -274,6 +293,19 @@
   .rail a:hover { color: var(--ink); }
   .rail a.active .tick { width: 1.5rem; background: var(--accent); }
   .rail a.active { color: var(--accent); font-weight: 650; }
+  .rail .rail-pages {
+    display: flex; flex-direction: column; gap: 0.08rem;
+    margin-bottom: 0.55rem; padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .rail .rail-pages .rail-cap {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.3rem; padding-left: 1.4rem;
+  }
+  .rail .rail-pages a { color: var(--accent); font-size: 0.73rem; font-weight: 650; }
+  .rail .rail-pages a .lbl { opacity: 1; transform: none; }
+  .rail .rail-pages a .tick { background: var(--accent); opacity: 0.4; }
+  .rail .rail-pages a:hover .tick { width: 1.5rem; opacity: 1; }
   .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
   .rail .rail-home {
     margin-bottom: 0.45rem;
@@ -294,6 +326,13 @@
 </style>
 
 <nav class="rail" aria-label="Sections">
+  <span class="rail-pages">
+    <span class="rail-cap">Detailed specs</span>
+    <a href="states.html"><span class="tick"></span><span class="lbl">State model</span></a>
+    <a href="walkthrough.html"><span class="tick"></span><span class="lbl">Walkthrough</span></a>
+    <a href="configuration.html"><span class="tick"></span><span class="lbl">Configuration</span></a>
+    <a href="transitions.html"><span class="tick"></span><span class="lbl">Transitions &amp; guards</span></a>
+  </span>
   <a href="#s1"><span class="tick"></span><span class="lbl">Context</span></a>
   <a href="#s2"><span class="tick"></span><span class="lbl">Problem</span></a>
   <a href="#s3"><span class="tick"></span><span class="lbl">Principle</span></a>
@@ -314,6 +353,15 @@
 
 <div class="wrap">
 
+  <div class="series">
+    <span class="series-label">Detailed specifications</span>
+    <span class="here">Specification</span>
+    <a href="states.html">State model</a>
+    <a href="walkthrough.html">Walkthrough</a>
+    <a href="configuration.html">Configuration</a>
+    <a href="transitions.html">Transitions &amp; guards</a>
+  </div>
+
   <header>
     <div class="eyebrow">AI Architect · Final project · Specification v2</div>
     <h1>Governed AI Course Generator</h1>
@@ -331,11 +379,11 @@
   </header>
 
   <div class="drill">
-    <div class="drill-title">Detailed specifications</div>
+    <div class="drill-title">Detailed specifications — four written, four planned</div>
     <div class="drill-grid">
       <a class="card" href="states.html">
         <span class="card-title">State model <span class="status draft">draft</span></span>
-        <span class="card-desc">The two-level state machine: course and node states, events, guards, temporal invariants, and what each artifact carries between sessions.</span>
+        <span class="card-desc">The two-level state machine: 21 revision states and 10 node states, the event catalog, guards, temporal invariants, and nine situations the machine actually meets.</span>
       </a>
       <a class="card" href="walkthrough.html">
         <span class="card-title">Walkthrough <span class="status draft">draft</span></span>
@@ -347,27 +395,16 @@
       </a>
       <a class="card" href="transitions.html">
         <span class="card-title">Transitions &amp; guards <span class="status draft">draft</span></span>
-        <span class="card-desc">Every legal move in both machines — state, event, guard, layer, next state — with all twenty-four guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
+        <span class="card-desc">Every legal move in both machines — state, event, guard, layer, next state — with all twenty-seven guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
       </a>
-      <span class="card">
-        <span class="card-title">Validation layers <span class="status planned">planned</span></span>
-        <span class="card-desc">Which engine owns which check, the concrete rules written out, and the explanation each layer produces when it refuses.</span>
-      </span>
-      <span class="card">
-        <span class="card-title">Generation safety <span class="status planned">planned</span></span>
-        <span class="card-desc">The action registry with risk levels, prompt architecture and injection defense in full, pre- and post-generation checks, idempotency, secrets, kill switch, autonomy ladder.</span>
-      </span>
-      <span class="card">
-        <span class="card-title">Evaluation &amp; red team <span class="status planned">planned</span></span>
-        <span class="card-desc">Test taxonomy, adversarial scenarios, trajectory evaluation, recorded fixtures, and the production signals worth watching.</span>
-      </span>
-      <span class="card">
-        <span class="card-title">Implementation plan <span class="status planned">planned</span></span>
-        <span class="card-desc">Build order, scope boundaries, and what is real versus modeled in the prototype. <strong>Owns the demo:</strong> the step-by-step script shown at the defense, with the failure it deliberately triggers and the recovery it shows.</span>
-      </span>
     </div>
+    <p class="drill-soon">
+      Planned: <b>Validation layers</b> — which engine owns which check, the concrete rules, and the explanation each produces when it refuses ·
+      <b>Generation safety</b> — the action registry with risk levels, prompt architecture and injection defense in full, idempotency, secrets, kill switch, autonomy ladder ·
+      <b>Evaluation &amp; red team</b> — test taxonomy, adversarial scenarios, trajectory evaluation, recorded fixtures, production signals ·
+      <b>Implementation plan</b> — build order, scope boundaries, and the demo script shown at the defense, with the failure it deliberately triggers.
+    </p>
   </div>
-
   <nav class="toc">
     <div class="toc-title">Contents</div>
     <ol>
