@@ -9,7 +9,7 @@
 <meta property="og:description" content="What may happen, what may not, and what has no transition at all.">
 <meta property="og:type" content="article">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128279;</text></svg>">
-<link rel="stylesheet" href="spec.css?v=2">
+<link rel="stylesheet" href="spec.css?v=3">
 </head>
 <body>
 
@@ -24,6 +24,7 @@
     <symbol id="i-safety" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 4.5-3.1 8.2-7.5 9.5C7.6 20.2 4.5 16.5 4.5 12V6L12 3z"/><path d="m8.8 12.3 2.3 2.3 4.1-4.7"/></symbol>
     <symbol id="i-eval" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
     <symbol id="i-plan" viewBox="0 0 24 24"><path d="M3.5 6.5 5 8l2.8-3M3.5 12.5 5 14l2.8-3M3.5 18.5 5 20l2.8-3"/><path d="M11.5 6.5h9M11.5 12.5h9M11.5 18.5h6"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.6V20h11V9.6"/></symbol>
     <symbol id="i-toc" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
     <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.5-1.5"/></symbol>
@@ -88,7 +89,7 @@
 </style>
 
 <nav class="rail" aria-label="Sections">
-  <a class="rail-home" href="./"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg><span class="lbl">← Specification</span></a>
+  <a class="rail-home" href="specification.html"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg><span class="lbl">Specification</span></a>
   <a href="#s1"><span class="tick"></span><span class="lbl">Reading the table</span></a>
   <a href="#s2"><span class="tick"></span><span class="lbl">Revision transitions</span></a>
   <a href="#s3"><span class="tick"></span><span class="lbl">Node transitions</span></a>
@@ -104,13 +105,14 @@
 
   <div class="series">
     <span class="series-label">Detailed specifications</span>
-    <a href="./"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg>← Specification</a>
-    <a href="states.html"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>State model</a>
+    <a href="./" aria-label="Cover" title="Cover"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg></a>
+    <a href="specification.html"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg>Specification</a>
+    <a href="states.html"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>States</a>
     <a href="walkthrough.html"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg>Walkthrough</a>
     <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
-    <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions &amp; guards</span>
-    <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg>Validation layers</a>
-    <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg>Generation safety</a>
+    <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions</span>
+    <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg>Validation</a>
+    <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg>Safety</a>
   </div>
 
   <header>
@@ -572,9 +574,9 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     </div>
   </section>
 
-  <p class="footer-note">Transitions &amp; guards · draft v0.1 · 28 July 2026 · companion to the <a href="./">spec v2</a> and the <a href="states.html">state model</a></p>
+  <p class="footer-note">Transitions &amp; guards · draft v0.1 · 28 July 2026 · companion to the <a href="specification.html">spec v2</a> and the <a href="states.html">state model</a></p>
 </div>
 
-<script src="spec.js?v=2" defer></script>
+<script src="spec.js?v=3" defer></script>
 </body>
 </html>

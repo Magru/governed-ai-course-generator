@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Governed AI Course Generator — Specification</title>
+<meta name="description" content="High-level specification of a governed AI course generator for an LXP platform: three layers of responsibility, a generation gateway, formal verification, and human approval.">
+<meta property="og:title" content="Governed AI Course Generator — Specification">
+<meta property="og:description" content="The model proposes. The architecture decides. The editor drives.">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+<link rel="stylesheet" href="spec.css?v=3">
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-spec" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 17h5"/></symbol>
+    <symbol id="i-states" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="10" r="2.6"/><circle cx="9" cy="18.5" r="2.6"/><path d="M8.5 7.3 15.5 9.3M7.1 8.5l1.5 7.5M15.9 11.9 11.2 16.9"/></symbol>
+    <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M8.5 18.5H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.5"/></symbol>
+    <symbol id="i-config" viewBox="0 0 24 24"><path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.4"/><circle cx="9" cy="16.5" r="2.4"/></symbol>
+    <symbol id="i-transitions" viewBox="0 0 24 24"><path d="M4 8h13M14 5l3 3-3 3"/><path d="M20 16H7M10 13l-3 3 3 3"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="m3 12.5 9 4.5 9-4.5"/><path d="m3 17 9 4.5 9-4.5"/></symbol>
+    <symbol id="i-safety" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 4.5-3.1 8.2-7.5 9.5C7.6 20.2 4.5 16.5 4.5 12V6L12 3z"/><path d="m8.8 12.3 2.3 2.3 4.1-4.7"/></symbol>
+    <symbol id="i-eval" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M3.5 6.5 5 8l2.8-3M3.5 12.5 5 14l2.8-3M3.5 18.5 5 20l2.8-3"/><path d="M11.5 6.5h9M11.5 12.5h9M11.5 18.5h6"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.6V20h11V9.6"/></symbol>
+    <symbol id="i-toc" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.5-1.5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-top" viewBox="0 0 24 24"><path d="M12 19V6M6 12l6-6 6 6"/></symbol>
+  </defs>
+</svg>
+<div class="progress" role="presentation"></div>
+<button type="button" class="to-top" aria-label="Back to top"><svg class="ico" aria-hidden="true"><use href="#i-top"></use></svg></button>
+
+
+<nav class="rail" aria-label="Sections">
+  <a class="rail-home" href="./"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg><span class="lbl">Cover</span></a>
+  <span class="rail-pages">
+    <span class="rail-cap">Detailed specs</span>
+    <a href="states.html"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg><span class="lbl">State model</span></a>
+    <a href="walkthrough.html"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg><span class="lbl">Walkthrough</span></a>
+    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg><span class="lbl">Configuration</span></a>
+    <a href="transitions.html"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg><span class="lbl">Transitions &amp; guards</span></a>
+    <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg><span class="lbl">Validation layers</span></a>
+    <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg><span class="lbl">Generation safety</span></a>
+  </span>
+  <a href="#s1"><span class="tick"></span><span class="lbl">Context</span></a>
+  <a href="#s2"><span class="tick"></span><span class="lbl">Problem</span></a>
+  <a href="#s3"><span class="tick"></span><span class="lbl">Principle</span></a>
+  <a href="#s4"><span class="tick"></span><span class="lbl">Responsibility</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Editor's journey</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">State model</span></a>
+  <a href="#s7"><span class="tick"></span><span class="lbl">Gateway</span></a>
+  <a href="#s8"><span class="tick"></span><span class="lbl">Formal stack</span></a>
+  <a href="#s9"><span class="tick"></span><span class="lbl">Neuro-symbolic</span></a>
+  <a href="#s10"><span class="tick"></span><span class="lbl">Guarantees</span></a>
+  <a href="#s11"><span class="tick"></span><span class="lbl">Loop discipline</span></a>
+  <a href="#s12"><span class="tick"></span><span class="lbl">Quality</span></a>
+  <a href="#s13"><span class="tick"></span><span class="lbl">Evaluation</span></a>
+  <a href="#s14"><span class="tick"></span><span class="lbl">Technology</span></a>
+  <a href="#s15"><span class="tick"></span><span class="lbl">Limits</span></a>
+  <a href="#s16"><span class="tick"></span><span class="lbl">Open questions</span></a>
+</nav>
+
+<div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Detailed specifications</span>
+    <a href="./" aria-label="Cover" title="Cover"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg></a>
+    <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg>Specification</span>
+    <a href="states.html"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>States</a>
+    <a href="walkthrough.html"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg>Walkthrough</a>
+    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
+    <a href="transitions.html"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions</a>
+    <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg>Validation</a>
+    <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg>Safety</a>
+  </div>
+
+  <header>
+    <div class="eyebrow">AI Architect · Final project · Specification v2</div>
+    <h1>Governed AI Course Generator</h1>
+    <p class="kicker">Governed AI course generation for an enterprise learning platform: from an empty brief to a published course, with formal layers at every step and the editor at the wheel.</p>
+    <div class="thesis">
+      <p><strong>The model proposes. The architecture decides. The editor drives.</strong></p>
+      <p>Nothing generated reaches a learner because it looked convincing. It reaches them because it was grounded in the organization's own knowledge, permitted by policy, consistent with everything already approved, and signed off by a person.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">Domain: <b>Sylla LXP</b> — a production platform</span>
+      <span class="meta-chip">Formal stack: <b>OPA · Z3 · Prolog · Datalog · LTL</b></span>
+      <span class="meta-chip">Neural: <b>multi-model, policy-routed</b></span>
+      <span class="meta-chip">Deliverable: <b>standalone prototype</b></span>
+    </div>
+  </header>
+
+  <div class="drill">
+    <div class="drill-title">Detailed specifications — six written, two planned</div>
+    <div class="drill-grid">
+      <a class="card" href="states.html">
+        <span class="card-title"><span class="card-name"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-states"></use></svg>State model</span> <span class="status draft">draft</span></span>
+        <span class="card-desc">The two-level state machine: 21 revision states and 10 node states, the event catalog, guards, temporal invariants, and nine situations the machine actually meets.</span>
+      </a>
+      <a class="card" href="walkthrough.html">
+        <span class="card-title"><span class="card-name"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-walk"></use></svg>Walkthrough</span> <span class="status draft">draft</span></span>
+        <span class="card-desc">One course from an empty brief to publication in twenty-four steps: every state change, every check, every human stop, and what still reaches the course after it is live.</span>
+      </a>
+      <a class="card" href="configuration.html">
+        <span class="card-title"><span class="card-name"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</span> <span class="status draft">draft</span></span>
+        <span class="card-desc">The seven sources the generator reads at runtime — catalogs, access rules, guardrail policy, policy bundle, thresholds, model routing — their owners, their record shapes, and what is deliberately left as code.</span>
+      </a>
+      <a class="card" href="layers.html">
+        <span class="card-title"><span class="card-name"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-layers"></use></svg>Validation layers</span> <span class="status draft">draft</span></span>
+        <span class="card-desc">Which engine owns which question — schema, OPA, Z3, Datalog, Prolog, temporal logic — the rules written out in Rego, Python and Prolog, and the artifact each layer hands back when it refuses.</span>
+      </a>
+      <a class="card" href="safety.html">
+        <span class="card-title"><span class="card-name"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-safety"></use></svg>Generation safety</span> <span class="status draft">draft</span></span>
+        <span class="card-desc">Eleven registered actions with risk levels and compensations, the membrane every one passes through, prompt architecture in full, injection defense across three surfaces, idempotency, secrets, the autonomy ladder and the kill switch.</span>
+      </a>
+      <a class="card" href="transitions.html">
+        <span class="card-title"><span class="card-name"><svg class="ico ico-lg" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions &amp; guards</span> <span class="status draft">draft</span></span>
+        <span class="card-desc">Every legal move in both machines — state, event, guard, layer, next state — with all twenty-seven guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
+      </a>
+    </div>
+    <p class="drill-soon">
+      Planned: <b>Evaluation &amp; red team</b> — test taxonomy, adversarial scenarios, trajectory evaluation, recorded fixtures, production signals ·
+      <b>Implementation plan</b> — build order, scope boundaries, and the demo script shown at the defense, with the failure it deliberately triggers.
+    </p>
+  </div>
+  <nav class="toc">
+    <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
+    <ol>
+      <li><a href="#s1">Context</a></li>
+      <li><a href="#s2">Problem &amp; success</a></li>
+      <li><a href="#s3">Governing principle</a></li>
+      <li><a href="#s4">Division of responsibility</a></li>
+      <li><a href="#s5">The editor's journey</a></li>
+      <li><a href="#s6">State model</a></li>
+      <li><a href="#s7">Generation gateway</a></li>
+      <li><a href="#s8">Formal stack</a></li>
+      <li><a href="#s9">Neuro-symbolic junction</a></li>
+      <li><a href="#s10">Governance guarantees</a></li>
+      <li><a href="#s11">Loop discipline</a></li>
+      <li><a href="#s12">Content quality</a></li>
+      <li><a href="#s13">Evaluation</a></li>
+      <li><a href="#s14">Technology</a></li>
+      <li><a href="#s15">Limits</a></li>
+      <li><a href="#s16">Open questions</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1">
+    <div class="eyebrow">Section 1</div>
+    <h2>Context</h2>
+    <p><strong>Sylla</strong> is a production learning experience platform I work on. Organizations run employee training on it: courses, learning paths, assessments, a per-organization skills catalog, a Knowledge Base of internal documents, role- and data-level permissions, and human approvals. Courses are built by hand in a block editor — sections, lessons, and typed blocks (text, media, quizzes); adaptive branching is planned per the builder specification and is not in the codebase today.</p>
+    <p>The generator described here is a standalone prototype on that domain. It does not touch production code; it models the same entities and the same permission rules, and it is designed so its architecture can graduate into the product.</p>
+  </section>
+
+  <section id="s2">
+    <div class="eyebrow">Section 2</div>
+    <h2>The problem and what success means</h2>
+    <p>Authoring is the most expensive part of the platform — days per course. Generating that content with a model is the obvious move, and an ungoverned generator is a product risk rather than a hypothetical one:</p>
+    <ul class="risks">
+      <li>it invents skills the organization's catalog does not contain, so the course teaches outside the company's competency model;</li>
+      <li>claims land in lessons with <strong>no traceable source</strong>;</li>
+      <li>an author's free-form prompt can request something the organization forbids;</li>
+      <li>content can be published <strong>without review</strong>;</li>
+      <li>a course lives across sessions, so editing one approved lesson silently <strong>desynchronizes</strong> the exam that tests it;</li>
+      <li>a generator with Knowledge Base access can pull <strong>restricted</strong> material into a course seen by an audience without rights to it;</li>
+      <li>a course structure can be broken in ways only a graph check catches — prerequisite cycles, unreachable material, an exam that tests a lesson nobody reaches.</li>
+    </ul>
+    <p><strong>Users:</strong> course authors and training administrators. <strong>Cost of a wrong action:</strong> unverified, stale, or restricted content delivered to an entire workforce.</p>
+    <div class="thesis">
+      <p><strong>Success:</strong> authoring drops from days to hours — with zero courses published that bypassed the formal checks or human approval, zero leaks of restricted sources, and zero published courses carrying desynchronized nodes.</p>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="eyebrow">Section 3</div>
+    <h2>Governing principle</h2>
+    <p>One sentence governs every decision that follows:</p>
+    <div class="thesis">
+      <p><strong>The model may propose anything. It may decide nothing.</strong> Publication, state transitions, and access to sources are decided by the architecture — formal layers first, a person last.</p>
+    </div>
+    <p>The rest of this specification is the consequence: where proposals are checked, who may say yes, what happens when the answer is no, and how any of it can be reconstructed six months later.</p>
+  </section>
+
+  <section id="s4" class="wrap-wide">
+    <div class="eyebrow">Section 4</div>
+    <h2>Division of responsibility</h2>
+    <p style="max-width:var(--measure);">Three kinds of judgment run this system, and they are not interchangeable. Assigning every question to the layer that can actually answer it is the core architectural decision of the project.</p>
+
+    <div class="layers">
+      <div class="layer formal">
+        <div class="ly-label">Formal engines</div>
+        <h3>Structure</h3>
+        <p>Rights, ordering, dependencies, arithmetic, coverage, staleness. Deterministic versioned rules that produce a proof, not an opinion.</p>
+        <div class="ly-ex">“A restricted source must not reach a broad-audience course” — a graph of relations.</div>
+      </div>
+      <div class="layer managed">
+        <div class="ly-label">Managed services</div>
+        <h3>Meaning &amp; modality</h3>
+        <p>Forbidden topics phrased indirectly, harmful text, personal data, what is inside a generated image, whether a retrieved passage is relevant. Configured and versioned outside the application.</p>
+        <div class="ly-ex">“The author asks for something forbidden, in other words” — meaning, not structure.</div>
+      </div>
+      <div class="layer human">
+        <div class="ly-label">The editor</div>
+        <h3>Judgment</h3>
+        <p>Whether this is worth teaching, in this order, to these people. Approval of the skeleton, of every node, and of publication.</p>
+        <div class="ly-ex">Delegated to no model, no service, and no rule.</div>
+      </div>
+    </div>
+
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <div class="thesis">
+        <p><strong>The boundary rule.</strong> If a check can be stated about a graph, a set, an ordering, or a number — it belongs to the formal engines. If answering it requires understanding a text or looking at an image — it is configured, never coded. If it is about pedagogical value — a person decides.</p>
+      </div>
+
+      <h3>Semantics are configuration</h3>
+      <p>Forbidden topics, content thresholds, and multimodal guardrails live in a managed service with its own version history. A compliance officer changes them: no developer, no deployment, no downtime. Their verdict enters the system as a <em>fact</em> for the formal layer — it decides nothing on its own — and if the service is unreachable the gateway fails closed.</p>
+
+      <h3>Vocabulary is data</h3>
+      <p>The block catalog — every block type, its settings schema, its modality, its applicability policy — is read from the platform at runtime and never copied into the generator. A new modality (video, audio, an interactive block) arrives as a catalog entry: the generator proposes it, its schema validates it, provenance traces it, policy constrains it. Zero code, zero deployments. The same holds for the skills catalog, the Knowledge Base categories with their access rules, thresholds, and the model routing table — organizational data, not constants inside a release.</p>
+
+      <p>→ <a href="configuration.html"><strong>Configuration — detailed specification</strong></a>: the seven sources read at runtime, their owners and record shapes, how a version stamp binds a decision to the rules that made it, what is deliberately left as code, and which of it exists in the platform today.</p>
+    </div>
+  </section>
+
+  <section id="s5" class="wrap-wide">
+    <div class="eyebrow">Section 5</div>
+    <h2>The editor's journey</h2>
+    <p style="max-width:var(--measure);">A course is not generated in one pass. It is a governed journey in three phases, and the expensive work starts only after a human has approved the cheap part.</p>
+    <div class="phases">
+      <div class="phase">
+        <div class="ph-label">Phase 1</div>
+        <h3>Skeleton</h3>
+        <p>The author gives a brief; the model proposes modules, lessons, topics, and exams — titles and learning objectives only. Checked formally, then edited and <b>approved by a person</b> before any content is paid for.</p>
+      </div>
+      <div class="phase">
+        <div class="ph-label">Phase 2</div>
+        <h3>Content, over many sessions</h3>
+        <p>Node by node: retrieval scoped to that topic, blocks assembled against the catalog's schemas, checks, repair, approval. State is persistent — the editor leaves and comes back.</p>
+      </div>
+      <div class="phase">
+        <div class="ph-label">Phase 3</div>
+        <h3>Publication</h3>
+        <p>Every node approved and none stale → whole-course checks for completeness, ordering, and consistency → a final human approval → published.</p>
+      </div>
+    </div>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <p>→ <a href="walkthrough.html"><strong>Walkthrough — one course, end to end</strong></a>: the same three phases as twenty-four numbered steps, with the state after each one, the three refusals available before the first token, and what still reaches the course once it is published.</p>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow">Section 6</div>
+    <h2>State model</h2>
+    <p>The lifecycle is an explicit two-level state machine, not a pipeline. The <strong>course</strong> machine survives editor sessions and aggregates the state of its nodes; each <strong>node</strong> — lesson, topic, exam — runs its own cycle of drafting, guardrail screening, checks, repair, and approval.</p>
+    <p>Three properties make it more than bookkeeping. Violations are split by class: a policy violation is terminal, while a constraint or grounding violation is recoverable and enters a bounded repair loop. Approval is honest: editing an approved node withdraws its approval and, through the dependency graph, the approval of everything derived from it. And <strong>a published course is immutable</strong> — what everyone calls editing a live course forks a new revision beside it, so the cascade never runs against content a learner is reading, and rollback is a pointer move rather than a recovery procedure. A learner who has already started finishes on the revision they started; the new one serves everyone who starts after. The single exception is a revision <em>withdrawn</em> for violating a rule — there access is cut, because “let them finish” is precisely what the compliance officer was preventing.</p>
+    <p><strong>The state machine is the editor's interface.</strong> In every state the system says what is available, what is blocked and why, and what to do next — the next best action is derived from uncovered objectives and stale nodes, not suggested by a model. Re-validation is a gate rather than a notification: publication is unavailable while anything is stale, with the affected nodes listed beside it. That is not a UX preference — the invariant already forbids publishing a stale course, and the gate is that invariant made visible.</p>
+    <p>→ <a href="states.html"><strong>State model — detailed specification</strong></a>: every course and node state, the event catalog, guards, temporal invariants, and the fields each artifact persists.</p>
+  </section>
+
+  <section id="s7" class="wrap-wide">
+    <div class="eyebrow">Section 7</div>
+    <h2>Generation gateway</h2>
+    <p style="max-width:var(--measure);">Every call to a model crosses one membrane, in both directions. Nothing generated enters course state without passing it, and the gateway — not the model — decides whether the write happens.</p>
+
+    <div class="diagram">
+      <div class="caption">One gateway: pre-checks, generation, post-checks, admission, audit</div>
+      <pre class="mermaid">
+flowchart TD
+  IN["Author prompt — untrusted input"] --> SC["Schema — is the request well formed"]
+  SC --> OPA["Policy — role, audience, limits, action legal in this state"]
+  OPA --> GI["Guardrail IN — forbidden topics, personal data"]
+  GI --> RT["Routing — task to model, by policy"]
+  RT --> GEN["Generation — forced schema output"]
+  GEN --> GO["Guardrail OUT — text and images"]
+  GO --> BS["Block schemas — from the platform catalog"]
+  BS --> DL["Grounding and rights — sources traced, permissions re-checked"]
+  DL --> ZP["Constraints and coverage"]
+  ZP --> ADM["Admission into course state"]
+  ADM --> HITL["Editor approval"]
+  ADM --> AUD["Audit trace — versions of model, policy, catalog, guardrail"]
+
+  OPA -- "not permitted" --> BL["Blocked — reason and safe next action"]
+  GI -- "forbidden topic" --> BL
+  GO -- "unsafe" --> RP["Repair loop — bounded retries"]
+  BS -- "invalid settings" --> RP
+  DL -- "ungrounded or leak" --> RP
+  RP --> GEN
+
+  classDef default fill:#FFFFFF,stroke:#8B958F,color:#202A35;
+  classDef managed fill:#F4E7DD,stroke:#A6512B,color:#5C2D16;
+  classDef hitl fill:#F3ECD8,stroke:#8A6A1F,color:#4A3A10;
+  classDef terminal fill:#E3EFEA,stroke:#0E6E5C,color:#0B4438;
+  class GI,GO,BL,RP managed;
+  class HITL hitl;
+  class ADM,AUD terminal;
+      </pre>
+      <div class="legend">
+        <span><span class="dot" style="background:#FFFFFF;border:1px solid #8B958F;"></span>formal layer</span>
+        <span><span class="dot" style="background:#F4E7DD;border:1px solid #A6512B;"></span>managed service · blocked · repairing</span>
+        <span><span class="dot" style="background:#F3ECD8;border:1px solid #8A6A1F;"></span>human</span>
+        <span><span class="dot" style="background:#E3EFEA;border:1px solid #0E6E5C;"></span>admitted and recorded</span>
+      </div>
+    </div>
+
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <h3>What the model is given, and how much of it is trusted</h3>
+      <p>Every prompt the gateway sends is assembled from three inputs with three different trust levels, kept separate rather than concatenated:</p>
+      <ol class="steps">
+        <li><strong>System instructions — trusted, ours.</strong> The generation rules for this phase and a strict output schema, enforced as a tool call so the model returns a structure rather than prose. Each phase has its own: skeleton, node content, illustration.</li>
+        <li><strong>The author's prompt — authorized, but untrusted.</strong> The author steers style and emphasis; the author cannot lift a rule. “Generate without checks” is refused at the entrance, with an explanation, and the model is never called.</li>
+        <li><strong>Retrieved sources — untrusted data.</strong> Passages from the Knowledge Base are quoted as data, never executed as instructions. An instruction embedded in an internal document is inert by construction. Sources are also screened on admission for personal data and instruction-shaped content — not because the quoting is unsafe, but so that an attempt is <em>recorded</em> rather than silently neutralized.</li>
+      </ol>
+      <p>The model's output stays untrusted until it has passed every layer: the schema binds its shape, grounding binds its claims to sources, policy binds the action it implies, and the guardrail screens its meaning. Nothing about it is acted on before those return.</p>
+
+      <p>Three properties of the gateway matter more than its individual steps. It is <strong>explicit</strong> — the guardrail is a call the architecture makes, visible in the state machine and in the trace, not a flag hidden inside a model invocation. It <strong>fails closed</strong> — if any layer cannot answer, nothing is admitted. And a refusal always carries a <strong>safe next action</strong>, which is what turns a block into a repair instead of a dead end.</p>
+    </div>
+  </section>
+
+  <section id="s8" class="wrap-wide">
+    <div class="eyebrow">Section 8</div>
+    <h2>The formal stack</h2>
+    <p style="max-width:var(--measure);">Five engines, each owning exactly one kind of question. No check is evaluated twice by two tools.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Engine</th><th>Owns</th><th>Representative check</th></tr></thead>
+        <tbody>
+          <tr><td class="tool">OPA</td><td class="role">Policy &amp; authorization</td><td>Who may act, on which audience, with which sources and which model; which actions are legal in the current state</td></tr>
+          <tr><td class="tool">Z3</td><td class="role">Arithmetic &amp; satisfiability</td><td>Whether the brief is satisfiable at all — proven <em>before</em> any generation spend, with the contradicting requirements named</td></tr>
+          <tr><td class="tool">Prolog</td><td class="role">Inference &amp; explanation</td><td>Which learning objectives remain uncovered, and a readable proof of why something was refused</td></tr>
+          <tr><td class="tool">Datalog</td><td class="role">Provenance &amp; dependencies</td><td>Every claim traced to a source; permission leaks found as paths; staleness propagated to dependents</td></tr>
+          <tr><td class="tool">LTL</td><td class="role">Ordering over time</td><td>Nothing published unapproved, no exam before its material, nothing admitted without a guardrail check — over a trace spanning months</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="s9">
+    <div class="eyebrow">Section 9</div>
+    <h2>The neuro-symbolic junction</h2>
+    <p><strong>Only the neural side can</strong> write coherent teaching material, invent exam questions, decompose a subject, and illustrate it. <strong>Only the symbolic side can</strong> prove the result is grounded, permitted, and consistent — and explain a refusal.</p>
+    <p>They meet in four places:</p>
+    <ol class="steps">
+      <li><strong>Grounding</strong> — every claim is bound to the skills catalog or a source passage; unbound content is rejected. <em>Symbolic filters neural.</em></li>
+      <li><strong>Repair</strong> — the formal explanation (a contradiction core, a denial reason, a proof tree) is fed into the next prompt and the model fixes its own output against it. <em>Symbolic steers neural.</em></li>
+      <li><strong>Explanation</strong> — refusals are explained by derivation, never by “the model decided”. <em>Symbolic justifies.</em></li>
+      <li><strong>Process</strong> — what the editor should do next is inferred from coverage and staleness, not proposed by a model. <em>Symbolic drives.</em></li>
+    </ol>
+  </section>
+
+  <section id="s10" class="wrap-wide">
+    <div class="eyebrow">Section 10</div>
+    <h2>Governance guarantees</h2>
+    <p style="max-width:var(--measure);">Seven properties the system owes the organization — each enforced structurally rather than promised.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Guarantee</th><th>How it is enforced</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="role">Restricted knowledge never leaks</td>
+            <td>Audience rights become a metadata filter on retrieval, and every returned source is re-checked against the permission closure afterwards. The filter makes it fast; the re-check makes it provable.</td>
+          </tr>
+          <tr>
+            <td class="role">A rule change never requires a shutdown</td>
+            <td>Every approved artifact is stamped with the policy, guardrail, and catalog versions it passed under. When a rule changes, the dependency graph marks exactly the affected courses for re-validation — a rule change is an event in the system, not a release.</td>
+          </tr>
+          <tr>
+            <td class="role">Nothing changes under a learner</td>
+            <td><strong>A published revision is immutable</strong>, so a learner finishes on the revision they started — within a bounded window, and told only when a change lands ahead of them — never a banner, never a silent rewrite. And because nothing is edited, rollback is a pointer move to an earlier revision that still exists and still carries the approvals and versions it was cleared under: nothing regenerated, nothing restored from a backup. The same applies one level up — policies, prompts, and catalogs are versioned, so reverting one re-validates exactly what that version touched rather than being a migration.</td>
+          </tr>
+          <tr>
+            <td class="role">Every action is reconstructable</td>
+            <td>One continuous trace per course: prompts, model and version, guardrail verdicts, each layer's decision, human approvals with what the approver was shown, and the final outcome.</td>
+          </tr>
+          <tr>
+            <td class="role">Side effects happen at most once</td>
+            <td>Generation and publication carry idempotency keys. A timeout is treated as <em>unknown</em>, never as failure: status is checked before any retry. Where an action half-completes, the registry names its compensation up front — publication is undone by moving the pointer, a generated node by discarding a draft revision, and the one action that cannot be taken back, notifying learners, is therefore compensated by a correction notice and an incident record rather than pretended away.</td>
+          </tr>
+          <tr>
+            <td class="role">The model never holds credentials</td>
+            <td>Secrets stay with the executor and never enter a prompt, a context, or an open audit record; outputs are scanned for leaked secrets before admission.</td>
+          </tr>
+          <tr>
+            <td class="role">Autonomy is earned, and revocable</td>
+            <td>The generator climbs an explicit ladder — propose only, dry run, read-only actions, low-risk writes with approval, high-risk writes with policy and audit. A kill switch disables an action class, a model, or the whole generator without touching the platform.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="max-width:var(--measure);">Actions are registered rather than implicit: retrieval, node generation, image generation, writing into course state, publication, and learner notification each carry a risk level and the controls that level requires. Adding a new action means classifying it first.</p>
+  </section>
+
+  <section id="s11">
+    <div class="eyebrow">Section 11</div>
+    <h2>Loop discipline</h2>
+    <p>The generator is a closed loop, and closed loops have failure modes of their own. Four rules keep it bounded:</p>
+    <ul class="plain">
+      <li><strong>Repair, not retry.</strong> A failed check does not re-run the same request — it returns a specific explanation, and the next attempt is aimed at it. Repeating a request without new information is pointless by construction.</li>
+      <li><strong>Every loop has a stop.</strong> Bounded attempts per node, a minimum improvement between rounds, an overall timeout, and escalation to the editor when the budget is spent. A loop that cannot stop is a safety defect, not an inconvenience.</li>
+      <li><strong>Self-critique is not verification.</strong> The model may flag its own weaknesses; it may not clear itself. Only the formal layers and the editor approve, and the approval path is separate from the generation path.</li>
+      <li><strong>No refinement without a ruler.</strong> Where there is no explicit criterion and no independent verifier, the system escalates instead of iterating. Endless polishing costs money, dilutes good content, and disguises the absence of a real check.</li>
+    </ul>
+    <p>The prototype also keeps <strong>no cross-course memory</strong>. Anything learned from one course influencing another would need its own retention, provenance, and review policy — deliberately outside this scope rather than quietly present.</p>
+  </section>
+
+  <section id="s12">
+    <div class="eyebrow">Section 12</div>
+    <h2>Content quality</h2>
+    <p>“Generated quickly” is not “publishable”. Quality is enforced per node, as content lands, at three levels:</p>
+    <ol class="steps">
+      <li><strong>Structural, formal.</strong> Every lesson has objectives; every objective is covered; every exam question traces to material already taught <em>and approved</em>; prerequisites form a coherent chain. A structurally weak node never reaches the editor — it goes to repair.</li>
+      <li><strong>Substantive, grounded.</strong> Content comes from the organization's Knowledge Base and skills catalog. An unsourced claim is a blocking violation — which removes the main source of low quality: fabrication.</li>
+      <li><strong>Editorial, human.</strong> The skeleton is approved before generation, each node is approved with its explanation, and publication is a separate decision. Editing an approved node withdraws its approval, so silent degradation is architecturally impossible.</li>
+    </ol>
+  </section>
+
+  <section id="s13">
+    <div class="eyebrow">Section 13</div>
+    <h2>Evaluation</h2>
+    <p>The system is graded on what it refuses as much as on what it produces.</p>
+    <ul class="plain">
+      <li><strong>Layer tests</strong> — each engine in isolation, plus valid and forbidden transitions of both state machines.</li>
+      <li><strong>Forbidden chains</strong> — content before an approved skeleton; publication with a stale node; an exam ahead of its material; anything admitted without a guardrail check.</li>
+      <li><strong>Adversarial scenarios</strong> — a forbidden request phrased indirectly; an instruction embedded in a source document; a broad-audience course reaching a restricted source; an unsafe illustration; a timeout followed by a retry; an unregistered action proposed.</li>
+      <li><strong>Trajectory evaluation</strong> — the path is graded, not only the artifact: which actions ran, in what order, at what cost, and how many repair rounds it took.</li>
+      <li><strong>Dry run</strong> — a whole course generated in simulation, reporting what would be produced and what would be blocked, with no side effects.</li>
+      <li><strong>Recorded fixtures</strong> — model responses, guardrail verdicts, and retrieval results are committed, so every result above reproduces offline; a live run is recorded separately.</li>
+      <li><strong>Production signals</strong> — blocked generations, policy denials, injection detections, near-miss source leaks, repair-loop depth, and the size of the re-validation queue.</li>
+    </ul>
+  </section>
+
+  <section id="s14">
+    <div class="eyebrow">Section 14</div>
+    <h2>Technology</h2>
+    <ul class="plain">
+      <li><strong>Models:</strong> multi-model on AWS Bedrock, as in production — a strong reasoning model for the skeleton and for repairs, a light one for node text and utility work, an image model for illustrations. <strong>Routing is a policy table</strong>, not a model's choice, and it carries the rule that restricted sources may only be processed by the organization-approved model. Every artifact records which model and version produced it; each model has a fallback chain.</li>
+      <li><strong>Formal engines are real:</strong> OPA (Rego), Z3, SWI-Prolog, a Datalog engine, and an LTL checker over the trace — the same stack I have already run end to end in an earlier assignment.</li>
+      <li><strong>Managed services</strong> for guardrails and retrieval, reached through ports so the implementation stays replaceable.</li>
+      <li><strong>Persistent course state</strong> (JSON/SQLite): sessions resume and the trace stays continuous across months.</li>
+      <li><strong>Scope:</strong> a fixed small course — two modules, a handful of nodes, one exam, a couple of images — with the effort spent on verification depth rather than feature breadth. The editor surface is a wizard rendered from the state machine, not a full UI.</li>
+      <li><strong>Hygiene:</strong> secrets outside the repository, configuration separated from code, and versioning for policies, prompts, and state definitions.</li>
+    </ul>
+  </section>
+
+  <section id="s15">
+    <div class="eyebrow">Section 15</div>
+    <h2>Limits, stated honestly</h2>
+    <p><strong>What the prototype actually runs.</strong> The five formal engines, the state machines, the gateway and the trace are real and run on every pass. Retrieval and model calls go through an adapter over recorded fixtures, so the behaviour under test is deterministic and reviewable — with one genuinely live end-to-end run demonstrated at the defense. The point of the project is the architecture that decides, not the provider that generates; making the demo depend on a network call would risk the former to prove the latter.</p>
+    <ul class="plain">
+      <li><strong>Pixels are not formally verifiable.</strong> An image passes guardrail and provenance checks; the visual itself is a human decision, and the architecture says so rather than pretending otherwise. Block types that need an eye are marked as such in the catalog, and a node cannot be approved while one of them is unseen — so the requirement travels with the vocabulary instead of being wired into the pipeline.</li>
+      <li><strong>A managed guardrail is no judge of pedagogy.</strong> It knows nothing about coverage, dependencies, or the organization's permission model — those never leave the formal layer.</li>
+      <li><strong>A formal guarantee is only as good as the model of the world.</strong> If the catalog or the permission closure is wrong, the proof is about the wrong thing — which is why both are read from the platform rather than restated.</li>
+      <li><strong>Every extra hop costs latency and money.</strong> Checks sit at generation boundaries, verdicts are cached by content hash, and cheap tasks go to the light model.</li>
+    </ul>
+  </section>
+
+  <section id="s16">
+    <div class="eyebrow">Section 16</div>
+    <h2>Open questions</h2>
+    <ol class="questions">
+      <li><strong>Over-refusal is invisible in a way under-refusal is not.</strong> A course that reaches an audience it should not have is a detectable failure; a course refused for a rule that should not have applied simply never gets made, and nobody files a report about it. Every guarantee on this page is about the first kind. The evaluation strategy has no equivalent instrument for the second.</li>
+      <li><strong>What actually blocks lifting this into the product?</strong> The prototype models the platform's rules on its own domain deliberately. Three things would have to become real for the architecture to move in: the catalog served at runtime, a managed guardrail in the generation path, and a policy permission distinct from general administration. None is hard; none has been scoped.</li>
+      <li><strong>The sweep is bounded but unmeasured.</strong> A reader grace window caps how far a policy change has to reach, which turns an open-ended cost into a number an organization chooses. What that number costs at real volumes is still a guess.</li>
+    </ol>
+  </section>
+
+  <div class="callout">
+    <div class="eyebrow">How to read this specification</div>
+    <p>This page is the high-level contract: what the system is for, which layer answers which question, and what the architecture guarantees. It is meant to be readable end to end in about ten minutes.</p>
+    <p>Everything operational — full state tables, transition rules, concrete policies, the action registry, the test suite — lives in the detailed specifications linked at the top, which grow as the build proceeds.</p>
+  </div>
+
+  <p class="footer-note"><a href="./">cover</a> · Specification v2 · <a href="states.html">state model</a> · <a href="walkthrough.html">walkthrough</a> · <a href="configuration.html">configuration</a> · <a href="transitions.html">transitions</a> · <a href="layers.html">layers</a> · <a href="safety.html">safety</a> · updated 28 July 2026</p>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    securityLevel: 'strict',
+    theme: 'base',
+    themeVariables: {
+      background: '#F4F5F0',
+      primaryColor: '#FFFFFF',
+      primaryTextColor: '#202A35',
+      primaryBorderColor: '#8B958F',
+      lineColor: '#8B958F',
+      secondaryColor: '#F2F3EE',
+      tertiaryColor: '#EDEFE8',
+      fontFamily: '"Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+  });
+</script>
+
+<script src="spec.js?v=3" defer></script>
+</body>
+</html>
