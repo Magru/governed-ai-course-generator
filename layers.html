@@ -433,7 +433,7 @@
     <div class="code">{
   "$id": "catalog://schemas/image@3",
   "type": "object",
-  "required": ["type", "src", "alt", "caption"],
+  "required": ["type", "src", "alt", "caption", "cites"],
   "properties": {
     "type":    { "const": "image" },
     "src":     { "type": "string", "format": "uri" },
@@ -443,7 +443,7 @@
   },
   "additionalProperties": false
 }</div>
-    <p>Two details carry weight. <code>additionalProperties: false</code> means a block the catalog does not know about cannot be smuggled in as an extra field. And <code>cites</code> with <code>minItems: 1</code> means <em>the schema itself</em> requires provenance — a block with no source is malformed before anyone asks whether its claims are true.</p>
+    <p>Two details carry weight. <code>additionalProperties: false</code> means a block the catalog does not know about cannot be smuggled in as an extra field. And <code>cites</code> is in <code>required</code> <em>as well as</em> carrying <code>minItems: 1</code> — both are needed, because a keyword like <code>minItems</code> only constrains a property that is present. Omit either half and a block with no source validates cleanly. With both, <em>the schema itself</em> requires provenance: a block with no source is malformed before anyone asks whether its claims are true.</p>
   </section>
 
   <section id="s3">
@@ -454,7 +454,9 @@
     <div class="code-label">Rego · authoring policy</div>
     <div class="code">package course.policy
 
-import future.keywords.in
+# rego.v1 brings in if / contains / every / in as keywords. Without it
+# this file parses only on OPA ≥ 1.0 and fails on anything older.
+import rego.v1
 
 default allow := false
 
@@ -499,6 +501,15 @@ deny contains reason if {
 }
 
 deny contains reason if {
+    not state_permits
+    reason := {
+        "rule": "state_permits",
+        "message": sprintf("%v is not legal while the course is in %v",
+                           [input.action, input.course.state]),
+    }
+}
+
+deny contains reason if {
     input.brief.node_count > data.org.thresholds.max_nodes_per_course
     reason := {
         "rule": "within_limits",
@@ -508,6 +519,7 @@ deny contains reason if {
     }
 }</div>
 
+    <p>Every clause of <code>allow</code> has a matching <code>deny</code> rule, and that pairing is not decoration: <code>allow</code> alone would refuse with silence. A policy engine that can only say no is as useless here as a solver that can only say <code>unsat</code>.</p>
     <p>Three things this file is deliberately not doing. It does not contain a list of forbidden topics — that is <a href="configuration.html#s5">meaning, and it is configured elsewhere</a>. It does not compute whether the brief is <em>achievable</em> — that is Z3's column. And it does not hold thresholds, only reads them: <code>data.org.thresholds</code> is the same object the <a href="configuration.html#s6">configuration page</a> describes, so tuning a limit never touches this policy.</p>
   </section>
 
@@ -517,7 +529,7 @@ deny contains reason if {
     <p>The solver answers one shape of question: <em>can all of this be true at once?</em> Its value is almost entirely in the failure case, because <code>unsat</code> on its own is useless — what the editor needs is <strong>which requirements</strong> cannot coexist.</p>
 
     <div class="code-label">Z3 · brief feasibility, with tracked assertions so a core exists</div>
-    <div class="code">from z3 import Int, Solver, unsat, Bool, Implies
+    <div class="code">from z3 import Int, Solver, unsat, Bool
 
 lessons     = Int("lessons")
 per_lesson  = Int("minutes_per_lesson")
@@ -526,13 +538,15 @@ total       = Int("total_minutes")
 s = Solver()
 s.set(unsat_core=True)
 
-# Every assertion is tracked, so the core names requirements,
-# not anonymous constraints.
+# Arithmetic itself is not a requirement anyone stated, so it goes in
+# untracked — it is the law that makes the others conflict, not one of
+# the conflicting things.
+s.add(lessons * per_lesson &lt;= total)
+
+# The stated requirements are tracked, so the core names them.
 s.assert_and_track(lessons    == 40,  Bool("brief.lesson_count"))
 s.assert_and_track(total      == 120, Bool("brief.total_minutes"))
 s.assert_and_track(per_lesson == 15,  Bool("org.min_minutes_per_lesson"))
-s.assert_and_track(lessons * per_lesson &lt;= total,
-                   Bool("implied.fits_in_budget"))
 
 if s.check() == unsat:
     core = s.unsat_core()
@@ -562,7 +576,8 @@ core:
       </div>
     </div>
 
-    <p>The core is minimal, which is the property that makes it useful: it names three requirements rather than the eleven the brief contains. Note also what is <em>in</em> the core — <code>org.min_minutes_per_lesson</code> is not something the author wrote. The refusal correctly points at an organizational threshold as one of the three things in conflict, rather than blaming the author for tripping over a setting they cannot see.</p>
+    <p>The split between <code>add</code> and <code>assert_and_track</code> is the whole trick, and getting it wrong is easy: track the arithmetic too, and every unsat core necessarily contains it — because the three equalities alone are perfectly satisfiable, so no conflicting subset can leave the arithmetic out. The core would then name four things, one of which is not a requirement at all but the reason the other three cannot coexist. Untracked, it becomes the law rather than a suspect, and the core names exactly the three statements a person could actually change.</p>
+    <p>Note what is <em>in</em> that three — <code>org.min_minutes_per_lesson</code> is not something the author wrote. The refusal correctly points at an organizational threshold as one of the conflicting requirements, rather than blaming the author for tripping over a setting they cannot see.</p>
     <p>Z3 is asked the same shape of question in three other places: whether exam points sum to the stated maximum, whether a node's durations fit its lesson, and whether a proposed skeleton's counts are consistent with the brief that produced it.</p>
   </section>
 
@@ -572,14 +587,15 @@ core:
     <p>Everything in this system that is a <em>path</em> rather than a property belongs to Datalog: does a claim reach a source, does a source reach an audience it should not, does an edit reach a node three hops away. The facts are mirrored from the platform and never re-derived — <a href="configuration.html#s4">the permission predicate is the platform's</a>, this layer only asks it new questions.</p>
 
     <div class="code-label">Datalog · facts (mirrored) and the three rules that matter</div>
-    <div class="code">% ---- facts, from the platform and from the run ----
-node_cites(Node, Chunk).
-chunk_in(Chunk, Article).
-visible_to(Article, Team).          % the platform's own predicate
-audience_of(Course, Team).
-contains(Course, Node).
-depends_on(Node, Other).            % exam→topic, image→topic, prereq→node
-edited(Node).
+    <div class="code">% ---- fact signatures, for reading. These are NOT loaded: a clause
+% ---- like visible_to(Article, Team). is a fact matching everything,
+% ---- which would make the negation below vacuously false and hide
+% ---- every leak. Real facts arrive from the platform and the run.
+%
+%   node_cites(Node, Chunk)      chunk_in(Chunk, Article)
+%   visible_to(Article, Team)    audience_of(Course, Team)
+%   contains(Course, Node)       edited(Node)
+%   depends_on(Node, Other)      % exam→topic, image→topic, prereq→node
 
 % ---- 1. a leak is a path, and the path is the refusal ----
 leak(Node, Article, Team) :-
@@ -634,8 +650,10 @@ contains(c_17, t2).
     <p>Datalog says what reaches what. Prolog is asked the harder question: what is <em>missing</em>, and can you say why in a form a person can read. It runs on narrow questions — one course, one objective — never as a sweep.</p>
 
     <div class="code-label">Prolog · objective coverage, and the same predicate asked for a reason</div>
-    <div class="code">% A node covers an objective if it teaches a skill that develops it.
+    <div class="code">% A node covers an objective only once a person has approved it —
+% teaching it is not the same as it counting.
 covers(Node, Objective) :-
+    approved(Node),
     teaches(Node, Skill),
     develops(Skill, Objective).
 
@@ -662,6 +680,7 @@ develops(sk_escalation, obj_escalate_correctly).
 develops(sk_severity, obj_escalate_correctly).
 contains(c_17, t1).
 teaches(t1, sk_severity).
+% t1 is not approved — no approved(t1) fact
 
 ?- why_uncovered(c_17, obj_escalate_correctly, E).</pre>
       </div>
@@ -679,6 +698,7 @@ teaches(t1, sk_severity).
       </div>
     </div>
 
+    <p>The first goal of <code>covers/2</code> is doing real work here. Without <code>approved(Node)</code> the objective would count as covered the moment a node merely <em>mentioned</em> the right skill, and the whole predicate would answer a question nobody asked — coverage by draft rather than coverage by course. It is also what makes the two explanations different: “taught but not approved” and “nothing teaches this at all” need different actions from the editor.</p>
     <p>This is where the editor's <em>next best action</em> comes from, and it is worth naming what it is not: the suggestion is derived from the uncovered set, not produced by a model. The system never guesses what the editor should do — it computes what is missing and says so.</p>
   </section>
 
@@ -764,7 +784,7 @@ i=43 GuardrailVerdict   node:  →NodeChecks</pre>
     <p>The order is not arbitrary and it is not primarily about correctness — it is about what a refusal costs.</p>
     <div class="formula">schema      microseconds   ·  no network, no state
 OPA         milliseconds   ·  local bundle, no model
-Z3          milliseconds   ·  before generation, always
+Z3          milliseconds   ·  before generation, and again on node arithmetic
 ─────────────────────────────  the model is called here
 guardrail   ~100 ms        ·  network hop, own state in the machine
 Datalog     milliseconds   ·  over facts already in memory
