@@ -89,7 +89,7 @@
   </div>
 
   <header>
-    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <div class="eyebrow">Governed AI Course Generator · Reviewed v0.1</div>
     <h1>What lives in configuration</h1>
     <p class="kicker">The generator's vocabulary, its notion of meaning, its limits and its models are organizational data read at runtime — not constants inside a release. This page says exactly which data, in what shape, owned by whom, and what happens the moment any of it changes.</p>
     <div class="thesis">
@@ -100,7 +100,7 @@
       <span class="meta-chip">Already exist in the platform: <b>3</b></span>
       <span class="meta-chip">Added by this project: <b>3</b></span>
       <span class="meta-chip">Extended: <b>1</b></span>
-      <span class="meta-chip">Status: <b>draft for discussion</b></span>
+      <span class="meta-chip">Status: <b>reviewed · two audit rounds</b></span>
     </div>
   </header>
 
@@ -453,6 +453,7 @@ metadata, titles   → light</div>
   <section id="s12">
     <div class="eyebrow">Section 12</div>
     <h2>Open questions</h2>
+    <p>Both are decisions for the organization rather than gaps in the design: the machinery to answer either way is already described above, and neither answer changes a record shape or an owner. They are the reason this page is marked reviewed rather than final.</p>
     <ol class="questions">
       <li><strong>How finely does the policy permission split?</strong> Compliance capability is a permission on an existing role, which works — but “may change the guardrail policy” and “may change the thresholds” are different powers with different blast radii, and granting them as one bundle makes the smaller one as heavy as the larger.</li>
       <li><strong>Should <code>reader_grace_days</code> vary by course type?</strong> A thirty-day tail is generous for onboarding and questionable for a compliance course, where the whole point is that everyone is on the current rules. Varying it means the threshold stops being one number and starts being a policy — which may be the honest answer.</li>
@@ -466,7 +467,7 @@ metadata, titles   → light</div>
     </div>
   </section>
 
-  <p class="footer-note">Configuration · draft v0.1 · 28 July 2026 · companion to the <a href="specification.html">spec v2</a></p>
+  <p class="footer-note">Configuration · reviewed v0.1 · 2 August 2026 · companion to the <a href="specification.html">spec v2</a></p>
 </div>
 
 <script src="spec.js?v=3" defer></script>

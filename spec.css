@@ -207,6 +207,9 @@ a.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 }
 .status.draft { background: var(--hitl-soft); color: var(--hitl); }
 .status.planned { background: #E9EBE4; color: var(--muted); }
+/* Audited, findings applied, open questions are decisions rather than gaps.
+   Deliberately not "final" — that waits on the prototype. */
+.status.reviewed { background: var(--accent-soft); color: var(--accent); }
 
 .drill-soon {
   font-size: 0.9rem; color: var(--muted); line-height: 1.6;
@@ -763,6 +766,13 @@ a.menu-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3p
 .menu-card.soon { opacity: 0.62; box-shadow: none; background: rgba(242, 243, 238, 0.4); }
 .menu-card.soon .mk-icon { background: #E9EBE4; color: var(--muted); border-color: var(--hairline); }
 @media (prefers-reduced-motion: reduce) { .menu-card { transition: none; } a.menu-card:hover { transform: none; } }
+
+.menu-legend {
+  margin: 1.1rem 0 0; padding: 0.85rem 1rem;
+  border: 1px dashed var(--hairline); border-radius: 10px;
+  font-family: var(--sans); font-size: 0.86rem; line-height: 1.55; color: var(--muted);
+}
+.menu-legend b { color: var(--ink); font-weight: 650; }
 
 .cover-foot {
   margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--hairline);
