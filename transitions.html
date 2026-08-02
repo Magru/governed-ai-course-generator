@@ -416,9 +416,9 @@
           <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">OutlineRepair</td></tr>
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(revision) ∧ ¬has_nodes(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">has_nodes(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
-          <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
-          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">¬has_nodes(revision)</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
-          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">has_nodes(revision)</td><td class="lyr">Human</td><td class="st">ContentInProgress <small>(proposal discarded; outline_version unchanged)</small></td></tr>
+          <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(revision) ∧ ¬has_nodes(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">reason_given ∧ ¬has_nodes(revision)</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">reason_given ∧ has_nodes(revision)</td><td class="lyr">Human</td><td class="st">ContentInProgress <small>(proposal discarded; outline_version unchanged)</small></td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineApproved</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress <small>(outline_version +1)</small></td></tr>
 
           <tr class="phase"><td colspan="5">Content, and the guard that ends it</td></tr>
@@ -429,7 +429,7 @@
           <tr><td class="st">ReadyForReview</td><td class="evt">CourseChecksRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">WholeCourseChecks</td></tr>
           <tr><td class="st">WholeCourseChecks</td><td class="evt">(auto)</td><td class="grd">objectives_covered ∧ ordering_acyclic ∧ no_permission_leak ∧ trace_satisfies_ltl</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st human">PendingApproval</td></tr>
           <tr><td class="st">WholeCourseChecks</td><td class="evt">CheckFailed(layer, nodes)</td><td class="grd">any of the above fails</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st">ContentInProgress</td></tr>
-          <tr><td class="st human">PendingApproval</td><td class="evt">ApprovalRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st human">PendingApproval</td><td class="evt">ApprovalRejected</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st human">PendingApproval</td><td class="evt">ApprovalGranted</td><td class="grd">approval_chain_satisfied</td><td class="lyr">OPA</td><td class="st">Approved</td></tr>
           <tr><td class="st">Approved</td><td class="evt">ReturnedToWork</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st">Approved</td><td class="evt">PublishRequested</td><td class="grd">all_nodes_approved ∧ no_stale_nodes ∧ versions_current ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">Published</td></tr>
@@ -442,8 +442,8 @@
                     <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">any of the above fails</td><td class="lyr">All layers</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
-          <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
-          <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
+          <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
@@ -492,7 +492,7 @@
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">course_state = ContentInProgress ∧ retry_budget_left(node)</td><td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">course → BlockedRecoverable</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node)</td><td class="lyr">Catalog flag · Human</td><td class="st human">NodeApproved</td></tr>
-          <tr><td class="st">Validated</td><td class="evt">NodeRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">NodeRepair</td></tr>
+          <tr><td class="st">Validated</td><td class="evt">NodeRejected</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">NodeEdited</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited)</td><td class="lyr">Datalog</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">NodeChecks</td></tr>
@@ -575,7 +575,7 @@
       <dd><span class="owner">Z3</span> — the numbers inside a node add up: exam points reach the stated maximum, durations match the block count. Refuses with the failing sum.</dd>
 
       <dt>successor_published(revision) · blocked_at(revision)</dt>
-      <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: which revision took the live pointer, and which state a recoverable block was entered from, so the fix returns there instead of to the beginning.</dd>
+      <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: which revision took the live pointer, and which <em>phase</em> a recoverable block was entered from — brief, outline, or content, each a named set of states — so the fix returns there instead of to the beginning.</dd>
 
       <dt>all_nodes_approved(revision) · no_stale_nodes(revision)</dt>
       <dd><span class="owner">State store</span> — the two quantified conditions that lift a revision out of <code>ContentInProgress</code>. Refuse with the offending nodes.</dd>
@@ -767,6 +767,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
 
     <h3>When state is read</h3>
     <p>Guards that name a state — <code>course_state = ContentInProgress</code> is the one that matters — are evaluated against the state <strong>at the moment the event is admitted</strong>, before any derived transition runs. This matters because course states are derived from node states: without the convention, the last node approval and the course's move to <code>ReadyForReview</code> would race inside one tick, and a guard could read either. Admission first, derivation second.</p>
+    <p>The mirror of that rule matters just as much: <strong>entering a state re-evaluates its outgoing guards.</strong> Without it a derived transition could be missed entirely — a revision returning to <code>ContentInProgress</code> after a skeleton revision that removed the last unapproved node would sit there forever, because every node is already approved and no further node event is coming to trigger the check. The guard is true on arrival; the machine has to look.</p>
     <h3>Determinism</h3>
     <p>No (state, event) pair has two rows whose guards can both hold. Where two rows share a state and an event they are complementary branches of one evaluation, so the next state is a function of the current state, the event, and the guard results — with no ordering dependence and no first-match-wins rule to remember.</p>
     <p>Making that true costs something, and the cost is visible in the tables: the three refusal rows in <code>BriefValidation</code> carry the earlier checks in their guards (<code>schema_valid ∧ ¬policy_allows</code>, not just <code>¬policy_allows</code>), and the repair rows carry <code>policy_allows ∧ constraint violated</code> so that a brief failing both a policy and a constraint has one destination rather than two. Ordering is then a <em>consequence</em> of the guards rather than a rule the reader has to hold separately — which is the point, because a rule held separately is a rule that drifts.</p>
