@@ -347,7 +347,7 @@
     </div>
     <div class="meta-row">
       <span class="meta-chip">Engines: <b>5 + schema</b></span>
-      <span class="meta-chip">Worked examples: <b>6</b></span>
+      <span class="meta-chip">Worked refusals: <b>4</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -770,7 +770,7 @@ guardrail   ~100 ms        ·  network hop, own state in the machine
 Datalog     milliseconds   ·  over facts already in memory
 Prolog      milliseconds   ·  narrow queries only
 temporal    once per course · replays the trace at review time</div>
-    <p>Everything above the line runs before a single token is generated, which is why <a href="walkthrough.html#s2">three of the five kinds of refusal cost nothing</a>. Everything below runs against something that already exists, so its cost is bounded by what was already spent.</p>
+    <p>Everything above the line runs before a single token is generated, which is why <a href="walkthrough.html#s2">a malformed brief, a forbidden one and an infeasible one all cost nothing</a>. Everything below runs against something that already exists, so its cost is bounded by what was already spent.</p>
 
     <h3>When a layer is unavailable</h3>
     <p>The formal engines are in-process and deterministic: if one cannot run, the deployment is broken, and the honest response is to stop admitting work rather than to admit it unchecked. The guardrail is a network hop, and its unavailability is a <em>timeout</em> — an unknown, routed to <code>ErrorRecovery</code>, not a denial. The distinction is recorded in the trace, because “we could not check” and “we checked and refused” are different facts about a course and an auditor will want to tell them apart.</p>
