@@ -9,264 +9,35 @@
 <meta property="og:description" content="Two-level state machine: what persists across editor sessions, where the process can stall, and which invariants hold over the trace.">
 <meta property="og:type" content="article">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+<link rel="stylesheet" href="spec.css?v=2">
 </head>
 <body>
 
-<style>
-  /* Deliberately single-theme: this document always renders light (paper). */
-  :root, :root[data-theme="dark"], :root[data-theme="light"] {
-    color-scheme: light;
-    --paper: #FAF9F5;
-    --ink: #202A35;
-    --muted: #5C6873;
-    --hairline: #DFE2DA;
-    --accent: #0E6E5C;
-    --accent-soft: #E3EFEA;
-    --blocked: #A6512B;
-    --blocked-soft: #F4E7DD;
-    --hitl: #8A6A1F;
-    --hitl-soft: #F3ECD8;
-    --panel: #F2F3EE;
-    --code-bg: #EDEFE8;
-    --diagram-bg: #F4F5F0;
-  }
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-spec" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 17h5"/></symbol>
+    <symbol id="i-states" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="10" r="2.6"/><circle cx="9" cy="18.5" r="2.6"/><path d="M8.5 7.3 15.5 9.3M7.1 8.5l1.5 7.5M15.9 11.9 11.2 16.9"/></symbol>
+    <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M8.5 18.5H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.5"/></symbol>
+    <symbol id="i-config" viewBox="0 0 24 24"><path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.4"/><circle cx="9" cy="16.5" r="2.4"/></symbol>
+    <symbol id="i-transitions" viewBox="0 0 24 24"><path d="M4 8h13M14 5l3 3-3 3"/><path d="M20 16H7M10 13l-3 3 3 3"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="m3 12.5 9 4.5 9-4.5"/><path d="m3 17 9 4.5 9-4.5"/></symbol>
+    <symbol id="i-safety" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 4.5-3.1 8.2-7.5 9.5C7.6 20.2 4.5 16.5 4.5 12V6L12 3z"/><path d="m8.8 12.3 2.3 2.3 4.1-4.7"/></symbol>
+    <symbol id="i-eval" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M3.5 6.5 5 8l2.8-3M3.5 12.5 5 14l2.8-3M3.5 18.5 5 20l2.8-3"/><path d="M11.5 6.5h9M11.5 12.5h9M11.5 18.5h6"/></symbol>
+    <symbol id="i-toc" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.5-1.5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-top" viewBox="0 0 24 24"><path d="M12 19V6M6 12l6-6 6 6"/></symbol>
+  </defs>
+</svg>
+<div class="progress" role="presentation"></div>
+<button type="button" class="to-top" aria-label="Back to top"><svg class="ico" aria-hidden="true"><use href="#i-top"></use></svg></button>
 
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
-    font-size: 17px;
-    line-height: 1.62;
-    margin: 0;
-  }
-  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.4rem 5rem; }
-  .wrap-wide { max-width: 54rem; margin: 0 auto; }
-
-  h1, h2, h3, .sans {
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-  }
-  h1 { font-size: 2.15rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; margin: 0.6rem 0 0.9rem; text-wrap: balance; }
-  h2 { font-size: 1.32rem; font-weight: 650; letter-spacing: -0.008em; margin: 0 0 0.9rem; text-wrap: balance; }
-  h3 { font-size: 1.02rem; font-weight: 650; margin: 1.4rem 0 0.5rem; }
-  p { margin: 0 0 1rem; }
-  section { margin-top: 3.2rem; }
-
-  .eyebrow {
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 0.4rem;
-  }
-  .kicker { color: var(--muted); font-size: 1.06rem; margin-bottom: 1.4rem; }
-
-  /* series nav */
-  .series {
-    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
-    border-bottom: 1px solid var(--hairline); color: var(--muted);
-  }
-  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
-  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
-  .series a:hover { border-color: var(--accent); }
-  .series .here { color: var(--ink); font-weight: 650; }
-  .series .soon { color: var(--muted); opacity: 0.75; }
-
-  .meta-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.3rem 0 0; }
-  .meta-chip {
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.78rem; font-weight: 550; color: var(--muted);
-    border: 1px solid var(--hairline); border-radius: 999px; padding: 0.28rem 0.75rem;
-    background: var(--panel);
-  }
-  .meta-chip b { color: var(--ink); font-weight: 650; }
-
-  .thesis {
-    border-left: 3px solid var(--accent);
-    background: var(--accent-soft);
-    padding: 0.9rem 1.1rem; border-radius: 0 8px 8px 0;
-    margin: 1.4rem 0;
-  }
-  .thesis p { margin: 0; }
-  .thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
-
-  nav.toc {
-    margin-top: 2.6rem; padding: 1.1rem 1.2rem;
-    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
-  }
-  nav.toc .toc-title { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.7rem;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
-  nav.toc ol { columns: 2; column-gap: 2rem; margin: 0; padding: 0 0 0 1.2rem; font-size: 0.92rem; }
-  nav.toc li { margin-bottom: 0.32rem; break-inside: avoid; }
-  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
-  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
-  @media (max-width: 620px) { nav.toc ol { columns: 1; } }
-
-  ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
-  ul.plain li { margin-bottom: 0.45rem; }
-  ol.steps { padding-left: 1.3rem; margin: 0 0 1rem; }
-  ol.steps li { margin-bottom: 0.55rem; }
-
-  strong { font-weight: 650; }
-  code {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.86em; background: var(--code-bg);
-    padding: 0.1em 0.38em; border-radius: 4px;
-  }
-  .formula {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--hairline);
-    border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0.6rem 0 1rem;
-    line-height: 1.9;
-  }
-
-  .table-scroll { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--hairline); border-radius: 10px; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 640px; }
-  thead th {
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
-    text-align: left; color: var(--muted); background: var(--panel);
-    padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--hairline);
-  }
-  tbody td { padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--hairline); vertical-align: top; }
-  tbody tr:last-child td { border-bottom: none; }
-  td.state {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-weight: 600; font-size: 0.82rem; white-space: nowrap; color: var(--accent);
-  }
-  td.state.hitl-s { color: var(--hitl); }
-  td.state.blocked-s { color: var(--blocked); }
-  td.ev { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; white-space: nowrap; color: var(--ink); }
-  td small, .muted { color: var(--muted); }
-
-  .diagram {
-    background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 10px;
-    padding: 1rem; margin: 1.2rem 0; overflow-x: auto;
-  }
-  .diagram .caption {
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.75rem; color: #5C6873; letter-spacing: 0.06em; text-transform: uppercase;
-    margin-bottom: 0.5rem; font-weight: 600;
-  }
-  .diagram pre.mermaid { margin: 0; background: transparent; }
-  .diagram .edgeLabel,
-  .diagram .edgeLabel p,
-  .diagram .edgeLabel span,
-  .diagram .edgeLabel div {
-    color: #202A35 !important;
-    background: #F4F5F0 !important;
-  }
-  .diagram svg .labelBkg { background: #F4F5F0 !important; }
-  .diagram svg .edgeLabel rect { fill: #F4F5F0 !important; opacity: 1 !important; }
-  .diagram svg .flowchart-link { stroke: #8B958F !important; }
-  .diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
-
-  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; margin-top: 0.6rem;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; color: #5C6873; }
-  .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
-
-  .principles { list-style: none; padding: 0; margin: 1.3rem 0; counter-reset: pr; }
-  .principles li {
-    position: relative; padding: 0.75rem 0 0.75rem 2.4rem; border-bottom: 1px solid var(--hairline);
-    counter-increment: pr;
-  }
-  .principles li:last-child { border-bottom: none; }
-  .principles li::before {
-    content: counter(pr);
-    position: absolute; left: 0; top: 0.85rem;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    font-size: 0.78rem; font-weight: 650; color: var(--muted);
-    width: 1.7rem; height: 1.7rem; border: 1px solid var(--hairline); border-radius: 999px;
-    display: flex; align-items: center; justify-content: center; background: var(--panel);
-  }
-
-  .callout {
-    border: 1px solid var(--accent); border-radius: 12px;
-    background: var(--accent-soft); padding: 1.2rem 1.3rem; margin-top: 3rem;
-  }
-  .callout .eyebrow { margin-bottom: 0.3rem; }
-  .callout p { margin: 0 0 0.7rem; }
-  .callout p:last-child { margin-bottom: 0; }
-
-  .questions { padding-left: 1.3rem; margin: 0; }
-  .questions li { margin-bottom: 0.7rem; }
-
-  .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
-  .footer-note a { color: var(--accent); }
-
-  html { scroll-behavior: smooth; }
-  section[id] { scroll-margin-top: 2.5rem; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-
-  /* sticky section rail */
-  .rail {
-    position: fixed;
-    left: 1.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 20;
-    display: none;
-    flex-direction: column;
-    gap: 0.15rem;
-    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
-    padding: 0.35rem 0;
-    max-height: 86vh;
-    overflow: hidden;
-  }
-  .rail a {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    text-decoration: none;
-    color: var(--muted);
-    padding: 0.16rem 0;
-    border: 0;
-  }
-  .rail .tick {
-    display: block;
-    width: 0.85rem;
-    height: 2px;
-    background: var(--hairline);
-    border-radius: 2px;
-    flex: none;
-    transition: width 0.18s ease, background-color 0.18s ease;
-  }
-  .rail .lbl {
-    font-size: 0.72rem;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    opacity: 0;
-    transform: translateX(-0.25rem);
-    transition: opacity 0.18s ease, transform 0.18s ease;
-  }
-  .rail:hover .lbl,
-  .rail a:focus-visible .lbl,
-  .rail a.active .lbl { opacity: 1; transform: none; }
-  .rail a:hover .tick { width: 1.5rem; background: var(--accent); }
-  .rail a:hover { color: var(--ink); }
-  .rail a.active .tick { width: 1.5rem; background: var(--accent); }
-  .rail a.active { color: var(--accent); font-weight: 650; }
-  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
-  .rail .rail-home {
-    margin-bottom: 0.45rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--hairline);
-    color: var(--accent);
-    font-size: 0.72rem;
-    font-weight: 650;
-  }
-  .rail .rail-home .lbl { opacity: 1; transform: none; }
-  @media (min-width: 1280px) { .rail { display: flex; } }
-  @media (prefers-reduced-motion: reduce) {
-    .rail .tick, .rail .lbl { transition: none; }
-  }
-
-  a { color: var(--accent); }
-  ::selection { background: var(--accent-soft); }
-</style>
 
 <nav class="rail" aria-label="Sections">
-  <a class="rail-home" href="./"><span class="tick"></span><span class="lbl">← Specification</span></a>
+  <a class="rail-home" href="./"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg><span class="lbl">← Specification</span></a>
   <a href="#s1"><span class="tick"></span><span class="lbl">Principles</span></a>
   <a href="#s2"><span class="tick"></span><span class="lbl">Course FSM</span></a>
   <a href="#s3"><span class="tick"></span><span class="lbl">Node FSM</span></a>
@@ -283,13 +54,13 @@
 
   <div class="series">
     <span class="series-label">Detailed specifications</span>
-    <a href="./">← Specification</a>
-    <span class="here">State model</span>
-    <a href="walkthrough.html">Walkthrough</a>
-    <a href="configuration.html">Configuration</a>
-    <a href="transitions.html">Transitions &amp; guards</a>
-    <a href="layers.html">Validation layers</a>
-    <a href="safety.html">Generation safety</a>
+    <a href="./"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg>← Specification</a>
+    <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>State model</span>
+    <a href="walkthrough.html"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg>Walkthrough</a>
+    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
+    <a href="transitions.html"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions &amp; guards</a>
+    <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg>Validation layers</a>
+    <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg>Generation safety</a>
   </div>
 
   <header>
@@ -308,7 +79,7 @@
   </header>
 
   <nav class="toc">
-    <div class="toc-title">Contents</div>
+    <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
     <ol>
       <li><a href="#s1">Design principles</a></li>
       <li><a href="#s2">Course FSM</a></li>
@@ -428,7 +199,7 @@ flowchart TD
       </table>
     </div>
 
-    <div class="wrap" style="padding:0; max-width:46rem;">
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
       <h3>Where a course starts and where it ends</h3>
       <p>One clarification first, because it decides how the rest of this section reads: <strong>this machine runs per revision, not per course.</strong> A course is an identity that owns an ordered list of revisions; every state named above describes one revision. Where this page says “the course” without qualification, it means the revision currently being worked on or served.</p>
       <p><strong>Initial — there are two.</strong> <code>AwaitingBrief</code> is where a course's <em>first</em> revision is created, and the only way to start from nothing. <code>ContentInProgress</code> is where every <em>later</em> revision is born: <code>ReviseRequested</code> forks it with its predecessor's nodes already approved, so there is no brief to validate and no skeleton to draft. A machine with two entry points is worth stating outright rather than leaving the reader to infer it from a fork arrow.</p>
@@ -530,7 +301,7 @@ flowchart TD
     <p>Some block types cannot be cleared by any check — an illustration is the obvious one. The catalog marks those types <code>requires_visual_review</code>, so the requirement travels with the vocabulary rather than being hard-coded per modality: whoever adds a new visual block type declares it there, and the machine inherits the rule.</p>
     <p>The flag is carried on the block, and it gates the node: a node reaches <code>Validated</code> when the formal layers are satisfied, but it cannot reach <code>NodeApproved</code> while any flagged block is still unseen. The editor's approval screen therefore shows two things — the formal verdict for the node, and the individual visuals still awaiting an eye. Rejecting one visual does not discard the node: that block returns to <code>NodeRepair</code> with the editor's reason, and everything already cleared stays cleared.</p>
 
-    <p style="max-width:46rem;"><strong>Initial:</strong> <code>Planned</code> — every node is born from the approved skeleton. <strong>Terminal:</strong> <code>BlockedFinal</code>. <strong>Resting:</strong> <code>NodeApproved</code> — the state a node is supposed to end in, which it leaves only when it or a dependency changes. A course is publishable exactly when every node rests there.</p>
+    <p style="max-width:var(--measure);"><strong>Initial:</strong> <code>Planned</code> — every node is born from the approved skeleton. <strong>Terminal:</strong> <code>BlockedFinal</code>. <strong>Resting:</strong> <code>NodeApproved</code> — the state a node is supposed to end in, which it leaves only when it or a dependency changes. A course is publishable exactly when every node rests there.</p>
   </section>
 
   <section id="s4">
@@ -547,7 +318,7 @@ flowchart TD
   <section id="s5" class="wrap-wide">
     <div class="eyebrow">Section 5</div>
     <h2>The machine in nine situations</h2>
-    <p style="max-width:46rem;">A state list says what exists; it does not say what moves. Below are the situations the generator actually meets, and for each one: what the event is, which states change, which fields are written, and what the editor is left holding.</p>
+    <p style="max-width:var(--measure);">A state list says what exists; it does not say what moves. Below are the situations the generator actually meets, and for each one: what the event is, which states change, which fields are written, and what the editor is left holding.</p>
 
     <div class="table-scroll">
       <table>
@@ -622,7 +393,7 @@ flowchart TD
       </table>
     </div>
 
-    <div class="wrap" style="padding:0; max-width:46rem;">
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
       <p>Four of these are worth following event by event, because they are where the design earns its keep.</p>
 
       <h3>A bounded repair, from failure to approval</h3>
@@ -823,65 +594,6 @@ G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
   });
 </script>
 
-<script>
-  (function () {
-    var rail = document.querySelector('.rail');
-    if (!rail) return;
-    var links = Array.prototype.slice.call(rail.querySelectorAll('a[href^="#"]'));
-    var targets = links.map(function (a) {
-      return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
-    }).filter(function (t) { return t.el; });
-    if (!targets.length) return;
-
-    var current = null;
-    var apply = function (t) {
-      if (t === current) return;
-      current = t;
-      targets.forEach(function (x) {
-        var on = x === t;
-        x.link.classList.toggle('active', on);
-        if (on) { x.link.setAttribute('aria-current', 'true'); }
-        else { x.link.removeAttribute('aria-current'); }
-      });
-    };
-
-    var update = function () {
-      var mid = window.innerHeight * 0.4;
-      var pick = targets[0];
-      for (var i = 0; i < targets.length; i++) {
-        if (targets[i].el.getBoundingClientRect().top <= mid) pick = targets[i];
-      }
-      // at the very bottom of the page the last section wins
-      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
-        pick = targets[targets.length - 1];
-      }
-      apply(pick);
-    };
-
-    // rAF-throttled, but never able to wedge: if a frame never arrives
-    // (background tab, throttled timers) the age guard flushes directly.
-    var queued = false;
-    var lastRun = 0;
-    var flush = function () {
-      queued = false;
-      lastRun = Date.now();
-      update();
-    };
-    var onScroll = function () {
-      if (Date.now() - lastRun > 300) { flush(); return; }
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(flush);
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    window.addEventListener('hashchange', function () { setTimeout(update, 60); });
-    window.addEventListener('load', function () { setTimeout(update, 50); });
-    // diagrams render after load and shift every offset below them
-    setTimeout(update, 900);
-    update();
-  })();
-</script>
+<script src="spec.js?v=2" defer></script>
 </body>
 </html>

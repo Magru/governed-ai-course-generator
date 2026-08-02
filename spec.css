@@ -1,0 +1,582 @@
+/* ===========================================================================
+   Governed AI Course Generator — shared stylesheet for the specification set.
+
+   One file for every page in the series. Page-specific rules stay in the
+   inline <style> block each page carries in its body: that block comes after
+   this file in document order, so it still wins on the cascade.
+
+   Deliberately single-theme: these documents always render light (paper).
+   =========================================================================== */
+
+:root, :root[data-theme="dark"], :root[data-theme="light"] {
+  color-scheme: light;
+
+  --paper: #FAF9F5;
+  --ink: #202A35;
+  --muted: #5C6873;
+  --hairline: #DDE1D8;
+  --accent: #0E6E5C;
+  --accent-soft: #E3EFEA;
+  --blocked: #A6512B;
+  --blocked-soft: #F4E7DD;
+  --hitl: #8A6A1F;
+  --hitl-soft: #F3ECD8;
+  --panel: #F2F3EE;
+  --code-bg: #EDEFE8;
+  --diagram-bg: #F4F5F0;
+
+  --sans: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+  --serif: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Prose measure stays near 90 characters — widening it further would make
+     reading worse, not better. What actually gains room is --wide, which
+     tables, diagrams and code blocks bleed out to. */
+  --measure: 47rem;
+  --wide: 47rem;
+  --shadow-sm: 0 1px 2px rgba(32, 42, 53, 0.04), 0 2px 8px rgba(32, 42, 53, 0.03);
+  --shadow-md: 0 2px 6px rgba(32, 42, 53, 0.05), 0 12px 28px rgba(32, 42, 53, 0.06);
+}
+
+@media (min-width: 1120px) { :root { --wide: 54rem; } }
+@media (min-width: 1500px) { :root { --wide: 60rem; } }
+
+/* One lever raises every rem-sized rule on the page, including the
+   page-specific blocks this file does not own. */
+html { font-size: 17.5px; scroll-behavior: smooth; }
+@media (max-width: 720px) { html { font-size: 16.5px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  line-height: 1.68;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- page background --------------------------------------------------- */
+/* Two fixed pseudo-elements rather than background-attachment: fixed, which
+   repaints the whole gradient stack on every scroll frame. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(58rem 34rem at 6% -8%,  rgba(14, 110, 92, 0.11), transparent 62%),
+    radial-gradient(46rem 30rem at 98% 0%,  rgba(138, 106, 31, 0.10), transparent 60%),
+    radial-gradient(54rem 42rem at 50% 108%, rgba(14, 110, 92, 0.08), transparent 66%),
+    var(--paper);
+}
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(32, 42, 53, 0.030) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(32, 42, 53, 0.030) 1px, transparent 1px);
+  background-size: 30px 30px;
+  -webkit-mask-image: radial-gradient(120% 78% at 50% -6%, #000 0%, transparent 74%);
+  mask-image: radial-gradient(120% 78% at 50% -6%, #000 0%, transparent 74%);
+}
+
+/* ---- layout ------------------------------------------------------------ */
+.wrap { max-width: var(--measure); margin: 0 auto; padding: 2.2rem 1.4rem 6rem; }
+
+/* .wrap-wide is left as a plain section — see the bleed rule at the end of
+   this file for how tables and diagrams get their extra room. */
+
+h1, h2, h3, .sans { font-family: var(--sans); }
+h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; margin: 0.7rem 0 1rem; text-wrap: balance; }
+h2 { font-size: 1.5rem; font-weight: 650; letter-spacing: -0.012em; margin: 0 0 1rem; text-wrap: balance; }
+h3 { font-size: 1.1rem; font-weight: 650; margin: 1.6rem 0 0.55rem; }
+p { margin: 0 0 1.05rem; }
+section { margin-top: 3.6rem; }
+section[id] { scroll-margin-top: 4rem; }
+
+.eyebrow {
+  font-family: var(--sans);
+  font-size: 0.74rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 0.45rem;
+  display: flex; align-items: center; gap: 0.45rem;
+}
+.kicker { color: var(--muted); font-size: 1.12rem; margin-bottom: 1.5rem; }
+
+.meta-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.4rem 0 0; }
+.meta-chip {
+  font-family: var(--sans);
+  font-size: 0.8rem; font-weight: 550; color: var(--muted);
+  border: 1px solid var(--hairline); border-radius: 999px; padding: 0.32rem 0.8rem;
+  background: rgba(242, 243, 238, 0.78);
+}
+.meta-chip b { color: var(--ink); font-weight: 650; }
+
+.thesis {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 1rem 1.2rem; border-radius: 0 10px 10px 0;
+  margin: 1.5rem 0;
+  box-shadow: var(--shadow-sm);
+}
+.thesis p { margin: 0; }
+.thesis p + p { margin-top: 0.65rem; }
+.thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
+
+/* ---- icons ------------------------------------------------------------- */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ico {
+  width: 1.05em; height: 1.05em; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+  vertical-align: -0.14em;
+}
+.ico-lg { width: 1.5rem; height: 1.5rem; stroke-width: 1.5; }
+
+/* ---- series navigation ------------------------------------------------- */
+/* Sticky on every width: it is the primary way between the eight documents. */
+.series {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center;
+  font-family: var(--sans); font-size: 0.8rem;
+  /* Tracks the widened content column rather than the prose column, so the
+     bar is never visibly narrower than the tables underneath it. */
+  width: var(--wide);
+  margin: -2.2rem calc((var(--measure) - var(--wide)) / 2) 2rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(250, 249, 245, 0.86);
+  -webkit-backdrop-filter: saturate(1.5) blur(12px);
+  backdrop-filter: saturate(1.5) blur(12px);
+}
+@media (max-width: 1119px) { .series { width: auto; margin-left: -1.4rem; margin-right: -1.4rem; padding-left: 1.4rem; padding-right: 1.4rem; } }
+/* The strip is self-evidently a menu; a label would cost it a whole row and
+   push the seven chips onto two. */
+.series .series-label { display: none; }
+.series a, .series .here, .series .soon {
+  display: inline-flex; align-items: center; gap: 0.36rem;
+  padding: 0.32rem 0.6rem; border-radius: 8px;
+  border: 1px solid transparent; text-decoration: none; white-space: nowrap;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+.series a { color: var(--muted); }
+.series a:hover { background: var(--accent-soft); color: var(--accent); border-color: rgba(14, 110, 92, 0.22); }
+.series a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.series .here { background: var(--ink); color: var(--paper); font-weight: 650; }
+.series .here .ico { stroke: var(--paper); }
+.series .soon { color: var(--muted); opacity: 0.6; }
+@media (max-width: 720px) {
+  .series { gap: 0.2rem; font-size: 0.76rem; overflow-x: auto; flex-wrap: nowrap; }
+  .series .series-label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .series a { transition: none; } }
+
+/* ---- drill-down menu (index) ------------------------------------------- */
+.drill { margin: 2.6rem 0 0; }
+.drill-title {
+  font-family: var(--sans);
+  font-size: 0.74rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.9rem;
+}
+.drill-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+@media (max-width: 760px) { .drill-grid { grid-template-columns: 1fr; } }
+.card {
+  position: relative; overflow: hidden;
+  border: 1px solid var(--hairline); border-radius: 12px;
+  background: rgba(242, 243, 238, 0.72);
+  padding: 1rem 1.1rem; display: block; text-decoration: none; color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+a.card:hover {
+  border-color: var(--accent); background: var(--accent-soft);
+  transform: translateY(-2px); box-shadow: var(--shadow-md);
+}
+a.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.card .card-title {
+  font-family: var(--sans);
+  font-weight: 650; font-size: 1rem;
+  display: flex; justify-content: space-between; gap: 0.6rem; align-items: center;
+}
+.card .card-title .ico { color: var(--accent); }
+.card .card-name { display: inline-flex; align-items: center; gap: 0.5rem; }
+.card .card-desc { font-size: 0.92rem; color: var(--muted); line-height: 1.54; margin-top: 0.35rem; display: block; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } a.card:hover { transform: none; } }
+
+.status {
+  font-family: var(--sans);
+  font-size: 0.64rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 0.15rem 0.52rem; border-radius: 999px; white-space: nowrap;
+}
+.status.draft { background: var(--hitl-soft); color: var(--hitl); }
+.status.planned { background: #E9EBE4; color: var(--muted); }
+
+.drill-soon {
+  font-size: 0.9rem; color: var(--muted); line-height: 1.6;
+  margin: 0.9rem 0 0; padding-top: 0.9rem; border-top: 1px dashed var(--hairline);
+}
+.drill-soon b { color: var(--ink); font-weight: 650; }
+
+/* ---- table of contents ------------------------------------------------- */
+nav.toc {
+  margin-top: 2.8rem; padding: 1.2rem 1.3rem;
+  border: 1px solid var(--hairline); border-radius: 12px;
+  background: rgba(242, 243, 238, 0.72);
+  box-shadow: var(--shadow-sm);
+}
+nav.toc .toc-title {
+  font-family: var(--sans);
+  font-size: 0.74rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.75rem;
+  display: flex; align-items: center; gap: 0.45rem;
+}
+nav.toc ol { columns: 2; column-gap: 2.2rem; margin: 0; padding: 0 0 0 1.2rem; font-size: 0.96rem; }
+nav.toc li { margin-bottom: 0.36rem; break-inside: avoid; }
+nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 620px) { nav.toc ol { columns: 1; } }
+
+/* ---- lists ------------------------------------------------------------- */
+ul.risks, ul.plain { padding-left: 1.25rem; margin: 0 0 1.05rem; }
+ul.risks li, ul.plain li { margin-bottom: 0.48rem; }
+ol.steps { padding-left: 1.35rem; margin: 0 0 1.05rem; }
+ol.steps li { margin-bottom: 0.58rem; }
+
+.principles { list-style: none; padding: 0; margin: 1.4rem 0; counter-reset: pr; }
+.principles li {
+  position: relative; padding: 0.8rem 0 0.8rem 2.6rem; border-bottom: 1px solid var(--hairline);
+  counter-increment: pr;
+}
+.principles li:last-child { border-bottom: none; }
+.principles li::before {
+  content: counter(pr);
+  position: absolute; left: 0; top: 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.8rem; font-weight: 650; color: var(--accent);
+  width: 1.8rem; height: 1.8rem; border: 1px solid var(--hairline); border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-soft);
+}
+
+.questions { padding-left: 1.35rem; margin: 0; }
+.questions li { margin-bottom: 0.7rem; }
+
+/* ---- code -------------------------------------------------------------- */
+strong { font-weight: 650; }
+code {
+  font-family: var(--mono);
+  font-size: 0.86em; background: var(--code-bg);
+  padding: 0.1em 0.38em; border-radius: 4px;
+}
+
+.formula {
+  font-family: var(--mono);
+  font-size: 0.86rem; background: var(--code-bg); border: 1px solid var(--hairline);
+  border-radius: 10px; padding: 1rem 1.1rem; overflow-x: auto; margin: 0.6rem 0 1.05rem;
+  line-height: 1.9;
+}
+
+/* ---- three-layer / phase cards ----------------------------------------- */
+.layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; margin: 1.5rem 0; }
+@media (max-width: 760px) { .layers { grid-template-columns: 1fr; } }
+.layer {
+  border: 1px solid var(--hairline); border-radius: 12px;
+  background: rgba(242, 243, 238, 0.72);
+  padding: 1.05rem 1.1rem; border-top-width: 3px; border-top-style: solid;
+  box-shadow: var(--shadow-sm);
+}
+.layer .ly-label {
+  font-family: var(--sans);
+  font-size: 0.72rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.layer h3 { margin: 0 0 0.45rem; font-size: 1.04rem; }
+.layer p { font-size: 0.94rem; color: var(--muted); margin: 0; line-height: 1.55; }
+.layer .ly-ex { font-size: 0.88rem; color: var(--muted); border-top: 1px dashed var(--hairline); padding-top: 0.6rem; margin-top: 0.65rem; font-style: italic; }
+.layer.formal { border-top-color: var(--accent); }
+.layer.formal .ly-label { color: var(--accent); }
+.layer.managed { border-top-color: var(--blocked); }
+.layer.managed .ly-label { color: var(--blocked); }
+.layer.human { border-top-color: var(--hitl); }
+.layer.human .ly-label { color: var(--hitl); }
+
+.phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem; margin: 1.5rem 0; }
+@media (max-width: 760px) { .phases { grid-template-columns: 1fr; } }
+.phase {
+  border: 1px solid var(--hairline); border-radius: 12px;
+  background: rgba(242, 243, 238, 0.72);
+  padding: 1.05rem 1.1rem;
+  box-shadow: var(--shadow-sm);
+}
+.phase .ph-label {
+  font-family: var(--sans);
+  font-size: 0.72rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 0.4rem;
+}
+.phase h3 { margin: 0 0 0.45rem; font-size: 1.04rem; }
+.phase p { font-size: 0.94rem; color: var(--muted); margin: 0; line-height: 1.55; }
+
+/* ---- tables ------------------------------------------------------------ */
+.table-scroll {
+  overflow-x: auto; margin: 1.3rem 0;
+  border: 1px solid var(--hairline); border-radius: 12px;
+  background: rgba(250, 249, 245, 0.6);
+  box-shadow: var(--shadow-sm);
+}
+table { border-collapse: collapse; width: 100%; font-size: 0.94rem; min-width: 34rem; }
+thead th {
+  font-family: var(--sans);
+  font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
+  text-align: left; color: var(--muted); background: var(--panel);
+  padding: 0.7rem 0.95rem; border-bottom: 1px solid var(--hairline);
+}
+tbody td { padding: 0.78rem 0.95rem; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr { transition: background-color 0.12s ease; }
+tbody tr:hover { background: rgba(227, 239, 234, 0.5); }
+@media (prefers-reduced-motion: reduce) { tbody tr { transition: none; } }
+
+td.state, td.tool {
+  font-family: var(--mono);
+  font-weight: 600; font-size: 0.84rem; white-space: nowrap; color: var(--accent);
+}
+td.state.hitl-s { color: var(--hitl); }
+td.state.blocked-s { color: var(--blocked); }
+td.ev { font-family: var(--mono); font-size: 0.82rem; white-space: nowrap; color: var(--ink); }
+td.role { font-weight: 600; min-width: 10rem; }
+td small, .muted { color: var(--muted); }
+
+/* ---- diagrams ---------------------------------------------------------- */
+.diagram {
+  position: relative;
+  background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 12px;
+  padding: 1.1rem; margin: 1.3rem 0; overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+.diagram .caption {
+  font-family: var(--sans);
+  font-size: 0.76rem; color: #5C6873; letter-spacing: 0.06em; text-transform: uppercase;
+  margin-bottom: 0.55rem; font-weight: 600;
+}
+.diagram pre.mermaid { margin: 0; background: transparent; }
+.diagram .edgeLabel,
+.diagram .edgeLabel p,
+.diagram .edgeLabel span,
+.diagram .edgeLabel div {
+  color: #202A35 !important;
+  background: #F4F5F0 !important;
+}
+.diagram svg .labelBkg { background: #F4F5F0 !important; }
+.diagram svg .edgeLabel rect { fill: #F4F5F0 !important; opacity: 1 !important; }
+.diagram svg .flowchart-link { stroke: #8B958F !important; }
+.diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 0.95rem; font-size: 0.84rem; margin-top: 0.65rem;
+  font-family: var(--sans); color: #5C6873; }
+.dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
+
+/* ---- callout ----------------------------------------------------------- */
+.callout {
+  border: 1px solid var(--accent); border-radius: 14px;
+  background: var(--accent-soft); padding: 1.3rem 1.4rem; margin-top: 3.2rem;
+  box-shadow: var(--shadow-sm);
+}
+.callout .eyebrow { margin-bottom: 0.35rem; }
+.callout p { margin: 0 0 0.75rem; }
+.callout p:last-child { margin-bottom: 0; }
+
+.footer-note { color: var(--muted); font-size: 0.9rem; margin-top: 2.8rem; text-align: center;
+  font-family: var(--sans); }
+.footer-note a { color: var(--accent); }
+
+/* ---- sticky section rail (wide screens only) --------------------------- */
+/* Positioned from the centre line so it never lands on the widened content
+   column: half the viewport, minus half of --wide, minus the rail's own
+   reserved width. Tracking --wide rather than a fixed number is what lets the
+   rail appear at 1360px, where the content column is still narrow enough to
+   leave room for it. */
+.rail {
+  position: fixed;
+  left: max(1rem, calc(50vw - (var(--wide) / 2) - 11rem));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  gap: 0.16rem;
+  font-family: var(--sans);
+  padding: 0.4rem 0;
+  max-height: 84vh;
+  overflow: hidden;
+}
+.rail a {
+  display: flex; align-items: center; gap: 0.55rem;
+  text-decoration: none; color: var(--muted);
+  padding: 0.17rem 0; border: 0;
+}
+.rail .tick {
+  display: block; width: 0.85rem; height: 2px;
+  background: var(--hairline); border-radius: 2px; flex: none;
+  transition: width 0.18s ease, background-color 0.18s ease;
+}
+.rail .lbl {
+  font-size: 0.75rem; letter-spacing: 0.02em; white-space: nowrap;
+  opacity: 0; transform: translateX(-0.25rem);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.rail:hover .lbl,
+.rail a:focus-visible .lbl,
+.rail a.active .lbl { opacity: 1; transform: none; }
+.rail a:hover .tick { width: 1.5rem; background: var(--accent); }
+.rail a:hover { color: var(--ink); }
+.rail a.active .tick { width: 1.5rem; background: var(--accent); }
+.rail a.active { color: var(--accent); font-weight: 650; }
+.rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+.rail .rail-pages {
+  display: flex; flex-direction: column; gap: 0.08rem;
+  margin-bottom: 0.6rem; padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.rail .rail-pages .rail-cap {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.32rem; padding-left: 1.4rem;
+}
+.rail .rail-pages a { color: var(--accent); font-size: 0.75rem; font-weight: 650; }
+.rail .rail-pages a .lbl { opacity: 1; transform: none; }
+.rail .rail-pages a .tick { background: var(--accent); opacity: 0.4; }
+.rail .rail-pages a:hover .tick { width: 1.5rem; opacity: 1; }
+.rail .rail-home {
+  margin-bottom: 0.5rem; padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--accent); font-size: 0.75rem; font-weight: 650;
+}
+.rail .rail-home .lbl { opacity: 1; transform: none; }
+/* Page links carry their own icon in place of the tick — they navigate away,
+   the section links below them do not, and the shape says so. */
+.rail .rail-pages a .ico, .rail .rail-home .ico { width: 0.95rem; height: 0.95rem; opacity: 0.65; }
+.rail .rail-pages a:hover .ico, .rail .rail-home:hover .ico { opacity: 1; }
+@media (min-width: 1360px) { .rail { display: flex; } }
+@media (prefers-reduced-motion: reduce) { .rail .tick, .rail .lbl { transition: none; } }
+
+/* ---- reading progress -------------------------------------------------- */
+.progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--accent), #14907A);
+  z-index: 60; pointer-events: none;
+  transition: width 0.08s linear;
+}
+@media (prefers-reduced-motion: reduce) { .progress { transition: none; } }
+
+/* ---- heading anchors --------------------------------------------------- */
+.anchor {
+  margin-left: 0.45rem; color: var(--muted); opacity: 0;
+  border: 0; text-decoration: none;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+.anchor .ico { width: 0.72em; height: 0.72em; stroke-width: 2; }
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; }
+.anchor:hover { color: var(--accent); }
+.anchor.copied { opacity: 1; color: var(--accent); }
+@media (max-width: 900px) { .anchor { display: none; } }
+
+/* ---- copy button on code listings -------------------------------------- */
+/* Wrapper the script puts around every copyable listing. It carries no box of
+   its own — the listing keeps its border and its margins collapse through. */
+.copy-host { position: relative; display: block; }
+.copy-btn {
+  position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
+  display: inline-flex; align-items: center; gap: 0.32rem;
+  font-family: var(--sans); font-size: 0.68rem; font-weight: 650;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--muted); background: rgba(250, 249, 245, 0.9);
+  border: 1px solid var(--hairline); border-radius: 7px;
+  padding: 0.24rem 0.5rem; cursor: pointer;
+  opacity: 0; transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.copy-host:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+.copy-btn.done { opacity: 1; color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+@media (prefers-reduced-motion: reduce) { .copy-btn { transition: none; } }
+
+/* ---- diagram zoom ------------------------------------------------------ */
+.zoom-btn {
+  position: absolute; top: 0.7rem; right: 0.7rem; z-index: 2;
+  display: inline-flex; align-items: center; gap: 0.32rem;
+  font-family: var(--sans); font-size: 0.68rem; font-weight: 650;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--muted); background: rgba(250, 249, 245, 0.9);
+  border: 1px solid var(--hairline); border-radius: 7px;
+  padding: 0.24rem 0.5rem; cursor: pointer;
+  opacity: 0; transition: opacity 0.15s ease;
+}
+.diagram:hover .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+.zoom-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+body.zoom-open { overflow: hidden; }
+.zoom-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(32, 42, 53, 0.55);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2.5rem;
+}
+.zoom-overlay .zoom-sheet {
+  background: var(--diagram-bg); border-radius: 14px; padding: 1.6rem;
+  max-width: 92vw; max-height: 88vh; overflow: auto;
+  box-shadow: 0 24px 70px rgba(32, 42, 53, 0.35);
+}
+.zoom-overlay svg { max-width: none !important; height: auto; }
+/* The button floats over whatever the enlarged diagram happens to be, so it
+   carries its own contrast rather than borrowing the backdrop's. */
+.zoom-close {
+  position: fixed; top: 1rem; right: 1.2rem; z-index: 2;
+  font-family: var(--sans); font-size: 0.75rem; font-weight: 650;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--paper); background: rgba(32, 42, 53, 0.88);
+  border: 1px solid rgba(250, 249, 245, 0.28); border-radius: 999px;
+  padding: 0.4rem 0.8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.zoom-close:hover { background: var(--ink); border-color: rgba(250, 249, 245, 0.5); }
+.zoom-close:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+
+/* ---- back to top ------------------------------------------------------- */
+.to-top {
+  position: fixed; right: 1.4rem; bottom: 1.4rem; z-index: 40;
+  width: 2.6rem; height: 2.6rem; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(250, 249, 245, 0.92); color: var(--accent);
+  border: 1px solid var(--hairline); cursor: pointer;
+  box-shadow: var(--shadow-md);
+  opacity: 0; visibility: hidden; transform: translateY(0.5rem);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.to-top.on { opacity: 1; visibility: visible; transform: none; }
+.to-top:hover { border-color: var(--accent); background: var(--accent-soft); }
+.to-top:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.to-top .ico { width: 1.15rem; height: 1.15rem; }
+@media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
+
+a { color: var(--accent); }
+::selection { background: var(--accent-soft); }
+
+/* ---- the bleed --------------------------------------------------------
+   Only the elements that are actually cramped widen past the prose column:
+   tables and diagrams. Widening their whole section instead would drag the
+   headings out with them and leave the page with two left edges.
+
+   Last in the file on purpose — it overrides the margin shorthand those two
+   rules set earlier. Below 1120px --wide equals --measure, the calc resolves
+   to zero, and nothing overflows. */
+.table-scroll, .diagram {
+  width: var(--wide);
+  margin-left: calc((var(--measure) - var(--wide)) / 2);
+  margin-right: calc((var(--measure) - var(--wide)) / 2);
+}
+
+/* ---- print ------------------------------------------------------------- */
+@media print {
+  body::before, body::after { display: none; }
+  .rail, .series, .progress, .to-top, .copy-btn, .zoom-btn, .anchor { display: none !important; }
+  .wrap, .wrap-wide { max-width: none; width: auto; margin: 0; }
+  .card, .layer, .phase, .table-scroll, .diagram, .callout, nav.toc { box-shadow: none; }
+}
