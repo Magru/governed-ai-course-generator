@@ -250,16 +250,17 @@ owner            compliance
 denied topics    stated as definitions in natural language
 personal data    detect and block: email · phone · national id
 image policy     evaluated on every generated image
-applied at       4 evaluation points — brief in · outline out · node out · image out
-                 node text and its images are screened in one call, so the
-                 four points occupy three states in the machine
+applied at       5 evaluation points — brief in · outline out · node out ·
+                 image prompt out · image out
+                 node text and its images are screened in one call; the prompt
+                 leaving for the provider is screened inside generation
 unreachable      fail closed: the run stalls, nothing is published</div>
     <p>Two properties of the verdict matter more than its content. It enters the system as a <strong>fact for the formal layer</strong> — the guardrail decides nothing on its own; a state transition consumes its verdict alongside the other layers' proofs. And its <strong>version is stamped</strong> onto whatever it approved, which is what makes <a href="walkthrough.html#s7">Act VI</a> possible.</p>
 
     <h3>Why the hop is explicit</h3>
     <p>The platform talks to the model through the Anthropic Messages API rather than the AWS SDK, so there is no transparent wrapper that could apply a guardrail invisibly on the way past. The evaluation has to be its own call.</p>
     <p class="src-note">source: the platform's model client — Anthropic Messages API over Bedrock</p>
-    <p>That constraint turned out to be an advantage. An invisible guardrail is a guardrail you cannot point to in a trace; an explicit hop is a state in the machine, a row in the audit, and a thing that can be shown to fail closed. The four evaluation points occupy three states in the model — <code>BriefValidation</code>, <code>OutlineGuardrail</code> and <code>OutputGuardrail</code>, the last of which screens a node's text and its images together — they are there because the call is real, not because a diagram wanted a box.</p>
+    <p>That constraint turned out to be an advantage. An invisible guardrail is a guardrail you cannot point to in a trace; an explicit hop is a state in the machine, a row in the audit, and a thing that can be shown to fail closed. Four of the five evaluation points occupy three states in the model — <code>BriefValidation</code>, <code>OutlineGuardrail</code> and <code>OutputGuardrail</code>, the last of which screens a node's text and its images together — they are there because the call is real, not because a diagram wanted a box. The fifth screens the image prompt on its way to the provider, and it sits inside the generation step rather than at a state of its own — the only outbound point, and the reason the count is five.</p>
   </section>
 
   <section id="s6">

@@ -490,6 +490,7 @@ rollback   move the pointer back to rev 1. No regeneration, no restore.</div>
           <tr><td class="ev">DraftDiscarded</td><td>human</td><td>a draft revision is abandoned — the transition behind “cancel” and “discard”</td></tr>
           <tr><td class="ev">ServiceUnreachable</td><td>infrastructure</td><td>a guardrail hop got no answer — an unknown, not a denial</td></tr>
           <tr><td class="ev">LivePointerMoved</td><td>system, on publication or rollback</td><td>the revision losing the pointer → <code>Superseded</code></td></tr>
+          <tr><td class="ev">LearnersNotified</td><td>system, on publication — to the learners a change lands ahead of</td><td>none; the revision does not move, the notice is recorded</td></tr>
           <tr><td class="ev">ModelError / Timeout</td><td>infrastructure</td><td>the current state</td></tr>
           <tr><td class="ev">ArchiveRequested</td><td>human</td><td>course</td></tr>
         </tbody>

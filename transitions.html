@@ -123,9 +123,9 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>54</b></span>
+      <span class="meta-chip">Revision transitions: <b>55</b></span>
       <span class="meta-chip">Node transitions: <b>17</b></span>
-      <span class="meta-chip">Guards: <b>32</b></span>
+      <span class="meta-chip">Guards: <b>33</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -218,6 +218,7 @@
           <tr><td class="st">Published</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision)</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Published</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">successor_published(revision)</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
+          <tr><td class="st">Published</td><td class="evt">LearnersNotified</td><td class="grd">notice_approved(recipient_set)</td><td class="lyr">Human · State store</td><td class="st">Published <small>(no move; the notice is recorded)</small></td></tr>
                     <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">any of the above fails</td><td class="lyr">All layers</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
@@ -352,6 +353,9 @@
 
       <dt>arithmetic_consistent(node)</dt>
       <dd><span class="owner">Z3</span> — the numbers inside a node add up: exam points reach the stated maximum, durations match the block count. Refuses with the failing sum.</dd>
+
+      <dt>notice_approved(recipient_set)</dt>
+      <dd><span class="owner">Human</span> — the person who approved the publication was shown how many learners the notice will reach and which changed nodes lie ahead of them. The notice cannot be unsent, so the consent that authorises it has to be consent to <em>this notice</em> rather than to the publication that implies it. Without this guard the approval given for one action is spent on a different, irreversible one.</dd>
 
       <dt>successor_published(revision) · blocked_at(revision)</dt>
       <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: which revision took the live pointer, and which <em>phase</em> a recoverable block was entered from — brief, outline, or content, each a named set of states — so the fix returns there instead of to the beginning.</dd>
