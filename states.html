@@ -738,7 +738,7 @@ idempotency_key_unused(operation)
 objectives_covered(course)
 is_draft_revision(course)       — nothing published may be edited
 differs_from_live(revision)     — an unchanged fork is not publishable</div>
-    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
+    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty-two, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
   </section>
 
   <section id="s8">
@@ -775,6 +775,7 @@ G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
       <li><code>trace_id</code> — the thread that ties every event together across sessions;</li>
       <li><code>approvals[]</code> — who approved what, when, and what they were shown at the time;</li>
       <li><code>threshold_set</code> — which numbers its budgets and windows came from;</li>
+      <li><code>outline_version</code> — which committed skeleton the nodes were built against;</li>
       <li><code>revision</code> and <code>forked_from</code> — which edition this is, and which one it was copied out of.</li>
     </ul>
     <p>Those fields are what make two things possible at once: resuming an editor's session three days later, and answering "which approved courses does this new rule affect?" without stopping the system.</p>

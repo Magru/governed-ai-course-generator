@@ -344,9 +344,9 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>53</b></span>
+      <span class="meta-chip">Revision transitions: <b>54</b></span>
       <span class="meta-chip">Node transitions: <b>17</b></span>
-      <span class="meta-chip">Guards: <b>30</b></span>
+      <span class="meta-chip">Guards: <b>32</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -402,6 +402,7 @@
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">¬feasible(brief) — unsat core</td><td class="lyr">Z3</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st">ContentInProgress · BlockedRecoverable</td><td class="evt">OutlineRevised</td><td class="grd">is_draft_revision ∧ has_outline(revision)</td><td class="lyr">Human</td><td class="st">OutlineChecks</td></tr>
           <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BriefSubmitted</td><td class="grd">blocked_at = brief</td><td class="lyr">State store</td><td class="st">BriefValidation</td></tr>
+          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BlockedInputFixed</td><td class="grd">¬has_outline(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BlockedInputFixed</td><td class="grd">blocked_at ∉ {brief, outline}</td><td class="lyr">State store</td><td class="st">the state that blocked</td></tr>
 
           <tr class="phase"><td colspan="5">The skeleton</td></tr>
@@ -417,8 +418,8 @@
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">has_nodes(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">¬has_nodes(revision)</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
-          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">has_nodes(revision)</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
-          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineApproved</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">has_nodes(revision)</td><td class="lyr">Human</td><td class="st">ContentInProgress <small>(proposal discarded; outline_version unchanged)</small></td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineApproved</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress <small>(outline_version +1)</small></td></tr>
 
           <tr class="phase"><td colspan="5">Content, and the guard that ends it</td></tr>
           <tr><td class="st">ContentInProgress</td><td class="evt">(node → BlockedFinal)</td><td class="grd">∃ node: BlockedFinal</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
@@ -458,6 +459,8 @@
     </div>
     <div class="wrap" style="padding:0; max-width:46rem;">
       <p><strong>The skeleton stays editable after content exists — but only by a person.</strong> <code>OutlineRevised</code> sends the revision back through <code>OutlineChecks</code>: nodes that survive keep their states and their stamps, a node removed from the skeleton is discarded with its history retained, and anything that depended on it goes stale through the ordinary cascade. The row exists because telling an editor to “drop the blocked node from the skeleton” is empty advice if the machine has no move for it.</p>
+      <p><strong>A skeleton edit is a transaction.</strong> <code>OutlineRevised</code> proposes, <code>OutlineApproved</code> commits and bumps <code>outline_version</code>, <code>OutlineRejected</code> discards the proposal and leaves the previous version in force. Both approval and rejection return the revision to <code>ContentInProgress</code> — the difference is not where it lands but which skeleton it carries, which is the same pattern as everywhere else here: nothing takes effect until a person says so.</p>
+      <p><strong>While the skeleton is being re-decided, node work is held.</strong> A node may be about to be removed, so generating content for it is waste, and generating against a structure in flux is the hole this row would otherwise open. Every transition that produces content — the first draft and the repair loop alike — carries <code>course_state = ContentInProgress</code>. Nodes already in flight are <em>held, not killed</em>: their next transition simply cannot fire until the revision comes back, and then it does. No new state is needed, because a machine that cannot move is already something this model can express.</p>
       <p>What the row must <em>not</em> do is let the model back in. Once a human has approved nodes, regenerating the skeleton would be the model overwriting decisions a person already made — the governing principle inverted. So both paths that hand the skeleton back to the model are guarded by <code>¬has_nodes</code>: a failed re-check goes to <code>BlockedRecoverable</code> instead of <code>OutlineRepair</code>, and a rejected re-review returns the editor to <code>ContentInProgress</code> instead of to <code>OutlineDrafting</code>. <strong>Before content exists the skeleton is a proposal; after content exists it is the editor's.</strong></p>
       <p><strong>A node blocked on policy stops the revision, recoverably.</strong> The row for it sends the revision to <code>BlockedRecoverable</code> rather than <code>BlockedFinal</code>, and the difference is deliberate: the policy violation is a terminal fact about that <em>node</em>, not about the course, and the editor has a real move — take the node out of the skeleton and carry on. Without the row the revision would sit in <code>ContentInProgress</code> forever, since its exit guard can never be satisfied while a blocked node exists. The stricter reading — one blocked node condemns the revision — is defensible too; it was weighed and rejected, because the content that violated the policy was written by the model, not by the editor whose work it would destroy.</p>
       <p><code>BlockedFinal</code> and <code>Archived</code> have no outgoing rows. That is what terminal means here, and it is enforced by the absence of a row rather than by a check inside one.</p>
@@ -486,7 +489,7 @@
           <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Z3 · Prolog</td><td class="st">Validated</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(content)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">NodeRepair</td></tr>
-          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(node)</td><td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">course_state = ContentInProgress ∧ retry_budget_left(node)</td><td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">course → BlockedRecoverable</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node)</td><td class="lyr">Catalog flag · Human</td><td class="st human">NodeApproved</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">NodeRepair</td></tr>
@@ -514,7 +517,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need seventeen more to be complete. All thirty, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need nineteen more to be complete. All thirty-two, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -558,6 +561,9 @@
 
       <dt>all_visuals_reviewed(node)</dt>
       <dd><span class="owner">Catalog flag · Human</span> — every block whose type carries <code>requires_visual_review</code> has been looked at by a person. Refuses with the queue of unreviewed visuals.</dd>
+
+      <dt>course_state(revision) · outline_version(revision)</dt>
+      <dd><span class="owner">State store</span> — the revision-level state a node transition is allowed to run under, and which committed skeleton it runs against. <code>outline_version</code> is what makes a rejected skeleton edit a no-op rather than an ambiguity.</dd>
 
       <dt>has_nodes(revision) · has_outline(revision)</dt>
       <dd><span class="owner">State store</span> — how far this revision has got. <code>has_nodes</code> is what separates “the skeleton is still a proposal” from “the skeleton is the editor's”, and it guards every path that would hand structure back to the model.</dd>
@@ -669,7 +675,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
         <tbody>
           <tr>
             <td class="role">1 · Generate a node before the skeleton is approved<br><small class="muted">BriefSubmitted → OutlineGenerated → <b>NodeGenerationRequested</b></small></td>
-            <td>No such transition — nodes do not exist before <code>OutlineApproved</code>. Caught after the fact by <code>G(content_generated(N) → O outline_approved)</code></td>
+            <td>Before the first approval no node exists to generate. Afterwards — during a skeleton revision — every transition into <code>ContentDrafting</code> carries <code>course_state = ContentInProgress</code>, which is false while the skeleton is being re-decided</td>
             <td>Nothing to click: the nodes are not there yet</td>
           </tr>
           <tr>
