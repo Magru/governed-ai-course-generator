@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Validation layers — Governed AI Course Generator</title>
+<meta name="description" content="Which engine owns which check — schema, OPA, Z3, Datalog, Prolog, temporal logic — the rules written out, and what each layer hands back when it refuses.">
+<meta property="og:title" content="Validation layers — Governed AI Course Generator">
+<meta property="og:description" content="A layer that returns false is a layer that has failed. Every refusal produces an artifact.">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128300;</text></svg>">
+</head>
+<body>
+
+<style>
+  /* Deliberately single-theme: this document always renders light (paper). */
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    color-scheme: light;
+    --paper: #FAF9F5;
+    --ink: #202A35;
+    --muted: #5C6873;
+    --hairline: #DFE2DA;
+    --accent: #0E6E5C;
+    --accent-soft: #E3EFEA;
+    --blocked: #A6512B;
+    --blocked-soft: #F4E7DD;
+    --hitl: #8A6A1F;
+    --hitl-soft: #F3ECD8;
+    --panel: #F2F3EE;
+    --code-bg: #EDEFE8;
+    --diagram-bg: #F4F5F0;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.4rem 5rem; }
+  .wrap-wide { max-width: 54rem; margin: 0 auto; }
+
+  h1, h2, h3, .sans {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.15; margin: 0.6rem 0 0.9rem; text-wrap: balance; }
+  h2 { font-size: 1.32rem; font-weight: 650; letter-spacing: -0.008em; margin: 0 0 0.9rem; text-wrap: balance; }
+  h3 { font-size: 1.02rem; font-weight: 650; margin: 1.4rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  section { margin-top: 3.2rem; }
+
+  .eyebrow {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.4rem;
+  }
+  .kicker { color: var(--muted); font-size: 1.06rem; margin-bottom: 1.4rem; }
+
+  /* series nav */
+  .series {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; align-items: baseline;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; padding-bottom: 0.9rem; margin-bottom: 1.6rem;
+    border-bottom: 1px solid var(--hairline); color: var(--muted);
+  }
+  .series .series-label { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; color: var(--muted); }
+  .series a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  .series a:hover { border-color: var(--accent); }
+  .series .here { color: var(--ink); font-weight: 650; }
+  .series .soon { color: var(--muted); opacity: 0.75; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.3rem 0 0; }
+  .meta-chip {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 550; color: var(--muted);
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 0.28rem 0.75rem;
+    background: var(--panel);
+  }
+  .meta-chip b { color: var(--ink); font-weight: 650; }
+
+  .thesis {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 0.9rem 1.1rem; border-radius: 0 8px 8px 0;
+    margin: 1.4rem 0;
+  }
+  .thesis p { margin: 0; }
+  .thesis.warn { border-left-color: var(--blocked); background: var(--blocked-soft); }
+
+  nav.toc {
+    margin-top: 2.6rem; padding: 1.1rem 1.2rem;
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--panel);
+  }
+  nav.toc .toc-title { font-size: 0.72rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.7rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  nav.toc ol { columns: 2; column-gap: 2rem; margin: 0; padding: 0 0 0 1.2rem; font-size: 0.92rem; }
+  nav.toc li { margin-bottom: 0.32rem; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 620px) { nav.toc ol { columns: 1; } }
+
+  ul.plain { padding-left: 1.2rem; margin: 0 0 1rem; }
+  ul.plain li { margin-bottom: 0.45rem; }
+  ol.steps { padding-left: 1.3rem; margin: 0 0 1rem; }
+  ol.steps li { margin-bottom: 0.55rem; }
+
+  strong { font-weight: 650; }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em; background: var(--code-bg);
+    padding: 0.1em 0.38em; border-radius: 4px;
+  }
+  .formula {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem; background: var(--code-bg); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0.6rem 0 1rem;
+    line-height: 1.9;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 1.2rem 0; border: 1px solid var(--hairline); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 640px; }
+  thead th {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.72rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase;
+    text-align: left; color: var(--muted); background: var(--panel);
+    padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--hairline);
+  }
+  tbody td { padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.state {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 600; font-size: 0.82rem; white-space: nowrap; color: var(--accent);
+  }
+  td.state.hitl-s { color: var(--hitl); }
+  td.state.blocked-s { color: var(--blocked); }
+  td.ev { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; white-space: nowrap; color: var(--ink); }
+  td small, .muted { color: var(--muted); }
+
+  .diagram {
+    background: var(--diagram-bg); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 1rem; margin: 1.2rem 0; overflow-x: auto;
+  }
+  .diagram .caption {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.75rem; color: #5C6873; letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 0.5rem; font-weight: 600;
+  }
+  .diagram pre.mermaid { margin: 0; background: transparent; }
+  .diagram .edgeLabel,
+  .diagram .edgeLabel p,
+  .diagram .edgeLabel span,
+  .diagram .edgeLabel div {
+    color: #202A35 !important;
+    background: #F4F5F0 !important;
+  }
+  .diagram svg .labelBkg { background: #F4F5F0 !important; }
+  .diagram svg .edgeLabel rect { fill: #F4F5F0 !important; opacity: 1 !important; }
+  .diagram svg .flowchart-link { stroke: #8B958F !important; }
+  .diagram svg .marker { fill: #8B958F !important; stroke: #8B958F !important; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.8rem; margin-top: 0.6rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; color: #5C6873; }
+  .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 3px; margin-right: 0.35em; vertical-align: -0.05em; }
+
+  .principles { list-style: none; padding: 0; margin: 1.3rem 0; counter-reset: pr; }
+  .principles li {
+    position: relative; padding: 0.75rem 0 0.75rem 2.4rem; border-bottom: 1px solid var(--hairline);
+    counter-increment: pr;
+  }
+  .principles li:last-child { border-bottom: none; }
+  .principles li::before {
+    content: counter(pr);
+    position: absolute; left: 0; top: 0.85rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; font-weight: 650; color: var(--muted);
+    width: 1.7rem; height: 1.7rem; border: 1px solid var(--hairline); border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; background: var(--panel);
+  }
+
+  .callout {
+    border: 1px solid var(--accent); border-radius: 12px;
+    background: var(--accent-soft); padding: 1.2rem 1.3rem; margin-top: 3rem;
+  }
+  .callout .eyebrow { margin-bottom: 0.3rem; }
+  .callout p { margin: 0 0 0.7rem; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .questions { padding-left: 1.3rem; margin: 0; }
+  .questions li { margin-bottom: 0.7rem; }
+
+  .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 2.6rem; text-align: center;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif; }
+  .footer-note a { color: var(--accent); }
+
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 2.5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* sticky section rail */
+  .rail {
+    position: fixed;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    padding: 0.35rem 0;
+    max-height: 86vh;
+    overflow: hidden;
+  }
+  .rail a {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 0.16rem 0;
+    border: 0;
+  }
+  .rail .tick {
+    display: block;
+    width: 0.85rem;
+    height: 2px;
+    background: var(--hairline);
+    border-radius: 2px;
+    flex: none;
+    transition: width 0.18s ease, background-color 0.18s ease;
+  }
+  .rail .lbl {
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-0.25rem);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .rail:hover .lbl,
+  .rail a:focus-visible .lbl,
+  .rail a.active .lbl { opacity: 1; transform: none; }
+  .rail a:hover .tick { width: 1.5rem; background: var(--accent); }
+  .rail a:hover { color: var(--ink); }
+  .rail a.active .tick { width: 1.5rem; background: var(--accent); }
+  .rail a.active { color: var(--accent); font-weight: 650; }
+  .rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  .rail .rail-home {
+    margin-bottom: 0.45rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+  .rail .rail-home .lbl { opacity: 1; transform: none; }
+  @media (min-width: 1280px) { .rail { display: flex; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rail .tick, .rail .lbl { transition: none; }
+  }
+
+  a { color: var(--accent); }
+  ::selection { background: var(--accent-soft); }
+</style>
+
+<style>
+  /* page-local */
+  .status {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.13rem 0.5rem; border-radius: 999px; white-space: nowrap;
+  }
+  .status.planned { background: #E9EBE4; color: var(--muted); }
+  .code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.79rem; line-height: 1.75;
+    background: var(--code-bg); border: 1px solid var(--hairline);
+    border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0.5rem 0 1rem;
+    white-space: pre;
+  }
+  .code-label {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.63rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 1.2rem 0 0.15rem;
+  }
+  .io { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin: 0.6rem 0 1rem; }
+  @media (max-width: 720px) { .io { grid-template-columns: 1fr; } }
+  .io > div {
+    border: 1px solid var(--hairline); border-radius: 8px; background: var(--panel);
+    padding: 0.7rem 0.85rem;
+  }
+  .io .io-h {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.63rem; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.4rem;
+  }
+  .io pre {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.74rem; line-height: 1.7; margin: 0; white-space: pre-wrap; word-break: break-word;
+  }
+  .io .out { color: var(--blocked); }
+  .layer-head {
+    display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+    border-bottom: 1px solid var(--hairline); padding-bottom: 0.5rem; margin-bottom: 0.9rem;
+  }
+  .layer-head .owns {
+    font-family: "Avenir Next", "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 0.78rem; color: var(--muted);
+  }
+</style>
+
+<nav class="rail" aria-label="Sections">
+  <a class="rail-home" href="./"><span class="tick"></span><span class="lbl">← Specification</span></a>
+  <a href="#s1"><span class="tick"></span><span class="lbl">The division</span></a>
+  <a href="#s2"><span class="tick"></span><span class="lbl">Schema</span></a>
+  <a href="#s3"><span class="tick"></span><span class="lbl">OPA</span></a>
+  <a href="#s4"><span class="tick"></span><span class="lbl">Z3</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Datalog</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">Prolog</span></a>
+  <a href="#s7"><span class="tick"></span><span class="lbl">Temporal logic</span></a>
+  <a href="#s8"><span class="tick"></span><span class="lbl">The guardrail</span></a>
+  <a href="#s9"><span class="tick"></span><span class="lbl">Refusals</span></a>
+  <a href="#s10"><span class="tick"></span><span class="lbl">Order &amp; failure</span></a>
+  <a href="#s11"><span class="tick"></span><span class="lbl">Open questions</span></a>
+</nav>
+
+<div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Detailed specifications</span>
+    <a href="./">← Specification</a>
+    <a href="states.html">State model</a>
+    <a href="walkthrough.html">Walkthrough</a>
+    <a href="configuration.html">Configuration</a>
+    <a href="transitions.html">Transitions &amp; guards</a>
+    <span class="here">Validation layers</span>
+  </div>
+
+  <header>
+    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <h1>Validation layers</h1>
+    <p class="kicker">Which engine owns which question, the rules written out in the language that actually runs them, and — the part that matters most — what each layer hands back when it says no.</p>
+    <div class="thesis">
+      <p><strong>A layer that returns <code>false</code> is a layer that has failed.</strong> Every refusal here produces an artifact: an unsat core, a leak path, a proof tree, a named rule. That is what a person acts on, what the repair loop feeds back into the next prompt, and what an auditor reads six months later. The verdict is the cheap part.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">Engines: <b>5 + schema</b></span>
+      <span class="meta-chip">Worked examples: <b>6</b></span>
+      <span class="meta-chip">Status: <b>draft for discussion</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#s1">How the questions divide</a></li>
+      <li><a href="#s2">Schema — shape</a></li>
+      <li><a href="#s3">OPA — permission</a></li>
+      <li><a href="#s4">Z3 — satisfiability</a></li>
+      <li><a href="#s5">Datalog — relations</a></li>
+      <li><a href="#s6">Prolog — coverage and explanation</a></li>
+      <li><a href="#s7">Temporal logic — the trace</a></li>
+      <li><a href="#s8">The guardrail, which is not one of these</a></li>
+      <li><a href="#s9">What a refusal is made of</a></li>
+      <li><a href="#s10">Order, cost, and an unavailable layer</a></li>
+      <li><a href="#s11">Open questions</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1" class="wrap-wide">
+    <div class="eyebrow">Section 1</div>
+    <h2>How the questions divide</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Five formal engines plus a schema validator, and the split is not by taste. Each answers a kind of question the others answer badly or not at all — and, just as important, each is <em>bad</em> at something the next one is good at. Naming both halves is what keeps a layer from quietly growing into a general-purpose rule engine.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Layer</th><th>Answers</th><th>Cannot answer</th><th>Refuses with</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="role">JSON Schema</td>
+            <td>Is this the right <em>shape</em>?</td>
+            <td>Anything about meaning, relations or quantity</td>
+            <td>The failing path and the expected type</td>
+          </tr>
+          <tr>
+            <td class="role">OPA · Rego</td>
+            <td>Is this actor allowed to do this, here, now?</td>
+            <td>Whether it is <em>possible</em> — policy has no arithmetic</td>
+            <td>The rule that denied, by name, with a message</td>
+          </tr>
+          <tr>
+            <td class="role">Z3</td>
+            <td>Can these requirements hold together at all?</td>
+            <td>Who is allowed to ask — it has no notion of an actor</td>
+            <td>An unsat core: the minimal set that cannot coexist</td>
+          </tr>
+          <tr>
+            <td class="role">Datalog</td>
+            <td>What reaches what, through how many hops?</td>
+            <td>Anything needing negation-as-search or arithmetic</td>
+            <td>The derivation path — the chain of facts that produced the answer</td>
+          </tr>
+          <tr>
+            <td class="role">Prolog</td>
+            <td>What is missing, and why?</td>
+            <td>Scale — it is asked narrow questions, never swept over everything</td>
+            <td>A proof tree, readable as prose</td>
+          </tr>
+          <tr>
+            <td class="role">Temporal logic</td>
+            <td>Did this happen in a legal order?</td>
+            <td>Anything about the present — it only reads history</td>
+            <td>The violated formula and the event that broke it</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <div class="thesis">
+        <p><strong>One owner per question.</strong> No check is computed by two engines, and no engine is asked something outside its column. When two layers could answer, the cheaper one owns it — which is why <em>“is this brief satisfiable”</em> is Z3 rather than a Prolog search, and <em>“may this editor author here”</em> is OPA rather than a Datalog reachability query.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s2">
+    <div class="eyebrow">Section 2</div>
+    <div class="layer-head"><h2 style="margin:0;">Schema</h2><span class="owns">shape · runs first · costs nothing</span></div>
+    <p>The least interesting layer and the one that catches the most. Every artifact the model produces is forced through a schema at generation time — the model returns a structure because it was given a tool signature, not because it was asked nicely — and validated again on the way in.</p>
+    <div class="code-label">Block schema, resolved from the catalog at the stamped version</div>
+    <div class="code">{
+  "$id": "catalog://schemas/image@3",
+  "type": "object",
+  "required": ["type", "src", "alt", "caption"],
+  "properties": {
+    "type":    { "const": "image" },
+    "src":     { "type": "string", "format": "uri" },
+    "alt":     { "type": "string", "minLength": 1 },
+    "caption": { "type": "string" },
+    "cites":   { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+  },
+  "additionalProperties": false
+}</div>
+    <p>Two details carry weight. <code>additionalProperties: false</code> means a block the catalog does not know about cannot be smuggled in as an extra field. And <code>cites</code> with <code>minItems: 1</code> means <em>the schema itself</em> requires provenance — a block with no source is malformed before anyone asks whether its claims are true.</p>
+  </section>
+
+  <section id="s3">
+    <div class="eyebrow">Section 3</div>
+    <div class="layer-head"><h2 style="margin:0;">OPA</h2><span class="owns">permission and policy · Rego · the only terminal refusal</span></div>
+    <p>Policy answers questions about <em>authority</em>: who may act, over which audience, with which sources, in which state. It is the only layer whose refusal is terminal, and the reason is worth being precise about — a constraint violation means the system produced something wrong and can try again; a policy violation means the organization has said no, and trying again is not a response to that.</p>
+
+    <div class="code-label">Rego · authoring policy</div>
+    <div class="code">package course.policy
+
+import future.keywords.in
+
+default allow := false
+
+# The action is permitted only if every clause below holds.
+allow if {
+    input.action in {"submit_brief", "generate_outline", "generate_node"}
+    input.actor.role == "editor"
+    audience_permitted
+    within_limits
+    state_permits
+}
+
+# An editor may only author for audiences they were granted.
+audience_permitted if {
+    every team in input.brief.audience {
+        team in data.org.grants[input.actor.id].may_author_for
+    }
+}
+
+# Thresholds come from organizational configuration, never from here.
+within_limits if {
+    input.brief.node_count <= data.org.thresholds.max_nodes_per_course
+}
+
+# The state machine's legality, restated where policy can see it.
+state_permits if {
+    input.action != "generate_node"
+}
+state_permits if {
+    input.action == "generate_node"
+    input.course.state == "ContentInProgress"
+}
+
+# Refusals are named, so the trace records which rule spoke.
+deny contains reason if {
+    not audience_permitted
+    reason := {
+        "rule": "audience_permitted",
+        "message": sprintf("%v is not granted authoring for %v",
+                           [input.actor.id, input.brief.audience]),
+    }
+}
+
+deny contains reason if {
+    input.brief.node_count > data.org.thresholds.max_nodes_per_course
+    reason := {
+        "rule": "within_limits",
+        "message": sprintf("%v nodes requested, limit is %v",
+                           [input.brief.node_count,
+                            data.org.thresholds.max_nodes_per_course]),
+    }
+}</div>
+
+    <p>Three things this file is deliberately not doing. It does not contain a list of forbidden topics — that is <a href="configuration.html#s5">meaning, and it is configured elsewhere</a>. It does not compute whether the brief is <em>achievable</em> — that is Z3's column. And it does not hold thresholds, only reads them: <code>data.org.thresholds</code> is the same object the <a href="configuration.html#s6">configuration page</a> describes, so tuning a limit never touches this policy.</p>
+  </section>
+
+  <section id="s4">
+    <div class="eyebrow">Section 4</div>
+    <div class="layer-head"><h2 style="margin:0;">Z3</h2><span class="owns">satisfiability and arithmetic · runs before money is spent</span></div>
+    <p>The solver answers one shape of question: <em>can all of this be true at once?</em> Its value is almost entirely in the failure case, because <code>unsat</code> on its own is useless — what the editor needs is <strong>which requirements</strong> cannot coexist.</p>
+
+    <div class="code-label">Z3 · brief feasibility, with tracked assertions so a core exists</div>
+    <div class="code">from z3 import Int, Solver, unsat, Bool, Implies
+
+lessons     = Int("lessons")
+per_lesson  = Int("minutes_per_lesson")
+total       = Int("total_minutes")
+
+s = Solver()
+s.set(unsat_core=True)
+
+# Every assertion is tracked, so the core names requirements,
+# not anonymous constraints.
+s.assert_and_track(lessons    == 40,  Bool("brief.lesson_count"))
+s.assert_and_track(total      == 120, Bool("brief.total_minutes"))
+s.assert_and_track(per_lesson == 15,  Bool("org.min_minutes_per_lesson"))
+s.assert_and_track(lessons * per_lesson &lt;= total,
+                   Bool("implied.fits_in_budget"))
+
+if s.check() == unsat:
+    core = s.unsat_core()
+    # [brief.lesson_count, brief.total_minutes, org.min_minutes_per_lesson]</div>
+
+    <div class="io">
+      <div>
+        <div class="io-h">In</div>
+        <pre>{ "lessons": 40,
+  "total_minutes": 120,
+  "audience": ["support-team"] }
+
+org.min_minutes_per_lesson = 15</pre>
+      </div>
+      <div>
+        <div class="io-h">Out — refusal</div>
+        <pre class="out">unsat
+
+core:
+  brief.lesson_count          40
+  brief.total_minutes         120
+  org.min_minutes_per_lesson  15
+
+"40 lessons at a 15-minute minimum
+ needs 600 minutes; the brief allows 120.
+ Loosen one of these three."</pre>
+      </div>
+    </div>
+
+    <p>The core is minimal, which is the property that makes it useful: it names three requirements rather than the eleven the brief contains. Note also what is <em>in</em> the core — <code>org.min_minutes_per_lesson</code> is not something the author wrote. The refusal correctly points at an organizational threshold as one of the three things in conflict, rather than blaming the author for tripping over a setting they cannot see.</p>
+    <p>Z3 is asked the same shape of question in three other places: whether exam points sum to the stated maximum, whether a node's durations fit its lesson, and whether a proposed skeleton's counts are consistent with the brief that produced it.</p>
+  </section>
+
+  <section id="s5">
+    <div class="eyebrow">Section 5</div>
+    <div class="layer-head"><h2 style="margin:0;">Datalog</h2><span class="owns">relations, provenance, reachability · the staleness cascade lives here</span></div>
+    <p>Everything in this system that is a <em>path</em> rather than a property belongs to Datalog: does a claim reach a source, does a source reach an audience it should not, does an edit reach a node three hops away. The facts are mirrored from the platform and never re-derived — <a href="configuration.html#s4">the permission predicate is the platform's</a>, this layer only asks it new questions.</p>
+
+    <div class="code-label">Datalog · facts (mirrored) and the three rules that matter</div>
+    <div class="code">% ---- facts, from the platform and from the run ----
+node_cites(Node, Chunk).
+chunk_in(Chunk, Article).
+visible_to(Article, Team).          % the platform's own predicate
+audience_of(Course, Team).
+contains(Course, Node).
+depends_on(Node, Other).            % exam→topic, image→topic, prereq→node
+edited(Node).
+
+% ---- 1. a leak is a path, and the path is the refusal ----
+leak(Node, Article, Team) :-
+    contains(Course, Node),
+    node_cites(Node, Chunk),
+    chunk_in(Chunk, Article),
+    audience_of(Course, Team),
+    not visible_to(Article, Team).
+
+% ---- 2. grounding: a claim with no source ----
+ungrounded(Node, Claim) :-
+    claim_in(Node, Claim),
+    not claim_cites(Claim, _).
+
+% ---- 3. staleness, transitively — nobody wrote the cascade ----
+stale(Node) :- depends_on(Node, Other), edited(Other).
+stale(Node) :- depends_on(Node, Other), stale(Other).</div>
+
+    <div class="io">
+      <div>
+        <div class="io-h">In</div>
+        <pre>node_cites(t2, ch_41).
+chunk_in(ch_41, art_incident_postmortem).
+visible_to(art_incident_postmortem,
+           security_team).
+audience_of(c_17, support_team).
+contains(c_17, t2).
+
+?- leak(t2, A, T).</pre>
+      </div>
+      <div>
+        <div class="io-h">Out — refusal</div>
+        <pre class="out">leak(t2, art_incident_postmortem,
+     support_team).
+
+"Node T2 cites chunk ch_41, which lives in
+ 'Incident Post-Mortem'. That article is
+ visible to security-team. This course is
+ for support-team.
+
+ The source is excluded from T2's retrieval
+ on retry."</pre>
+      </div>
+    </div>
+
+    <p>The third rule is the one worth staring at. <strong>Nobody wrote the staleness cascade</strong> — it is two clauses, and the transitive case is one of them. The exam is stale because it depends on the topic; an illustration derived from that exam would be stale because it depends on the exam. The same two lines that make a one-hop dependency work make a five-hop one work, and no code anywhere enumerates the kinds of dependency.</p>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow">Section 6</div>
+    <div class="layer-head"><h2 style="margin:0;">Prolog</h2><span class="owns">coverage and explanation · the layer that answers “why”</span></div>
+    <p>Datalog says what reaches what. Prolog is asked the harder question: what is <em>missing</em>, and can you say why in a form a person can read. It runs on narrow questions — one course, one objective — never as a sweep.</p>
+
+    <div class="code-label">Prolog · objective coverage, and the same predicate asked for a reason</div>
+    <div class="code">% A node covers an objective if it teaches a skill that develops it.
+covers(Node, Objective) :-
+    teaches(Node, Skill),
+    develops(Skill, Objective).
+
+uncovered(Course, Objective) :-
+    requires(Course, Objective),
+    \+ ( contains(Course, Node), covers(Node, Objective) ).
+
+% The explanation is not a second implementation — it is the
+% same search, asked to keep what it found on the way.
+why_uncovered(Course, Objective, Explanation) :-
+    uncovered(Course, Objective),
+    findall(S, develops(S, Objective), Skills),
+    findall(N-S, ( contains(Course, N), teaches(N, S),
+                   member(S, Skills) ), Partial),
+    ( Partial == []
+    -> Explanation = no_node_teaches_any_of(Skills)
+    ;  Explanation = taught_but_not_approved(Partial) ).</div>
+
+    <div class="io">
+      <div>
+        <div class="io-h">In</div>
+        <pre>requires(c_17, obj_escalate_correctly).
+develops(sk_escalation, obj_escalate_correctly).
+develops(sk_severity, obj_escalate_correctly).
+contains(c_17, t1).
+teaches(t1, sk_severity).
+
+?- why_uncovered(c_17, obj_escalate_correctly, E).</pre>
+      </div>
+      <div>
+        <div class="io-h">Out — refusal, and a next action</div>
+        <pre class="out">E = taught_but_not_approved([t1-sk_severity]).
+
+"'Escalate correctly' is not covered.
+ Two skills develop it: escalation, severity.
+ T1 teaches severity but is not approved yet;
+ nothing teaches escalation at all.
+
+ Next: approve T1, and add a node for
+ escalation — or drop the objective."</pre>
+      </div>
+    </div>
+
+    <p>This is where the editor's <em>next best action</em> comes from, and it is worth naming what it is not: the suggestion is derived from the uncovered set, not produced by a model. The system never guesses what the editor should do — it computes what is missing and says so.</p>
+  </section>
+
+  <section id="s7">
+    <div class="eyebrow">Section 7</div>
+    <div class="layer-head"><h2 style="margin:0;">Temporal logic</h2><span class="owns">the trace · the only layer that reads history</span></div>
+    <p>Every other layer looks at the present. This one replays the recorded trace and asks whether the system <em>got here legally</em> — because a course can be in a perfect state and have reached it through a path that should have been impossible.</p>
+
+    <div class="code-label">Checked over the trace at WholeCourseChecks · see the <a href="states.html#s8">full list</a></div>
+    <div class="code">G(content_generated(N)  → course_state = ContentInProgress)
+G(exam_generated(E)     → O content_approved(topics(E)))
+G(generated(A)          → O guardrail_checked(A))
+G(published(R)          → G ¬node_edited(R))
+G(rolled_back_to(R)     → O re_verified(R))
+G(restricted_chunk_used(N) → O permission_checked(N))
+G(action                → F audit(action))</div>
+
+    <p>No model checker is needed for these. The trace is a finite, ordered list of events with the state before and after each, so every formula above reduces to a pass over that list — <code>G</code> is “holds at every index”, <code>O</code> is “appears at some earlier index”, <code>F</code> is “appears at some later one”. The checker is a few hundred lines and its output is the interesting part:</p>
+
+    <div class="io">
+      <div>
+        <div class="io-h">In — a trace fragment</div>
+        <pre>i=41 OutlineRevised     course: CIP→OutlineChecks
+i=42 NodeGenerated(t3)  node:  ContentDrafting→Generated
+i=43 GuardrailVerdict   node:  →NodeChecks</pre>
+      </div>
+      <div>
+        <div class="io-h">Out — refusal</div>
+        <pre class="out">VIOLATED at i=42
+  G(content_generated(N) →
+    course_state = ContentInProgress)
+
+  course_state at i=42 was OutlineChecks.
+
+"A node was generated while the skeleton
+ was being revised. This trace could not
+ have been produced by the current
+ transition table."</pre>
+      </div>
+    </div>
+
+    <p>That last line is the point of the layer. A temporal violation is not usually a content problem — it is evidence that the implementation and the specification have drifted apart, which is exactly the failure no amount of content review would ever surface.</p>
+  </section>
+
+  <section id="s8">
+    <div class="eyebrow">Section 8</div>
+    <h2>The guardrail, which is not one of these</h2>
+    <p>The managed guardrail sits in the same pipeline and is deliberately <em>not</em> a formal layer. It answers questions about meaning — is this text asking for something forbidden, in other words; is there personal data here; what is in this image — and those questions have no proof and no core. It returns a judgment.</p>
+    <div class="thesis">
+      <p><strong>Its verdict enters as a fact, not as a decision.</strong> The guardrail never causes a transition by itself: it produces <code>GuardrailVerdict(allow|deny, category)</code>, and the transition table consumes that alongside the formal layers' proofs. The distinction is not pedantry — it is what keeps a probabilistic judgment from ever being the sole reason something reached a learner, and what makes “the guardrail was down” a different event from “the guardrail said no”.</p>
+    </div>
+    <p>Because it is configured rather than coded, it is also the only layer whose <em>rules are not in this document</em>. That is the point of the <a href="configuration.html">configuration page</a>: a forbidden topic is a definition a compliance officer writes, not a clause anyone deploys.</p>
+  </section>
+
+  <section id="s9" class="wrap-wide">
+    <div class="eyebrow">Section 9</div>
+    <h2>What a refusal is made of</h2>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Collected in one place, because this is the property that distinguishes the design. Each artifact has three consumers, and they want different things from it: a person needs to act, the repair loop needs to feed it into the next prompt, and the audit needs it to still mean something in a year.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Layer</th><th>Artifact</th><th>What the repair loop does with it</th></tr></thead>
+        <tbody>
+          <tr><td class="role">Schema</td><td>Failing path, expected type</td><td>Regenerates with the path named in the prompt</td></tr>
+          <tr><td class="role">OPA</td><td>Rule name and message</td><td><strong>Nothing</strong> — a policy refusal is terminal and the loop does not run</td></tr>
+          <tr><td class="role">Z3</td><td>Unsat core — the minimal conflicting set</td><td>Does not retry; hands the core to the editor, because no regeneration can satisfy contradictory requirements</td></tr>
+          <tr><td class="role">Datalog</td><td>The derivation path: node → chunk → article → audience</td><td>Excludes the offending source from that node's retrieval and regenerates</td></tr>
+          <tr><td class="role">Prolog</td><td>Proof tree, rendered as prose</td><td>Puts the uncovered objectives into the next prompt as explicit requirements</td></tr>
+          <tr><td class="role">Temporal</td><td>Violated formula, offending event index</td><td>Never repairs — a temporal violation is a bug report about the system, not about the content</td></tr>
+          <tr><td class="role">Guardrail</td><td>Category, never the matched text</td><td>Regenerates with the category named, never with the phrase — quoting it back would teach the model to reproduce it</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wrap" style="padding:0; max-width:46rem;">
+      <p>Two rows are worth reading twice. <strong>Z3 does not trigger a retry</strong>, even though its failure is technically recoverable — because regenerating cannot make forty lessons fit in two hours, and a loop that tries is a loop that burns budget to reach the same answer. And <strong>the guardrail refuses with a category, not a quote</strong>: handing the model the exact phrase that tripped the filter is how a repair loop teaches itself to write the thing it was refused for.</p>
+    </div>
+  </section>
+
+  <section id="s10">
+    <div class="eyebrow">Section 10</div>
+    <h2>Order, cost, and an unavailable layer</h2>
+    <p>The order is not arbitrary and it is not primarily about correctness — it is about what a refusal costs.</p>
+    <div class="formula">schema      microseconds   ·  no network, no state
+OPA         milliseconds   ·  local bundle, no model
+Z3          milliseconds   ·  before generation, always
+─────────────────────────────  the model is called here
+guardrail   ~100 ms        ·  network hop, own state in the machine
+Datalog     milliseconds   ·  over facts already in memory
+Prolog      milliseconds   ·  narrow queries only
+temporal    once per course · replays the trace at review time</div>
+    <p>Everything above the line runs before a single token is generated, which is why <a href="walkthrough.html#s2">three of the five kinds of refusal cost nothing</a>. Everything below runs against something that already exists, so its cost is bounded by what was already spent.</p>
+
+    <h3>When a layer is unavailable</h3>
+    <p>The formal engines are in-process and deterministic: if one cannot run, the deployment is broken, and the honest response is to stop admitting work rather than to admit it unchecked. The guardrail is a network hop, and its unavailability is a <em>timeout</em> — an unknown, routed to <code>ErrorRecovery</code>, not a denial. The distinction is recorded in the trace, because “we could not check” and “we checked and refused” are different facts about a course and an auditor will want to tell them apart.</p>
+    <div class="thesis">
+      <p><strong>No layer's absence is ever read as permission.</strong> There is no configuration value, no degraded mode and no timeout branch that turns a missing verdict into a pass.</p>
+    </div>
+  </section>
+
+  <section id="s11">
+    <div class="eyebrow">Section 11</div>
+    <h2>Open questions</h2>
+    <ol class="questions">
+      <li><strong>Who owns the fact mirror, and how fresh is it?</strong> Datalog runs over facts copied from the platform — permissions, skills, the dependency graph. A permission revoked a minute ago and not yet mirrored means a leak check that passes on stale truth. Either the mirror is transactional with the source, or the staleness of the mirror itself becomes a stamped version like every other.</li>
+      <li><strong>Is a Prolog explanation stable enough to store?</strong> The proof tree is written into the audit as the reason a node was refused. But it is derived from a rule set that can change, so replaying the same query a year later against a newer bundle may produce a different explanation for the same historical decision. Storing the rendered text solves it and freezes prose; storing the query re-derives it and may lie.</li>
+      <li><strong>How much of the temporal check can run continuously?</strong> Today the invariants are verified once, at <code>WholeCourseChecks</code>. Several of them — the immutability one especially — could be evaluated incrementally on every event, turning a review-time audit into a runtime assertion. That is strictly better and strictly more expensive, and nothing here has measured which invariants are worth it.</li>
+    </ol>
+
+    <div class="callout">
+      <div class="eyebrow">Related pages</div>
+      <p><strong><a href="transitions.html">Transitions &amp; guards</a></strong> — where each of these checks is called from, and what happens to the revision when one refuses.</p>
+      <p><strong><a href="configuration.html">Configuration</a></strong> — the thresholds these rules read and the guardrail policy this page deliberately does not contain.</p>
+      <p><strong>Generation safety</strong> <span class="status planned">next</span> — the action registry with risk levels, prompt architecture and injection defense in full, idempotency, secrets, kill switch, autonomy ladder.</p>
+    </div>
+  </section>
+
+  <p class="footer-note">Validation layers · draft v0.1 · 28 July 2026 · companion to the <a href="./">spec v2</a> and the <a href="transitions.html">transition table</a></p>
+</div>
+
+<script>
+  (function () {
+    var rail = document.querySelector('.rail');
+    if (!rail) return;
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a[href^="#"]'));
+    var targets = links.map(function (a) {
+      return { link: a, el: document.getElementById(a.getAttribute('href').slice(1)) };
+    }).filter(function (t) { return t.el; });
+    if (!targets.length) return;
+
+    var current = null;
+    var apply = function (t) {
+      if (t === current) return;
+      current = t;
+      targets.forEach(function (x) {
+        var on = x === t;
+        x.link.classList.toggle('active', on);
+        if (on) { x.link.setAttribute('aria-current', 'true'); }
+        else { x.link.removeAttribute('aria-current'); }
+      });
+    };
+
+    var update = function () {
+      var mid = window.innerHeight * 0.4;
+      var pick = targets[0];
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].el.getBoundingClientRect().top <= mid) pick = targets[i];
+      }
+      // at the very bottom of the page the last section wins
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+        pick = targets[targets.length - 1];
+      }
+      apply(pick);
+    };
+
+    // rAF-throttled, but never able to wedge: if a frame never arrives
+    // (background tab, throttled timers) the age guard flushes directly.
+    var queued = false;
+    var lastRun = 0;
+    var flush = function () {
+      queued = false;
+      lastRun = Date.now();
+      update();
+    };
+    var onScroll = function () {
+      if (Date.now() - lastRun > 300) { flush(); return; }
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(flush);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('hashchange', function () { setTimeout(update, 60); });
+    window.addEventListener('load', function () { setTimeout(update, 50); });
+    // diagrams render after load and shift every offset below them
+    setTimeout(update, 900);
+    update();
+  })();
+</script>
+</body>
+</html>

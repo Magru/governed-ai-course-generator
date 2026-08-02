@@ -332,6 +332,7 @@
     <a href="walkthrough.html"><span class="tick"></span><span class="lbl">Walkthrough</span></a>
     <a href="configuration.html"><span class="tick"></span><span class="lbl">Configuration</span></a>
     <a href="transitions.html"><span class="tick"></span><span class="lbl">Transitions &amp; guards</span></a>
+    <a href="layers.html"><span class="tick"></span><span class="lbl">Validation layers</span></a>
   </span>
   <a href="#s1"><span class="tick"></span><span class="lbl">Context</span></a>
   <a href="#s2"><span class="tick"></span><span class="lbl">Problem</span></a>
@@ -360,6 +361,7 @@
     <a href="walkthrough.html">Walkthrough</a>
     <a href="configuration.html">Configuration</a>
     <a href="transitions.html">Transitions &amp; guards</a>
+    <a href="layers.html">Validation layers</a>
   </div>
 
   <header>
@@ -379,7 +381,7 @@
   </header>
 
   <div class="drill">
-    <div class="drill-title">Detailed specifications — four written, four planned</div>
+    <div class="drill-title">Detailed specifications — five written, three planned</div>
     <div class="drill-grid">
       <a class="card" href="states.html">
         <span class="card-title">State model <span class="status draft">draft</span></span>
@@ -393,14 +395,17 @@
         <span class="card-title">Configuration <span class="status draft">draft</span></span>
         <span class="card-desc">The seven sources the generator reads at runtime — catalogs, access rules, guardrail policy, policy bundle, thresholds, model routing — their owners, their record shapes, and what is deliberately left as code.</span>
       </a>
+      <a class="card" href="layers.html">
+        <span class="card-title">Validation layers <span class="status draft">draft</span></span>
+        <span class="card-desc">Which engine owns which question — schema, OPA, Z3, Datalog, Prolog, temporal logic — the rules written out in Rego, Python and Prolog, and the artifact each layer hands back when it refuses.</span>
+      </a>
       <a class="card" href="transitions.html">
         <span class="card-title">Transitions &amp; guards <span class="status draft">draft</span></span>
         <span class="card-desc">Every legal move in both machines — state, event, guard, layer, next state — with all twenty-seven guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
       </a>
     </div>
     <p class="drill-soon">
-      Planned: <b>Validation layers</b> — which engine owns which check, the concrete rules, the explanation each produces when it refuses, and worked input/output examples per layer ·
-      <b>Generation safety</b> — the action registry with risk levels, prompt architecture and injection defense in full, idempotency, secrets, kill switch, autonomy ladder ·
+      Planned: <b>Generation safety</b> — the action registry with risk levels, prompt architecture and injection defense in full, idempotency, secrets, kill switch, autonomy ladder ·
       <b>Evaluation &amp; red team</b> — test taxonomy, adversarial scenarios, trajectory evaluation, recorded fixtures, production signals ·
       <b>Implementation plan</b> — build order, scope boundaries, and the demo script shown at the defense, with the failure it deliberately triggers.
     </p>
@@ -751,7 +756,7 @@ flowchart TD
     <p>Everything operational — full state tables, transition rules, concrete policies, the action registry, the test suite — lives in the detailed specifications linked at the top, which grow as the build proceeds.</p>
   </div>
 
-  <p class="footer-note">Specification v2 · <a href="states.html">state model</a> · <a href="walkthrough.html">walkthrough</a> · <a href="configuration.html">configuration</a> · <a href="transitions.html">transitions</a> · updated 28 July 2026</p>
+  <p class="footer-note">Specification v2 · <a href="states.html">state model</a> · <a href="walkthrough.html">walkthrough</a> · <a href="configuration.html">configuration</a> · <a href="transitions.html">transitions</a> · <a href="layers.html">layers</a> · updated 28 July 2026</p>
 </div>
 
 <script type="module">
