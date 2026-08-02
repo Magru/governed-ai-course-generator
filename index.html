@@ -399,7 +399,7 @@
       </a>
     </div>
     <p class="drill-soon">
-      Planned: <b>Validation layers</b> — which engine owns which check, the concrete rules, and the explanation each produces when it refuses ·
+      Planned: <b>Validation layers</b> — which engine owns which check, the concrete rules, the explanation each produces when it refuses, and worked input/output examples per layer ·
       <b>Generation safety</b> — the action registry with risk levels, prompt architecture and injection defense in full, idempotency, secrets, kill switch, autonomy ladder ·
       <b>Evaluation &amp; red team</b> — test taxonomy, adversarial scenarios, trajectory evaluation, recorded fixtures, production signals ·
       <b>Implementation plan</b> — build order, scope boundaries, and the demo script shown at the defense, with the failure it deliberately triggers.
@@ -590,7 +590,7 @@ flowchart TD
       <ol class="steps">
         <li><strong>System instructions — trusted, ours.</strong> The generation rules for this phase and a strict output schema, enforced as a tool call so the model returns a structure rather than prose. Each phase has its own: skeleton, node content, illustration.</li>
         <li><strong>The author's prompt — authorized, but untrusted.</strong> The author steers style and emphasis; the author cannot lift a rule. “Generate without checks” is refused at the entrance, with an explanation, and the model is never called.</li>
-        <li><strong>Retrieved sources — untrusted data.</strong> Passages from the Knowledge Base are quoted as data, never executed as instructions. An instruction embedded in an internal document is inert by construction.</li>
+        <li><strong>Retrieved sources — untrusted data.</strong> Passages from the Knowledge Base are quoted as data, never executed as instructions. An instruction embedded in an internal document is inert by construction. Sources are also screened on admission for personal data and instruction-shaped content — not because the quoting is unsafe, but so that an attempt is <em>recorded</em> rather than silently neutralized.</li>
       </ol>
       <p>The model's output stays untrusted until it has passed every layer: the schema binds its shape, grounding binds its claims to sources, policy binds the action it implies, and the guardrail screens its meaning. Nothing about it is acted on before those return.</p>
 
@@ -647,7 +647,7 @@ flowchart TD
           </tr>
           <tr>
             <td class="role">Nothing changes under a learner</td>
-            <td><strong>A published revision is immutable</strong>, so a learner finishes on the revision they started and is told only when a change lands ahead of them — never a banner, never a silent rewrite. And because nothing is edited, rollback is a pointer move to an earlier revision that still exists and still carries the approvals and versions it was cleared under: nothing regenerated, nothing restored from a backup. The same applies one level up — policies, prompts, and catalogs are versioned, so reverting one re-validates exactly what that version touched rather than being a migration.</td>
+            <td><strong>A published revision is immutable</strong>, so a learner finishes on the revision they started — within a bounded window, and told only when a change lands ahead of them — never a banner, never a silent rewrite. And because nothing is edited, rollback is a pointer move to an earlier revision that still exists and still carries the approvals and versions it was cleared under: nothing regenerated, nothing restored from a backup. The same applies one level up — policies, prompts, and catalogs are versioned, so reverting one re-validates exactly what that version touched rather than being a migration.</td>
           </tr>
           <tr>
             <td class="role">Every action is reconstructable</td>

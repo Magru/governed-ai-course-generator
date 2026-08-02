@@ -531,9 +531,11 @@ the editor is not told anything yet</div>
 invariant: G(exam_generated(E) → O content_approved(topics(E)))</div>
       </li>
       <li>
-        <h4>The exam is drafted and checked <span class="actor model">model</span> <span class="actor auto">automatic</span></h4>
+        <h4>The editor starts the exam, and it is drafted and checked <span class="actor human">editor</span> <span class="actor model">model</span> <span class="actor auto">automatic</span></h4>
         <p>The same cycle as any node, plus two checks only an exam needs.</p>
-        <div class="mv">Z3       the points per question sum to the stated maximum
+        <div class="mv">NodeGenerationRequested → the same cycle as any node, guardrail included
+
+Z3       the points per question sum to the stated maximum
 Datalog  every question traces to an approved topic —
          not to the Knowledge Base at large</div>
       </li>
@@ -607,9 +609,13 @@ rev 2: → ReadyForReview → WholeCourseChecks → Approved → <b>Published</b
 live pointer: rev 1 → rev 2
 rev 1: → <b>Superseded</b>   intact, still stamped, still readable
 
-rollback = move the pointer back to rev 1
-           nothing regenerated, nothing restored from a backup</div>
-    <p>That last line is the whole return on the decision. Rollback — which the brief asks for under production readiness — stops being a recovery procedure and becomes a pointer move to something that was never damaged.</p>
+RollbackRequested(rev 1)   rev 1: Superseded → <b>StaleReview</b>
+                           re-judged against today's versions first
+  passes → rev 1: → <b>Published</b>, rev 2 → Superseded
+  fails  → rev 1: → <span class="warnc">Withdrawn</span>; you cannot roll back to it
+
+nothing regenerated, nothing restored from a backup</div>
+    <p>That is the whole return on the decision. Rollback — which the brief asks for under production readiness — stops being a recovery procedure and becomes a pointer move to something that was never damaged. It is not free, though: the returning revision is re-judged against today's versions before it goes back on air, because a rollback that skipped the check would be the one path through which content nobody re-approved could reach an audience.</p>
 
     <h3>A compliance officer changes a policy</h3>
     <div class="mv">PolicyChanged(v7 → v8)
@@ -654,7 +660,8 @@ re-judged against v8 — <b>no content is regenerated</b>
 16  Timeout                T3: → ErrorRecovery            idempotency_key checked first
 17  …                      T3: → NodeApproved             model call #5  ← EDITOR
 18  (guard holds)          E1: generation unfenced        topics approved
-19  NodeGenerated          E1: → NodeChecks               + Z3 points · Datalog traceability
+19  NodeGenerationRequested E1: → ContentDrafting        ← EDITOR · model call #6
+    NodeGenerated → OutputGuardrail → NodeChecks           + Z3 points · Datalog traceability
 20  NodeApproved           E1: → NodeApproved             ← EDITOR
 21  (guard)                course: → ReadyForReview       derived, not pressed
 22  CourseChecksRequested  course: → WholeCourseChecks    ← EDITOR
@@ -662,7 +669,7 @@ re-judged against v8 — <b>no content is regenerated</b>
 23  ApprovalGranted        course: → Approved             ← EDITOR
 24  PublishRequested       course: → Published
 
-    5 model calls · 3 kinds of human stop · 1 repair · 1 timeout · 0 surprises
+    6 model calls · 3 kinds of human stop · 1 repair · 1 timeout · 0 surprises
 </div>
   </section>
 

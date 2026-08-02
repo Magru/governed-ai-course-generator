@@ -291,7 +291,7 @@
   </div>
 
   <header>
-    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <div class="eyebrow">Governed AI Course Generator · Working draft v0.2</div>
     <h1>State inventory</h1>
     <p class="kicker">The two-level state machine behind the generator: what actually persists between editor sessions, where the process is allowed to stall, and which invariants must hold over the whole trace.</p>
     <div class="thesis">
@@ -354,10 +354,11 @@ flowchart TD
   WCC --> PA["PendingApproval — final human decision"]
   PA --> AP["Approved — stamped with versions"]
   AP --> PUB["Published — immutable"]
-  PUB --> ARC["Archived"]
   PUB -- "a successor revision goes live" --> SUP["Superseded"]
   PUB -. "ReviseRequested — spawns a new revision; this one stays Published" .-> CIP2["rev n+1 · ContentInProgress"]
   SUP -. "RollbackRequested" .-> SR
+  SUP --> ARC["Archived"]
+  WD --> ARC
 
   BV -- "denied topic or policy" --> BFin["BlockedFinal"]
   BF -- "unsat, core shown" --> BRec["BlockedRecoverable"]
@@ -416,7 +417,7 @@ flowchart TD
           <tr><td class="state terminal">Published</td><td>Live for its audience, and <strong>immutable</strong>: no transition edits its content. A change forks a new revision beside it.</td><td>Request a revision; withdraw it</td></tr>
           <tr><td class="state blocked-s">StaleReview</td><td><strong>New in v2.</strong> A revision is being re-verified against the current versions — because a policy, catalog, or source change touched it, or because a rollback wants to put it back on air. It is never rewritten here, only re-judged.</td><td>Wait for the re-check; withdraw early</td></tr>
           <tr><td class="state terminal">Withdrawn</td><td><strong>New.</strong> Terminal for this revision: re-verification failed, so it no longer serves — and unlike <code>Superseded</code>, readers part-way through <strong>lose access</strong>, because a rule violation is exactly the case where letting them finish defeats the purpose. The explanation names what changed. If no earlier revision can pass re-verification either, the course serves nothing at all: that is an accepted outcome, not a gap — withdrawal is never refused for want of a replacement, or availability would start outranking compliance.</td><td>Request a revision that complies</td></tr>
-          <tr><td class="state">Superseded</td><td><strong>New.</strong> A later revision took the live pointer. Kept intact, still stamped, still readable by learners who started on it. <strong>Quasi-terminal:</strong> its only exit is a rollback, and only through re-verification. Learners who started on it finish on it, within a bounded window.</td><td>Read; request a rollback</td></tr>
+          <tr><td class="state">Superseded</td><td><strong>New.</strong> A later revision took the live pointer. Kept intact, still stamped, still readable by learners who started on it. <strong>Quasi-terminal:</strong> the only way back into service is a rollback, and only through re-verification; it can also be swept by a policy change while readers remain, or retired outright. Learners who started on it finish on it, within a bounded window.</td><td>Read; request a rollback</td></tr>
           <tr><td class="state terminal">Archived</td><td>Terminal: deliberately retired, kept for audit.</td><td>Clone as the basis for a new course</td></tr>
           <tr><td class="state blocked-s">BlockedFinal</td><td>Terminal, with no unblock path: a policy violation (OPA deny or a denied topic). An admin does not reopen it — they start a new brief, because a terminal state an admin can undo is terminal in name only. Carries the deny reason and the audit entry.</td><td>Read only</td></tr>
           <tr><td class="state blocked-s">BlockedRecoverable</td><td>The process stopped and needs a human move: retries exhausted, a contradictory brief, a rights refusal.</td><td>Fix the input and re-enter the relevant state</td></tr>
@@ -429,7 +430,7 @@ flowchart TD
       <h3>Where a course starts and where it ends</h3>
       <p>One clarification first, because it decides how the rest of this section reads: <strong>this machine runs per revision, not per course.</strong> A course is an identity that owns an ordered list of revisions; every state named above describes one revision. Where this page says “the course” without qualification, it means the revision currently being worked on or served.</p>
       <p><strong>Initial — there are two.</strong> <code>AwaitingBrief</code> is where a course's <em>first</em> revision is created, and the only way to start from nothing. <code>ContentInProgress</code> is where every <em>later</em> revision is born: <code>ReviseRequested</code> forks it with its predecessor's nodes already approved, so there is no brief to validate and no skeleton to draft. A machine with two entry points is worth stating outright rather than leaving the reader to infer it from a fork arrow.</p>
-      <p><strong>Terminal:</strong> <code>Archived</code> (deliberately retired), <code>Withdrawn</code> (re-verification failed), and <code>BlockedFinal</code> (a policy violation, read-only from then on). <strong>Quasi-terminal:</strong> <code>Published</code> and <code>Superseded</code> — a revision rests in either indefinitely, and each has exactly one way back to the other. Every remaining state is transient by design: it either advances, repairs, or waits on a person.</p>
+      <p><strong>Terminal:</strong> <code>Archived</code> (deliberately retired) and <code>BlockedFinal</code> (a policy violation, read-only from then on). <strong>Quasi-terminal:</strong> <code>Published</code>, <code>Superseded</code> and <code>Withdrawn</code> — a revision rests in any of them indefinitely; the first two each have a way back into service, and all three can be retired to <code>Archived</code>. Every remaining state is transient by design: it either advances, repairs, or waits on a person.</p>
 
       <h3>A published course is immutable</h3>
       <p>This is the decision the rest of the model hangs on, so it is worth stating flatly: <strong>once a revision is published, nothing in it ever changes.</strong> There is no transition out of <code>Published</code> that edits content — not for an editor fixing a typo, not for a policy change, not for the staleness cascade. A learner who opens a lesson is reading exactly the bytes a human approved, under versions that are still recorded.</p>
@@ -583,7 +584,7 @@ flowchart TD
           <tr>
             <td class="role">A node reaches for a restricted source</td>
             <td>stays <code>ContentInProgress</code></td>
-            <td><code>NodeChecks</code> → <code>NodeRepair</code>, and <code>BlockedRecoverable</code> once the repair budget is spent</td>
+            <td><code>NodeChecks</code> → <code>NodeRepair</code>; once the repair budget is spent the node stops there and the <em>revision</em> goes to <code>BlockedRecoverable</code></td>
             <td>The leak path is recorded: node → source → the audience that lacks rights. The source is excluded from this node's retrieval on retry</td>
             <td>Narrow the audience, or accept the node without that source</td>
           </tr>
@@ -708,6 +709,7 @@ rollback   move the pointer back to rev 1. No regeneration, no restore.</div>
           <tr><td class="ev">ReviseRequested</td><td>human</td><td>forks a new revision from a published or withdrawn one</td></tr>
           <tr><td class="ev">RollbackRequested</td><td>human, with a reason</td><td>a superseded revision → <code>StaleReview</code>, to earn its way back</td></tr>
           <tr><td class="ev">WithdrawRequested</td><td>human</td><td>pulls a live revision off air without waiting for the re-check</td></tr>
+          <tr><td class="ev">BlockedInputFixed</td><td>human</td><td>a recoverable stop is cleared and the revision returns to the state that blocked</td></tr>
           <tr><td class="ev">OutlineRevised</td><td>human</td><td>the skeleton changes after content exists — the move behind removing a blocked node</td></tr>
           <tr><td class="ev">ReturnedToWork</td><td>human</td><td>an approved revision is sent back to <code>ContentInProgress</code></td></tr>
           <tr><td class="ev">DraftDiscarded</td><td>human</td><td>a draft revision is abandoned — the transition behind “cancel” and “discard”</td></tr>
@@ -736,14 +738,15 @@ idempotency_key_unused(operation)
 objectives_covered(course)
 is_draft_revision(course)       — nothing published may be edited
 differs_from_live(revision)     — an unchanged fork is not publishable</div>
-    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all twenty-four, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
+    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
   </section>
 
   <section id="s8">
     <div class="eyebrow">Section 8</div>
     <h2>Temporal invariants over the trace</h2>
     <p>These hold across the whole life of a course — including sessions separated by days.</p>
-    <div class="formula">G(content_generated(N) → O outline_approved)
+    <p>The first line used to read <code>G(content_generated(N) → O outline_approved)</code>, and the change is worth explaining rather than hiding. <code>O</code> means “happened at some point in the past”, so once a skeleton had been approved <em>once</em>, the premise stayed true forever. That was harmless while a skeleton could only be approved once — and became toothless the moment <code>OutlineRevised</code> allowed a second approval cycle, since a node could then be generated against a skeleton that was mid-revision and the formula would still hold. Naming the state instead of the history says what was always meant.</p>
+    <div class="formula">G(content_generated(N) → course_state = ContentInProgress)
 G(exam_generated(E)   → O content_approved(topics(E)))
 G(published(C)        → all_nodes_approved(C) ∧ ¬∃ stale(C))
 G(node_edited(N)      → X needs_revalidation(N))
@@ -771,6 +774,7 @@ G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
       <li><code>idempotency_key</code> of the last side-effecting operation;</li>
       <li><code>trace_id</code> — the thread that ties every event together across sessions;</li>
       <li><code>approvals[]</code> — who approved what, when, and what they were shown at the time;</li>
+      <li><code>threshold_set</code> — which numbers its budgets and windows came from;</li>
       <li><code>revision</code> and <code>forked_from</code> — which edition this is, and which one it was copied out of.</li>
     </ul>
     <p>Those fields are what make two things possible at once: resuming an editor's session three days later, and answering "which approved courses does this new rule affect?" without stopping the system.</p>

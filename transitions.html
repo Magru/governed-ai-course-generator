@@ -344,9 +344,9 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>50</b></span>
+      <span class="meta-chip">Revision transitions: <b>53</b></span>
       <span class="meta-chip">Node transitions: <b>17</b></span>
-      <span class="meta-chip">Guards: <b>27</b></span>
+      <span class="meta-chip">Guards: <b>30</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -400,9 +400,9 @@
           <tr><td class="st">BriefValidation</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">feasible(brief)</td><td class="lyr">Z3</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">¬feasible(brief) — unsat core</td><td class="lyr">Z3</td><td class="st stop">BlockedRecoverable</td></tr>
-          <tr><td class="st">ContentInProgress · BlockedRecoverable</td><td class="evt">OutlineRevised</td><td class="grd">is_draft_revision</td><td class="lyr">Human</td><td class="st">OutlineChecks</td></tr>
+          <tr><td class="st">ContentInProgress · BlockedRecoverable</td><td class="evt">OutlineRevised</td><td class="grd">is_draft_revision ∧ has_outline(revision)</td><td class="lyr">Human</td><td class="st">OutlineChecks</td></tr>
           <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BriefSubmitted</td><td class="grd">blocked_at = brief</td><td class="lyr">State store</td><td class="st">BriefValidation</td></tr>
-          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">(input fixed by a human)</td><td class="grd">blocked_at ≠ brief</td><td class="lyr">State store</td><td class="st">the state that blocked</td></tr>
+          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BlockedInputFixed</td><td class="grd">blocked_at ∉ {brief, outline}</td><td class="lyr">State store</td><td class="st">the state that blocked</td></tr>
 
           <tr class="phase"><td colspan="5">The skeleton</td></tr>
           <tr><td class="st">OutlineDrafting</td><td class="evt">OutlineGenerated</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutlineGuardrail</td></tr>
@@ -413,9 +413,11 @@
           <tr><td class="st">OutlineChecks</td><td class="evt">(auto)</td><td class="grd">schema_valid ∧ skills_grounded ∧ policy_allows ∧ feasible</td><td class="lyr">Schema · Datalog · OPA · Z3</td><td class="st human">OutlineReview</td></tr>
           <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(structure)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
           <tr><td class="st">OutlineChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">OutlineRepair</td></tr>
-          <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">retry_budget_left(revision) ∧ ¬has_nodes(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">has_nodes(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
-          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">¬has_nodes(revision)</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">has_nodes(revision)</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineApproved</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress</td></tr>
 
           <tr class="phase"><td colspan="5">Content, and the guard that ends it</td></tr>
@@ -438,6 +440,7 @@
           <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">successor_published(revision)</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
                     <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">any of the above fails</td><td class="lyr">All layers</td><td class="st stop">Withdrawn</td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
@@ -445,7 +448,7 @@
           <tr><td class="st stop">Withdrawn</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn)</small></td></tr>
 
-          <tr><td class="st">any draft state</td><td class="evt">DraftDiscarded</td><td class="grd">is_draft_revision</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
+          <tr><td class="st">any non-terminal draft state</td><td class="evt">DraftDiscarded</td><td class="grd">is_draft_revision</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr class="phase"><td colspan="5">Infrastructure</td></tr>
           <tr><td class="st stop">ErrorRecovery</td><td class="evt">(auto)</td><td class="grd">¬idempotency_key_unused(op) — the write landed</td><td class="lyr">State store</td><td class="st">the state after the operation</td></tr>
           <tr><td class="st stop">ErrorRecovery</td><td class="evt">(auto)</td><td class="grd">idempotency_key_unused(op) ∧ retry_budget_left</td><td class="lyr">State store</td><td class="st">the state that issued the operation</td></tr>
@@ -454,8 +457,9 @@
       </table>
     </div>
     <div class="wrap" style="padding:0; max-width:46rem;">
-      <p><strong>The skeleton stays editable after content exists.</strong> <code>OutlineRevised</code> sends the revision back through <code>OutlineChecks</code>: nodes that survive keep their states and their stamps, a node removed from the skeleton is discarded with its history retained, and anything that depended on it goes stale through the ordinary cascade. This row exists because of the decision below — telling an editor to “drop the blocked node from the skeleton” is empty advice if the machine has no move for it.</p>
-      <p><strong>A node blocked on policy stops the revision, recoverably.</strong> The row for it sends the revision to <code>BlockedRecoverable</code> rather than <code>BlockedFinal</code>, and the difference is deliberate: the policy violation is a terminal fact about that <em>node</em>, not about the course, and the editor has a real move — take the node out of the skeleton and carry on. Without the row the revision would sit in <code>ContentInProgress</code> forever, since its exit guard can never be satisfied while a blocked node exists. The stricter reading — one blocked node condemns the revision — is defensible too, and is the first open question below.</p>
+      <p><strong>The skeleton stays editable after content exists — but only by a person.</strong> <code>OutlineRevised</code> sends the revision back through <code>OutlineChecks</code>: nodes that survive keep their states and their stamps, a node removed from the skeleton is discarded with its history retained, and anything that depended on it goes stale through the ordinary cascade. The row exists because telling an editor to “drop the blocked node from the skeleton” is empty advice if the machine has no move for it.</p>
+      <p>What the row must <em>not</em> do is let the model back in. Once a human has approved nodes, regenerating the skeleton would be the model overwriting decisions a person already made — the governing principle inverted. So both paths that hand the skeleton back to the model are guarded by <code>¬has_nodes</code>: a failed re-check goes to <code>BlockedRecoverable</code> instead of <code>OutlineRepair</code>, and a rejected re-review returns the editor to <code>ContentInProgress</code> instead of to <code>OutlineDrafting</code>. <strong>Before content exists the skeleton is a proposal; after content exists it is the editor's.</strong></p>
+      <p><strong>A node blocked on policy stops the revision, recoverably.</strong> The row for it sends the revision to <code>BlockedRecoverable</code> rather than <code>BlockedFinal</code>, and the difference is deliberate: the policy violation is a terminal fact about that <em>node</em>, not about the course, and the editor has a real move — take the node out of the skeleton and carry on. Without the row the revision would sit in <code>ContentInProgress</code> forever, since its exit guard can never be satisfied while a blocked node exists. The stricter reading — one blocked node condemns the revision — is defensible too; it was weighed and rejected, because the content that violated the policy was written by the model, not by the editor whose work it would destroy.</p>
       <p><code>BlockedFinal</code> and <code>Archived</code> have no outgoing rows. That is what terminal means here, and it is enforced by the absence of a row rather than by a check inside one.</p>
     </div>
   </section>
@@ -472,7 +476,7 @@
           <tr><th>From</th><th>Event</th><th>Guard</th><th>Layer</th><th>To</th></tr>
         </thead>
         <tbody>
-          <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))</td><td class="lyr">State store · OPA · Datalog</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">course_state = ContentInProgress ∧ is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))</td><td class="lyr">State store · OPA · Datalog</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">—</td><td class="lyr">—</td><td class="st">Generated</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">Generated</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutputGuardrail</td></tr>
@@ -510,7 +514,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need fourteen more to be complete. All twenty-seven, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need seventeen more to be complete. All thirty, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -554,6 +558,12 @@
 
       <dt>all_visuals_reviewed(node)</dt>
       <dd><span class="owner">Catalog flag · Human</span> — every block whose type carries <code>requires_visual_review</code> has been looked at by a person. Refuses with the queue of unreviewed visuals.</dd>
+
+      <dt>has_nodes(revision) · has_outline(revision)</dt>
+      <dd><span class="owner">State store</span> — how far this revision has got. <code>has_nodes</code> is what separates “the skeleton is still a proposal” from “the skeleton is the editor's”, and it guards every path that would hand structure back to the model.</dd>
+
+      <dt>reason_given(action)</dt>
+      <dd><span class="owner">State store</span> — a human action that removes something carries an explanation into the audit. Withdrawal, rejection and rollback all require it; approval does not, because approving is not the move an auditor asks about.</dd>
 
       <dt>arithmetic_consistent(node)</dt>
       <dd><span class="owner">Z3</span> — the numbers inside a node add up: exam points reach the stated maximum, durations match the block count. Refuses with the failing sum.</dd>
@@ -610,8 +620,9 @@ AwaitingBrief → … → Published, no repair, no refusal</div>
 
     <div class="chain">
       <h3>2 · A repair inside the budget</h3>
-      <div class="formula">NodeGenerated → GuardrailVerdict(allow) → CheckFailed(datalog, ungrounded)
-  → [retry_budget_left ✓] → NodeGenerationRequested
+      <div class="formula">NodeGenerationRequested [course_state = ContentInProgress ✓]
+  → NodeGenerated → GuardrailVerdict(allow) → CheckFailed(datalog, ungrounded)
+  → NodeRepair [retry_budget_left ✓] → ContentDrafting
   → NodeGenerated → GuardrailVerdict(allow) → (checks pass) → NodeApproved</div>
       <p>Legal because <code>retry_budget_left</code> held at the moment of the repair. The same chain once the budget is spent is <a href="#s6">forbidden chain 8</a> — at a budget of two that is the third failure, and the difference between legal and forbidden is a counter, not a category.</p>
     </div>
@@ -744,10 +755,12 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <h2>Totality, determinism, concurrency</h2>
 
     <h3>One recovery state, shared by two machines</h3>
-    <p><code>ErrorRecovery</code> appears in both tables and is <strong>one state, parameterized by the scope of the operation that failed</strong>, not two states with the same name. The exit rule is a single sentence in both cases — check <code>idempotency_key</code>, then decide about a retry — and splitting it would duplicate the only interesting logic in the model, which is how such rules drift apart. The cost is that a state belongs to two machines at once, which is unusual enough to say out loud rather than leave for a reader to notice: it is counted once, in neither total.</p>
+    <p><code>ErrorRecovery</code> appears in both tables and is <strong>one state, parameterized by the scope of the operation that failed</strong>, not two states with the same name. The exit rule is a single sentence in both cases — check <code>idempotency_key</code>, then decide about a retry — and splitting it would duplicate the only interesting logic in the model, which is how such rules drift apart. The cost is that a state belongs to two machines at once, which is unusual enough to say out loud rather than leave for a reader to notice: it is counted once, among the revision states, and referenced — not duplicated — by the node machine.</p>
     <h3>The transition function is partial, and that is explicit</h3>
     <p>Most (state, event) pairs have no row. An event arriving where no row matches is <strong>recorded and discarded</strong> — it does not error, does not queue, and above all does not fall through to a default. A stale <code>GuardrailVerdict</code> arriving after the editor cancelled a run is the ordinary case for this, and the trace keeps it so that “why did nothing happen?” has an answer.</p>
 
+    <h3>When state is read</h3>
+    <p>Guards that name a state — <code>course_state = ContentInProgress</code> is the one that matters — are evaluated against the state <strong>at the moment the event is admitted</strong>, before any derived transition runs. This matters because course states are derived from node states: without the convention, the last node approval and the course's move to <code>ReadyForReview</code> would race inside one tick, and a guard could read either. Admission first, derivation second.</p>
     <h3>Determinism</h3>
     <p>No (state, event) pair has two rows whose guards can both hold. Where two rows share a state and an event they are complementary branches of one evaluation, so the next state is a function of the current state, the event, and the guard results — with no ordering dependence and no first-match-wins rule to remember.</p>
     <p>Making that true costs something, and the cost is visible in the tables: the three refusal rows in <code>BriefValidation</code> carry the earlier checks in their guards (<code>schema_valid ∧ ¬policy_allows</code>, not just <code>¬policy_allows</code>), and the repair rows carry <code>policy_allows ∧ constraint violated</code> so that a brief failing both a policy and a constraint has one destination rather than two. Ordering is then a <em>consequence</em> of the guards rather than a rule the reader has to hold separately — which is the point, because a rule held separately is a rule that drifts.</p>
@@ -762,7 +775,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <div class="eyebrow">Section 9</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>Does a revised skeleton have to stop at <code>OutlineReview</code> again?</strong> The table sends <code>OutlineRevised</code> to <code>OutlineChecks</code> and leaves the question of a second human approval open. Requiring it is more control and more clicks on a change the editor just made themselves; skipping it means the skeleton can move without anyone signing the new shape.</li>
+      <li><strong>What happens to a node that runs out of repair budget?</strong> The revision stops at <code>BlockedRecoverable</code> and the editor can remove the node through <code>OutlineRevised</code> — so the <em>revision</em> always has a move. The <em>node</em> does not: it sits in <code>NodeRepair</code> with no outgoing transition. That is defensible (a node the machine could not fix is not a node the machine can un-fix) but it means the only repair for bad content is deletion. Whether an editor should be able to write the node themselves is a product question this spec has never answered — every node in it is model-generated and then judged.</li>
       <li><strong>Does a live-updating approval screen need to freeze once opened?</strong> The screen follows the state machine, which is right — until the thing being approved changes while it is being read. An approval records what the approver was shown, so either the screen holds still until the decision is made, or the record has to say which version they actually saw.</li>
     </ol>
 
