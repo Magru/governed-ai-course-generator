@@ -223,7 +223,7 @@ modified and still carries the stamps it was cleared under.</div>
       <p>A draft revision is also the answer to “where does an editor experiment?” — it is invisible to learners, it can be abandoned, and <code>differs_from_live</code> stops an untouched one from being published. No separate sandbox state is needed, and one would sit badly beside the rule that every action is audited.</p>
       <p>Three consequences, and none of them cost a new mechanism:</p>
       <ul class="plain">
-        <li><strong>The node FSM does not change at all.</strong> The same ten states, the same cascade — they simply never run against live content any more. That is the strongest argument for the decision: it removes a class of problem rather than adding machinery.</li>
+        <li><strong>The node FSM does not change at all.</strong> The same eleven states, the same cascade — they simply never run against live content any more. That is the strongest argument for the decision: it removes a class of problem rather than adding machinery.</li>
         <li><strong>Node approvals are inherited; the publication signature never is.</strong> The fork copies node approvals so unchanged work is not re-reviewed — but every revision passes <code>PendingApproval</code> on its own. “Was this node reviewed?” and “am I willing to sign what goes live today, under today's rules?” are different questions, and only the first is about the content.</li>
         <li><strong>Rollback becomes expressible at all</strong>, which is what the brief asks for under production readiness. It is a pointer move to a revision that still exists, still holds its approvals, and still carries the versions it was cleared under — not a regeneration and not a restore from backup. It is not a free move, though: the returning revision is re-verified first, for the reason given below.</li>
         <li><strong>One guard has to be added:</strong> <code>differs_from_live(revision)</code>. A fork that has not been edited is byte-identical to what is already serving, and publishing it would be a no-op that nonetheless moves the pointer and rewrites history. The guard keeps such a revision out of <code>ReadyForReview</code>.</li>
@@ -268,7 +268,7 @@ flowchart TD
   NR -- "budget spent" --> BR["BlockedRecoverable"]
   NC -- "policy violation" --> BF["BlockedFinal"]
   NA -- "editor edits the node" --> NRV["NeedsRevalidation"]
-  NRV -. "Datalog marks dependents" .-> NRV2["Dependent nodes — exam, images"]
+  NRV -. "Datalog marks dependents" .-> NRV2["Dependents — exam questions, illustrations"]
   NRV --> NC
   NRV2 --> NC
   BF -. "OutlineApproved drops it — reachable from any live state" .-> RM["Removed — no longer in the skeleton, record kept"]
@@ -296,7 +296,7 @@ flowchart TD
           <tr><td class="state terminal">Validated</td><td>Formally clean, waiting on a person.</td><td>→ NodeApproved</td></tr>
           <tr><td class="state hitl-s">NodeApproved</td><td><strong>Human.</strong> The editor approved this node; versions are stamped onto it.</td><td>An edit → NeedsRevalidation</td></tr>
           <tr><td class="state blocked-s">NeedsRevalidation</td><td>This node or something it depends on changed; the approval is honestly withdrawn.</td><td>→ NodeChecks</td></tr>
-          <tr><td class="state blocked-s">BlockedFinal</td><td>Terminal for this node: a policy violation.</td><td>—</td></tr>
+          <tr><td class="state blocked-s">BlockedFinal</td><td>A policy violation. Nothing the machine does moves it — no retry, no re-check, no repair.</td><td>Only removal, and only by a person</td></tr>
             <tr><td class="state terminal">Removed</td><td><b>New.</b> The editor committed a skeleton that no longer contains this node. Terminal, and deliberately not a failure: the record, its trace and its stamps are kept for audit, but the node is no longer part of the course and no guard counts it. Re-adding a node with the same title creates a different one — the same rule that makes an edit fork rather than overwrite.</td><td>—</td></tr>
         </tbody>
       </table>
@@ -305,7 +305,7 @@ flowchart TD
     <p>Some block types cannot be cleared by any check — an illustration is the obvious one. The catalog marks those types <code>requires_visual_review</code>, so the requirement travels with the vocabulary rather than being hard-coded per modality: whoever adds a new visual block type declares it there, and the machine inherits the rule.</p>
     <p>The flag is carried on the block, and it gates the node: a node reaches <code>Validated</code> when the formal layers are satisfied, but it cannot reach <code>NodeApproved</code> while any flagged block is still unseen. The editor's approval screen therefore shows two things — the formal verdict for the node, and the individual visuals still awaiting an eye. Rejecting one visual does not discard the node: that block returns to <code>NodeRepair</code> with the editor's reason, and everything already cleared stays cleared.</p>
 
-    <p style="max-width:var(--measure);"><strong>Initial:</strong> <code>Planned</code> — every node is born from the approved skeleton. <strong>Terminal:</strong> <code>BlockedFinal</code>. <strong>Resting:</strong> <code>NodeApproved</code> — the state a node is supposed to end in, which it leaves only when it or a dependency changes. A course is publishable exactly when every node rests there.</p>
+    <p style="max-width:var(--measure);"><strong>Initial:</strong> <code>Planned</code> — every node is born from the approved skeleton. <strong>Terminal:</strong> <code>Removed</code> — and <code>BlockedFinal</code> with one qualification worth stating precisely: it is terminal <em>to the machine</em>, since no check, retry or repair leaves it, but a person can still drop the node from the skeleton. That is the only move out, and it is the reason a policy violation stops a node without stopping the course. <strong>Resting:</strong> <code>NodeApproved</code> — the state a node is supposed to end in, which it leaves only when it or a dependency changes. A course is publishable exactly when every node rests there.</p>
   </section>
 
   <section id="s4">
@@ -530,7 +530,7 @@ G(published(C)        → all_nodes_approved(C) ∧ ¬∃ stale(C))
 G(node_edited(N)      → X needs_revalidation(N))
 G(removed(N)          → O outline_committed_without(N))            ← new
 G(generated(A)        → O guardrail_checked(A))                  ← new in v2
-G(published(C)        → policy_version(C) = current ∨ stale(C))  ← new in v2
+G(published(C)        → policy_version(C) = current ∨ stale(C) ∨ ¬affected(C))
 G(restricted_chunk_used(N) → O permission_checked(N))
 G(action              → F audit(action))
 
@@ -570,7 +570,7 @@ G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
 
   <div class="callout">
     <div class="eyebrow">Companion pages</div>
-    <p><strong><a href="walkthrough.html">Walkthrough — one course, end to end</a></strong> — these states seen from inside a single run that succeeds: twenty-four steps, three human stops, and what still reaches the course after publication.</p>
+    <p><strong><a href="walkthrough.html">Walkthrough — one course, end to end</a></strong> — these states seen from inside a single run that succeeds: twenty-four steps, three kinds of human stop, and what still reaches the course after publication.</p>
     <p><strong><a href="configuration.html">Configuration</a></strong> — the catalogs, policies and thresholds these states read, and the version stamps written at every approval.</p>
     <p><strong><a href="transitions.html">Transitions &amp; guards</a></strong> — the full table these states move through: every legal transition with its guard and layer, four legal event chains, twelve forbidden ones, and the moves that deliberately do not exist.</p>
   </div>

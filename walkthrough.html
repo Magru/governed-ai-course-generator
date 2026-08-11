@@ -228,7 +228,7 @@ the prompt now carries the explanation, not just "try again"</div>
         <h4>Nodes come into existence <span class="actor auto">automatic</span></h4>
         <div class="mv">course: OutlineReview → <b>ContentInProgress</b>
 T1, T2, T3, E1: <b>Planned</b></div>
-        <p>Not one node could have existed before this moment. That is not a UI convention — it is the invariant <code>G(content_generated(N) → O outline_approved)</code>, checked over the trace at the end.</p>
+        <p>Not one node could have existed before this moment. That is not a UI convention — it is the invariant <code>G(content_generated(N) → course_state = ContentInProgress)</code>, checked over the trace at the end. It names the state rather than the history on purpose: “a skeleton was approved at some point” stays true forever once it has happened, and would let a node be generated against a skeleton that is mid-revision.</p>
       </li>
     </ol>
   </section>
@@ -454,7 +454,7 @@ re-judged against v8 — <b>no content is regenerated</b>
     <ol class="principles">
       <li><strong>The three human stops are three different questions.</strong> The skeleton stop asks “is this the right course?”, the node stops ask “is this the right content?”, the publication stop asks “am I willing to sign this?”. None of them is a confirmation dialog, and none could be merged into another without losing the question it asks.</li>
       <li><strong>Money is spent at step 4, and steps 1–3 are already complete refusals.</strong> The ordering of the layers is economic as much as it is logical: schema before policy, policy before arithmetic, all of them before the model. A system that calls the model first and validates afterwards pays for every rejection.</li>
-      <li><strong>The course state is never set by hand.</strong> Every course-level transition in this run except three approvals and the publish click was derived from node states by a guard. That is the difference between a state machine and a status field.</li>
+      <li><strong>The course state is never set by hand.</strong> Once content exists, every course-level transition in this run was derived from node states by a guard — the exceptions are the four human acts (three approvals and the publish click), the editor declaring the revision done, and the brief and skeleton phases, which run before there is a node to derive anything from. That is the difference between a state machine and a status field.</li>
       <li><strong>Two failures in the run were handled without telling anyone.</strong> The outline repair and the timeout both resolved inside the machine. Bounded automatic recovery is what earns the right to interrupt a human when something genuinely needs them — an agent that escalates everything trains its editor to approve everything.</li>
     </ol>
 

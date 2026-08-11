@@ -181,7 +181,7 @@
           <tr><td class="st">BriefFeasibility</td><td class="evt">(auto)</td><td class="grd">¬feasible(brief) — unsat core</td><td class="lyr">Z3</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st">ContentInProgress · BlockedRecoverable</td><td class="evt">OutlineRevised</td><td class="grd">is_draft_revision ∧ has_outline(revision)</td><td class="lyr">Human</td><td class="st">OutlineChecks</td></tr>
           <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BriefSubmitted</td><td class="grd">blocked_at = brief</td><td class="lyr">State store</td><td class="st">BriefValidation</td></tr>
-          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BlockedInputFixed</td><td class="grd">¬has_outline(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
+          <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BlockedInputFixed</td><td class="grd">blocked_at = outline ∧ ¬has_outline(revision)</td><td class="lyr">State store</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st stop">BlockedRecoverable</td><td class="evt">BlockedInputFixed</td><td class="grd">blocked_at ∉ {brief, outline}</td><td class="lyr">State store</td><td class="st">the state that blocked</td></tr>
 
           <tr class="phase"><td colspan="5">The skeleton</td></tr>
@@ -225,7 +225,7 @@
           <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
-          <tr><td class="st">Superseded</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
+          <tr><td class="st">Superseded</td><td class="evt">ArchiveRequested</td><td class="grd">¬has_active_readers</td><td class="lyr">State store · Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn)</small></td></tr>
 
@@ -239,6 +239,8 @@
     </div>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <p><strong>The skeleton stays editable after content exists — but only by a person.</strong> <code>OutlineRevised</code> sends the revision back through <code>OutlineChecks</code>: nodes that survive keep their states and their stamps, a node dropped from the skeleton moves to <code>Removed</code> and keeps its record, and anything that depended on it goes stale through the ordinary cascade. The row exists because telling an editor to “drop the blocked node from the skeleton” is empty advice if the machine has no move for it.</p>
+      <p><strong>A corrected brief always re-enters through validation.</strong> The three <code>BlockedRecoverable</code> rows divide by the phase the stop was entered from, and the brief row is deliberately keyed to <code>BriefSubmitted</code> rather than <code>BlockedInputFixed</code>: changing a brief produces a new brief, and a new brief is schema-checked, policy-checked and screened for denied topics before anything else happens to it. An earlier draft of this table guarded the outline row on <code>¬has_outline</code> alone, which is also true of every brief-stage block — that routed a corrected brief straight into <code>OutlineDrafting</code>, past all three checks and into model spend.</p>
+
       <p><strong>A skeleton edit is a transaction.</strong> <code>OutlineRevised</code> proposes, <code>OutlineApproved</code> commits and bumps <code>outline_version</code>, <code>OutlineRejected</code> discards the proposal and leaves the previous version in force. Both approval and rejection return the revision to <code>ContentInProgress</code> — the difference is not where it lands but which skeleton it carries, which is the same pattern as everywhere else here: nothing takes effect until a person says so.</p>
       <p><strong>While the skeleton is being re-decided, node work is held.</strong> A node may be about to be removed, so generating content for it is waste, and generating against a structure in flux is the hole this row would otherwise open. Every transition that produces content — the first draft and the repair loop alike — carries <code>course_state = ContentInProgress</code>. Nodes already in flight are <em>held, not killed</em>: their next transition simply cannot fire until the revision comes back, and then it does. No new state is needed, because a machine that cannot move is already something this model can express.</p>
       <p>What the row must <em>not</em> do is let the model back in. Once a human has approved nodes, regenerating the skeleton would be the model overwriting decisions a person already made — the governing principle inverted. So both paths that hand the skeleton back to the model are guarded by <code>¬has_nodes</code>: a failed re-check goes to <code>BlockedRecoverable</code> instead of <code>OutlineRepair</code>, and a rejected re-review returns the editor to <code>ContentInProgress</code> instead of to <code>OutlineDrafting</code>. <strong>Before content exists the skeleton is a proposal; after content exists it is the editor's.</strong></p>
@@ -260,7 +262,7 @@
         </thead>
         <tbody>
           <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">course_state = ContentInProgress ∧ is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))</td><td class="lyr">State store · OPA · Datalog</td><td class="st">ContentDrafting</td></tr>
-          <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">—</td><td class="lyr">—</td><td class="st">Generated</td></tr>
+          <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">course_state = ContentInProgress</td><td class="lyr">State store</td><td class="st">Generated</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">Generated</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutputGuardrail</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
@@ -276,7 +278,7 @@
           <tr><td class="st human">NodeApproved</td><td class="evt">NodeEdited</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited)</td><td class="lyr">Datalog</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">NodeChecks</td></tr>
-            <tr><td class="st">any state but Removed</td><td class="evt">OutlineApproved</td><td class="grd">is_draft_revision ∧ ¬in_outline(node, committed_outline)</td><td class="lyr">Human · State store</td><td class="st">Removed</td></tr>
+            <tr><td class="st">any state but Removed</td><td class="evt">OutlineApproved</td><td class="grd">is_draft_revision ∧ ¬in_outline(node, committed_outline) ∧ reason_given</td><td class="lyr">Human · State store</td><td class="st">Removed</td></tr>
         </tbody>
       </table>
     </div>
@@ -305,7 +307,7 @@
       <dd><span class="owner">JSON Schema</span> — the brief, the outline, or a block has the shape it must have. Refuses with the failing path and the expected type.</dd>
 
       <dt>policy_allows(action, role, state)</dt>
-      <dd><span class="owner">OPA</span> — may this actor take this action, over this audience, in this state? Refuses with the rule that denied and a human-readable reason. <strong>The only guard whose refusal is terminal.</strong></dd>
+      <dd><span class="owner">OPA</span> — may this actor take this action, over this audience, in this state? Refuses with the rule that denied and a human-readable reason. <strong>One of two guards whose refusal is terminal</strong> — the other is <code>guardrail_clean</code> on the brief, where a denied topic ends the revision rather than sending it back.</dd>
 
       <dt>guardrail_clean(artifact)</dt>
       <dd><span class="owner">Managed guardrail</span> — text and images carry nothing forbidden. Refuses with a category, never with a matched string. An <em>explicit</em> deny is a refusal; an <em>unreachable</em> service is a timeout, which is an unknown and routes to <code>ErrorRecovery</code> — the run stalls either way, but the two are not the same event and must not be recorded as one.</dd>
@@ -329,7 +331,7 @@
       <dd><span class="owner">Prolog</span> — every learning objective is closed by some node. Refuses with the uncovered objectives, which is also what drives the editor's next-best-action.</dd>
 
       <dt>content_approved(topics(exam))</dt>
-      <dd><span class="owner">Datalog</span> — an exam may not be generated before the topics it tests are approved. Refuses by naming the topics still outstanding.</dd>
+      <dd><span class="owner">Datalog</span> — an exam may not be generated before the topics it tests are approved. <code>topics()</code> ranges over the topics in the <em>committed outline</em>: a topic dropped from the skeleton stops being a precondition rather than becoming one that can never be met. Without that scope a removed topic would strand its exam in <code>Planned</code> while the exam still counted toward <code>all_nodes_approved</code> — a revision with no move left. Refuses by naming the topics still outstanding.</dd>
 
       <dt>depends_on(node, edited)</dt>
       <dd><span class="owner">Datalog</span> — the staleness cascade, evaluated as a guard rather than run as a procedure. Returns the dependency path, which becomes the reason recorded on each withdrawn approval.</dd>
