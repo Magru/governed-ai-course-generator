@@ -124,8 +124,8 @@
     </div>
     <div class="meta-row">
       <span class="meta-chip">Revision transitions: <b>55</b></span>
-      <span class="meta-chip">Node transitions: <b>17</b></span>
-      <span class="meta-chip">Guards: <b>33</b></span>
+      <span class="meta-chip">Node transitions: <b>18</b></span>
+      <span class="meta-chip">Guards: <b>34</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -238,7 +238,7 @@
       </table>
     </div>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
-      <p><strong>The skeleton stays editable after content exists — but only by a person.</strong> <code>OutlineRevised</code> sends the revision back through <code>OutlineChecks</code>: nodes that survive keep their states and their stamps, a node removed from the skeleton is discarded with its history retained, and anything that depended on it goes stale through the ordinary cascade. The row exists because telling an editor to “drop the blocked node from the skeleton” is empty advice if the machine has no move for it.</p>
+      <p><strong>The skeleton stays editable after content exists — but only by a person.</strong> <code>OutlineRevised</code> sends the revision back through <code>OutlineChecks</code>: nodes that survive keep their states and their stamps, a node dropped from the skeleton moves to <code>Removed</code> and keeps its record, and anything that depended on it goes stale through the ordinary cascade. The row exists because telling an editor to “drop the blocked node from the skeleton” is empty advice if the machine has no move for it.</p>
       <p><strong>A skeleton edit is a transaction.</strong> <code>OutlineRevised</code> proposes, <code>OutlineApproved</code> commits and bumps <code>outline_version</code>, <code>OutlineRejected</code> discards the proposal and leaves the previous version in force. Both approval and rejection return the revision to <code>ContentInProgress</code> — the difference is not where it lands but which skeleton it carries, which is the same pattern as everywhere else here: nothing takes effect until a person says so.</p>
       <p><strong>While the skeleton is being re-decided, node work is held.</strong> A node may be about to be removed, so generating content for it is waste, and generating against a structure in flux is the hole this row would otherwise open. Every transition that produces content — the first draft and the repair loop alike — carries <code>course_state = ContentInProgress</code>. Nodes already in flight are <em>held, not killed</em>: their next transition simply cannot fire until the revision comes back, and then it does. No new state is needed, because a machine that cannot move is already something this model can express.</p>
       <p>What the row must <em>not</em> do is let the model back in. Once a human has approved nodes, regenerating the skeleton would be the model overwriting decisions a person already made — the governing principle inverted. So both paths that hand the skeleton back to the model are guarded by <code>¬has_nodes</code>: a failed re-check goes to <code>BlockedRecoverable</code> instead of <code>OutlineRepair</code>, and a rejected re-review returns the editor to <code>ContentInProgress</code> instead of to <code>OutlineDrafting</code>. <strong>Before content exists the skeleton is a proposal; after content exists it is the editor's.</strong></p>
@@ -251,7 +251,7 @@
     <div class="eyebrow">Section 3</div>
     <h2>Node transitions</h2>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
-      <p>Seventeen rows, and every one of them runs inside a draft revision. There is no node transition that can fire against a published one — which is the immutability decision expressed as an absence rather than as a rule.</p>
+      <p>Eighteen rows, and every one of them runs inside a draft revision. There is no node transition that can fire against a published one — which is the immutability decision expressed as an absence rather than as a rule.</p>
     </div>
     <div class="table-scroll">
       <table class="trans">
@@ -276,6 +276,7 @@
           <tr><td class="st human">NodeApproved</td><td class="evt">NodeEdited</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited)</td><td class="lyr">Datalog</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">NodeChecks</td></tr>
+            <tr><td class="st">any state but Removed</td><td class="evt">OutlineApproved</td><td class="grd">is_draft_revision ∧ ¬in_outline(node, committed_outline)</td><td class="lyr">Human · State store</td><td class="st">Removed</td></tr>
         </tbody>
       </table>
     </div>
@@ -297,7 +298,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need nineteen more to be complete. All thirty-two, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need twenty-one more to be complete. All thirty-four, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -360,8 +361,11 @@
       <dt>successor_published(revision) · blocked_at(revision)</dt>
       <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: which revision took the live pointer, and which <em>phase</em> a recoverable block was entered from — brief, outline, or content, each a named set of states — so the fix returns there instead of to the beginning.</dd>
 
+      <dt>in_outline(node, committed_outline)</dt>
+      <dd><span class="owner">State store</span> — whether the skeleton just committed still contains this node. It is evaluated against the proposal being committed, never against <code>outline_version</code>, which the very same transition is about to advance. Refusing is what drops a node, so it refuses with the outline version that dropped it.</dd>
+
       <dt>all_nodes_approved(revision) · no_stale_nodes(revision)</dt>
-      <dd><span class="owner">State store</span> — the two quantified conditions that lift a revision out of <code>ContentInProgress</code>. Refuse with the offending nodes.</dd>
+      <dd><span class="owner">State store</span> — the two quantified conditions that lift a revision out of <code>ContentInProgress</code>. Both quantify over the nodes in the committed outline, so a <code>Removed</code> node falls outside the quantifier instead of standing as a counter-example forever. Refuse with the offending nodes.</dd>
 
       <dt>retry_budget_left(scope)</dt>
       <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. Refusing is what turns a repair loop into a stop.</dd>
@@ -533,7 +537,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
       <li><strong><code>Superseded → Published</code></strong> — rollback goes through re-verification or not at all.</li>
       <li><strong><code>BlockedFinal → *</code></strong> — no admin override. A terminal state an administrator can undo is terminal in name only.</li>
       <li><strong><code>Validated → Published</code></strong> — nodes are never published; revisions are. A node reaching <code>Validated</code> means the formal layers are satisfied, which is not the same as anyone having agreed to it.</li>
-      <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in seventeen rows.</li>
+      <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in eighteen rows.</li>
       <li><strong>Cloning an archived course</strong> — the state model offers it, and it is deliberately not a transition: a clone creates a <em>new course identity</em> with its own first revision in <code>AwaitingBrief</code>. Nothing about the archived revision changes, so it belongs to the layer above this machine.</li>
       <li><strong>A skip from <code>Generated</code> to <code>NodeChecks</code></strong> — there is no path that avoids the guardrail hop, which is what makes <code>G(generated(A) → O guardrail_checked(A))</code> checkable over the trace rather than merely intended.</li>
     </ul>
@@ -565,7 +569,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <div class="eyebrow">Section 9</div>
     <h2>Open questions</h2>
     <ol class="questions">
-      <li><strong>What happens to a node that runs out of repair budget?</strong> The revision stops at <code>BlockedRecoverable</code> and the editor can remove the node through <code>OutlineRevised</code> — so the <em>revision</em> always has a move. The <em>node</em> does not: it sits in <code>NodeRepair</code> with no outgoing transition. That is defensible (a node the machine could not fix is not a node the machine can un-fix) but it means the only repair for bad content is deletion. Whether an editor should be able to write the node themselves is a product question this spec has never answered — every node in it is model-generated and then judged.</li>
+      <li><strong>Should an editor be able to write a node by hand?</strong> A node whose repair budget runs out now has exactly one way out: the editor drops it from the skeleton and it moves to <code>Removed</code>. That is defensible — a node the machine could not fix is not a node the machine can un-fix — but it means the only repair for bad content is deletion. Whether an editor should be able to write the node themselves is a product question this spec has never answered: every node in it is model-generated and then judged.</li>
       <li><strong>Does a live-updating approval screen need to freeze once opened?</strong> The screen follows the state machine, which is right — until the thing being approved changes while it is being read. An approval records what the approver was shown, so either the screen holds still until the decision is made, or the record has to say which version they actually saw.</li>
     </ol>
 

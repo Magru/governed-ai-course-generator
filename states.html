@@ -74,7 +74,7 @@
     </div>
     <div class="meta-row">
       <span class="meta-chip">Course states: <b>21</b></span>
-      <span class="meta-chip">Node states: <b>10</b></span>
+      <span class="meta-chip">Node states: <b>11</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
       <span class="meta-chip">Names: <b>not final</b></span>
     </div>
@@ -271,6 +271,7 @@ flowchart TD
   NRV -. "Datalog marks dependents" .-> NRV2["Dependent nodes — exam, images"]
   NRV --> NC
   NRV2 --> NC
+  BF -. "OutlineApproved drops it — reachable from any live state" .-> RM["Removed — no longer in the skeleton, record kept"]
 
   classDef default fill:#FFFFFF,stroke:#8B958F,color:#202A35;
   classDef hitl fill:#F3ECD8,stroke:#8A6A1F,color:#4A3A10;
@@ -278,7 +279,7 @@ flowchart TD
   classDef terminal fill:#E3EFEA,stroke:#0E6E5C,color:#0B4438;
   class NA hitl;
   class NR,BR,BF,NRV,NRV2 blocked;
-  class VAL terminal;
+  class VAL,RM terminal;
       </pre>
     </div>
 
@@ -296,6 +297,7 @@ flowchart TD
           <tr><td class="state hitl-s">NodeApproved</td><td><strong>Human.</strong> The editor approved this node; versions are stamped onto it.</td><td>An edit → NeedsRevalidation</td></tr>
           <tr><td class="state blocked-s">NeedsRevalidation</td><td>This node or something it depends on changed; the approval is honestly withdrawn.</td><td>→ NodeChecks</td></tr>
           <tr><td class="state blocked-s">BlockedFinal</td><td>Terminal for this node: a policy violation.</td><td>—</td></tr>
+            <tr><td class="state terminal">Removed</td><td><b>New.</b> The editor committed a skeleton that no longer contains this node. Terminal, and deliberately not a failure: the record, its trace and its stamps are kept for audit, but the node is no longer part of the course and no guard counts it. Re-adding a node with the same title creates a different one — the same rule that makes an edit fork rather than overwrite.</td><td>—</td></tr>
         </tbody>
       </table>
     </div>
@@ -474,7 +476,7 @@ rollback   move the pointer back to rev 1. No regeneration, no restore.</div>
           <tr><td class="ev">OutlineGenerated / NodeGenerated</td><td>model</td><td>course / node</td></tr>
           <tr><td class="ev">GuardrailVerdict</td><td>managed service</td><td>course / node</td></tr>
           <tr><td class="ev">CheckFailed(layer, reason)</td><td>formal layer</td><td>course / node</td></tr>
-          <tr><td class="ev">OutlineApproved / OutlineRejected</td><td>human</td><td>course</td></tr>
+          <tr><td class="ev">OutlineApproved / OutlineRejected</td><td>human</td><td>course / node</td></tr>
           <tr><td class="ev">NodeApproved / NodeRejected</td><td>human</td><td>node</td></tr>
           <tr><td class="ev">NodeEdited</td><td>human</td><td>node, then the cascade</td></tr>
           <tr><td class="ev">PolicyChanged / CatalogChanged / KBUpdated</td><td>organization configuration</td><td>every stamped artifact</td></tr>
@@ -514,7 +516,7 @@ idempotency_key_unused(operation)
 objectives_covered(course)
 is_draft_revision(course)       — nothing published may be edited
 differs_from_live(revision)     — an unchanged fork is not publishable</div>
-    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty-two, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
+    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty-four, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
   </section>
 
   <section id="s8">
@@ -526,6 +528,7 @@ differs_from_live(revision)     — an unchanged fork is not publishable</div>
 G(exam_generated(E)   → O content_approved(topics(E)))
 G(published(C)        → all_nodes_approved(C) ∧ ¬∃ stale(C))
 G(node_edited(N)      → X needs_revalidation(N))
+G(removed(N)          → O outline_committed_without(N))            ← new
 G(generated(A)        → O guardrail_checked(A))                  ← new in v2
 G(published(C)        → policy_version(C) = current ∨ stale(C))  ← new in v2
 G(restricted_chunk_used(N) → O permission_checked(N))
@@ -561,7 +564,6 @@ G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
     <div class="eyebrow">Section 10</div>
     <h2>Open questions in this draft</h2>
     <ol class="questions">
-      <li><strong>Where does a node removed from the skeleton go?</strong> <code>OutlineRevised</code> makes dropping a node a real move — it is the recovery for a node blocked on policy — but the node machine has no state for “was in this course and no longer is”. Retaining its history without leaving it in a state that reads as live wants either a state or an explicit statement that removed nodes leave the machine entirely.</li>
       <li><strong>Is the expiry of a reader's window a state change?</strong> When the last window on a superseded revision closes, the revision stops being swept — but nothing in the model marks the moment. Either the sweep re-derives “has readers” every time, or expiry is an event and there is a state past <code>Superseded</code> that says so.</li>
     </ol>
   </section>
