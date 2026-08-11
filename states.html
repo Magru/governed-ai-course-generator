@@ -57,12 +57,12 @@
     <span class="series-label">Detailed specifications</span>
     <a href="./" aria-label="Cover" title="Cover"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg></a>
     <a href="specification.html"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg>Specification</a>
-    <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>States</span>
     <a href="walkthrough.html"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg>Walkthrough</a>
-    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
+    <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>States</span>
     <a href="transitions.html"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions</a>
     <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg>Validation</a>
     <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg>Safety</a>
+    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
   </div>
 
   <header>
@@ -269,6 +269,7 @@ flowchart TD
   NC -- "policy violation" --> BF["BlockedFinal"]
   NA -- "editor edits the node" --> NRV["NeedsRevalidation"]
   NRV -. "Datalog marks dependents" .-> NRV2["Dependents — exam questions, illustrations"]
+  NRV -- "hand-edited" --> OMD
   NRV --> NC
   NRV2 --> NC
   BF -. "OutlineApproved drops it — reachable from any live state" .-> RM["Removed — no longer in the skeleton, record kept"]
@@ -295,7 +296,7 @@ flowchart TD
           <tr><td class="state blocked-s">NodeRepair</td><td>The unsat core, deny reason, or proof tree is fed back into the prompt; retry ≤ 2.</td><td>Budget left → ContentDrafting · spent → BlockedRecoverable</td></tr>
           <tr><td class="state terminal">Validated</td><td>Formally clean, waiting on a person.</td><td>→ NodeApproved</td></tr>
           <tr><td class="state hitl-s">NodeApproved</td><td><strong>Human.</strong> The editor approved this node; versions are stamped onto it.</td><td>An edit → NeedsRevalidation</td></tr>
-          <tr><td class="state blocked-s">NeedsRevalidation</td><td>This node or something it depends on changed; the approval is honestly withdrawn.</td><td>→ NodeChecks</td></tr>
+          <tr><td class="state blocked-s">NeedsRevalidation</td><td>This node or something it depends on changed — including a node it points at leaving the skeleton; the approval is honestly withdrawn.</td><td>Hand-edited → OutputGuardrail · otherwise → NodeChecks</td></tr>
           <tr><td class="state blocked-s">BlockedFinal</td><td>A policy violation. Nothing the machine does moves it — no retry, no re-check, no repair.</td><td>Only removal, and only by a person</td></tr>
             <tr><td class="state terminal">Removed</td><td><b>New.</b> The editor committed a skeleton that no longer contains this node. Terminal, and deliberately not a failure: the record, its trace and its stamps are kept for audit, but the node is no longer part of the course and no guard counts it. Re-adding a node with the same title creates a different one — the same rule that makes an edit fork rather than overwrite.</td><td>—</td></tr>
         </tbody>

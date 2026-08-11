@@ -107,12 +107,12 @@
     <span class="series-label">Detailed specifications</span>
     <a href="./" aria-label="Cover" title="Cover"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg></a>
     <a href="specification.html"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg>Specification</a>
-    <a href="states.html"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>States</a>
     <a href="walkthrough.html"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg>Walkthrough</a>
-    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
+    <a href="states.html"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>States</a>
     <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions</span>
     <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg>Validation</a>
     <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg>Safety</a>
+    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
   </div>
 
   <header>
@@ -124,8 +124,8 @@
     </div>
     <div class="meta-row">
       <span class="meta-chip">Revision transitions: <b>55</b></span>
-      <span class="meta-chip">Node transitions: <b>18</b></span>
-      <span class="meta-chip">Guards: <b>34</b></span>
+      <span class="meta-chip">Node transitions: <b>19</b></span>
+      <span class="meta-chip">Guards: <b>37</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -215,16 +215,16 @@
 
           <tr class="phase"><td colspan="5">Live — where nothing is edited</td></tr>
           <tr><td class="st">Published</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn; this revision does not move)</small></td></tr>
-          <tr><td class="st">Published</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision)</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
-          <tr><td class="st">Published</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
-          <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">successor_published(revision)</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
+          <tr><td class="st">Published</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision)</td><td class="lyr">Datalog · Guardrail</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st">any state in the live lineage</td><td class="evt">WithdrawRequested</td><td class="grd">in_live_lineage(revision) ∧ reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
+          <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">lost_live_pointer(revision)</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
           <tr><td class="st">Published</td><td class="evt">LearnersNotified</td><td class="grd">notice_approved(recipient_set)</td><td class="lyr">Human · State store</td><td class="st">Published <small>(no move; the notice is recorded)</small></td></tr>
                     <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">any of the above fails</td><td class="lyr">All layers</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
-          <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog · Guardrail</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">ArchiveRequested</td><td class="grd">¬has_active_readers</td><td class="lyr">State store · Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn)</small></td></tr>
@@ -253,7 +253,7 @@
     <div class="eyebrow">Section 3</div>
     <h2>Node transitions</h2>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
-      <p>Eighteen rows, and every one of them runs inside a draft revision. There is no node transition that can fire against a published one — which is the immutability decision expressed as an absence rather than as a rule.</p>
+      <p>Nineteen rows, and every one of them runs inside a draft revision. There is no node transition that can fire against a published one — which is the immutability decision expressed as an absence rather than as a rule.</p>
     </div>
     <div class="table-scroll">
       <table class="trans">
@@ -268,7 +268,7 @@
           <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st">NodeChecks</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st stop">NodeRepair</td></tr>
-          <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Z3 · Prolog</td><td class="st">Validated</td></tr>
+          <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ references_live ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Z3 · Prolog</td><td class="st">Validated</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(content)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">course_state = ContentInProgress ∧ retry_budget_left(node)</td><td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
@@ -276,8 +276,9 @@
           <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node)</td><td class="lyr">Catalog flag · Human</td><td class="st human">NodeApproved</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeRejected</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">NodeEdited</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
-          <tr><td class="st human">NodeApproved</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited)</td><td class="lyr">Datalog</td><td class="st">NeedsRevalidation</td></tr>
-          <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">NodeChecks</td></tr>
+          <tr><td class="st human">NodeApproved</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited ∨ removed)</td><td class="lyr">Datalog</td><td class="st">NeedsRevalidation</td></tr>
+          <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">hand_edited(node)</td><td class="lyr">State store</td><td class="st">OutputGuardrail</td></tr>
+            <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">¬hand_edited(node)</td><td class="lyr">State store</td><td class="st">NodeChecks</td></tr>
             <tr><td class="st">any state but Removed</td><td class="evt">OutlineApproved</td><td class="grd">is_draft_revision ∧ ¬in_outline(node, committed_outline) ∧ reason_given</td><td class="lyr">Human · State store</td><td class="st">Removed</td></tr>
         </tbody>
       </table>
@@ -300,7 +301,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need twenty-one more to be complete. All thirty-four, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need twenty-four more to be complete. All thirty-seven, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -320,6 +321,9 @@
 
       <dt>grounded(node)</dt>
       <dd><span class="owner">Datalog</span> — every claim in the node hangs on a retrieved chunk. Refuses by naming the unsupported claims.</dd>
+
+      <dt>references_live(node)</dt>
+      <dd><span class="owner">Datalog</span> — every node this one points at is still in the committed outline: the topics an exam tests, and the prerequisites a lesson declares. Removing a node from the skeleton is the move that breaks this, and it breaks it in two directions — an exam left testing material the course no longer teaches, and a lesson whose prerequisite points at nothing. Neither is a cycle, so <code>ordering_acyclic</code> cannot see either. Refuses by naming the reference and the outline version that dropped its target.</dd>
 
       <dt>no_permission_leak(scope)</dt>
       <dd><span class="owner">Datalog</span> — no source used anywhere in the scope is invisible to any member of the intended audience. Refuses with the path: node → source → the audience that lacks rights.</dd>
@@ -342,6 +346,9 @@
       <dt>block_schemas_valid(node)</dt>
       <dd><span class="owner">Catalog schema</span> — every block validates against the settings schema its catalog entry names, at the catalog version stamped on the revision.</dd>
 
+      <dt>hand_edited(node)</dt>
+      <dd><span class="owner">State store</span> — whether the text now in this node was typed by a person rather than produced by the model. It is the whole difference between the two ways a node reaches <code>NeedsRevalidation</code>: an editor rewriting a paragraph has introduced text nothing has screened, while a node marked stale because a neighbour changed carries no new text at all. Only the first needs the guardrail, and sending the second through it would be a paid call on a managed service to re-read words it has already cleared.</dd>
+
       <dt>all_visuals_reviewed(node)</dt>
       <dd><span class="owner">Catalog flag · Human</span> — every block whose type carries <code>requires_visual_review</code> has been looked at by a person. Refuses with the queue of unreviewed visuals.</dd>
 
@@ -358,10 +365,10 @@
       <dd><span class="owner">Z3</span> — the numbers inside a node add up: exam points reach the stated maximum, durations match the block count. Refuses with the failing sum.</dd>
 
       <dt>notice_approved(recipient_set)</dt>
-      <dd><span class="owner">Human</span> — the person who approved the publication was shown how many learners the notice will reach and which changed nodes lie ahead of them. The notice cannot be unsent, so the consent that authorises it has to be consent to <em>this notice</em> rather than to the publication that implies it. Without this guard the approval given for one action is spent on a different, irreversible one.</dd>
+      <dd><span class="owner">Human</span> — the person who approved the publication was shown how many learners the notice will reach and which changed nodes lie ahead of them. The notice cannot be unsent, so the consent that authorises it has to be consent to <em>this notice</em> rather than to the publication that implies it. Without this guard the approval given for one action is spent on a different, irreversible one. The set is re-derived at publication and compared with the one the approver saw: an unbounded gap can sit between <code>Approved</code> and the publish click, and learners enrol and finish inside it. If the two differ the notice waits for a fresh approval — the same rule the publication signature already follows, applied to the other irreversible action.</dd>
 
-      <dt>successor_published(revision) · blocked_at(revision)</dt>
-      <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: which revision took the live pointer, and which <em>phase</em> a recoverable block was entered from — brief, outline, or content, each a named set of states — so the fix returns there instead of to the beginning.</dd>
+      <dt>lost_live_pointer(revision) · blocked_at(revision)</dt>
+      <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: whether some other revision now holds the live pointer, and which <em>phase</em> a recoverable block was entered from — brief, outline, or content, each a named set of states — so the fix returns there instead of to the beginning. The first was called <code>successor_published</code> until it was noticed that a rollback is the case where the revision taking the pointer is the <em>predecessor</em>: under the old name the rollback chain below could not execute. What matters is that the pointer moved away, not which direction it moved.</dd>
 
       <dt>in_outline(node, committed_outline)</dt>
       <dd><span class="owner">State store</span> — whether the skeleton just committed still contains this node. It is evaluated against the proposal being committed, never against <code>outline_version</code>, which the very same transition is about to advance. Refusing is what drops a node, so it refuses with the outline version that dropped it.</dd>
@@ -378,6 +385,9 @@
       <dt>versions_current(artifact)</dt>
       <dd><span class="owner">State store</span> — the stamps on the artifact match the current policy, guardrail, catalog and KB versions. Refusing sends a live revision to <code>StaleReview</code> rather than blocking it.</dd>
 
+      <dt>in_live_lineage(revision)</dt>
+      <dd><span class="owner">State store</span> — this revision is serving, or was serving and has not been retired: <code>Published</code>, <code>Superseded</code>, <code>StaleReview</code>, and the <code>ErrorRecovery</code> or <code>BlockedRecoverable</code> a re-verification can fall into. It exists so that withdrawal does not depend on which phase an outage happened to interrupt. A guardrail that cannot be reached takes a live revision through <code>ErrorRecovery</code> into <code>BlockedRecoverable</code> — and that is precisely the moment someone needs to pull a course off air, so an emergency lever wired only to <code>Published</code> would come away in their hand.</dd>
+
       <dt>is_draft_revision(revision)</dt>
       <dd><span class="owner">State store</span> — this revision has never been published. Guards every editing transition in both machines; it is the single point at which immutability is enforced.</dd>
 
@@ -385,7 +395,7 @@
       <dd><span class="owner">State store</span> — this revision is not byte-identical to the one currently serving. Stops a fork nobody touched from being published and moving the pointer for nothing.</dd>
 
       <dt>affected(revision) · has_active_readers(revision)</dt>
-      <dd><span class="owner">Datalog · State store</span> — which revisions a configuration change reaches, and whether anyone is still reading a superseded one. Together they scope the staleness sweep.</dd>
+      <dd><span class="owner">Datalog · Guardrail · State store</span> — which revisions a configuration change reaches, and whether anyone is still reading a superseded one. Together they scope the staleness sweep. <code>affected</code> is deliberately answered by two owners, because it is two questions wearing one name. “Is this revision stamped under a version the change supersedes?” is structural, and Datalog owns it. “Does the change actually reach what this revision says?” is a question about meaning, and no relation can answer it — a rule about a forbidden topic is evaded by a paraphrase, not by a missing edge. So the structural filter runs first and the guardrail judges what survives it, <em>before</em> the sweep commits a revision to re-verification. Putting the guardrail only inside <code>StaleReview</code> would have made it unreachable for exactly the revisions it was needed to catch.</dd>
 
       <dt>approval_chain_satisfied(revision)</dt>
       <dd><span class="owner">OPA</span> — the signatures this organization requires for publication are present. Configuration decides how many and whose; the guard only checks.</dd>
@@ -539,7 +549,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
       <li><strong><code>Superseded → Published</code></strong> — rollback goes through re-verification or not at all.</li>
       <li><strong><code>BlockedFinal → *</code></strong> — no admin override. A terminal state an administrator can undo is terminal in name only.</li>
       <li><strong><code>Validated → Published</code></strong> — nodes are never published; revisions are. A node reaching <code>Validated</code> means the formal layers are satisfied, which is not the same as anyone having agreed to it.</li>
-      <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in eighteen rows.</li>
+      <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in nineteen rows.</li>
       <li><strong>Cloning an archived course</strong> — the state model offers it, and it is deliberately not a transition: a clone creates a <em>new course identity</em> with its own first revision in <code>AwaitingBrief</code>. Nothing about the archived revision changes, so it belongs to the layer above this machine.</li>
       <li><strong>A skip from <code>Generated</code> to <code>NodeChecks</code></strong> — there is no path that avoids the guardrail hop, which is what makes <code>G(generated(A) → O guardrail_checked(A))</code> checkable over the trace rather than merely intended.</li>
     </ul>
