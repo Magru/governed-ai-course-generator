@@ -738,6 +738,36 @@ a { color: var(--accent); }
 .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
 @media (max-width: 780px) { .menu-grid { grid-template-columns: 1fr; } }
 
+/* A stage header spans the grid so the cards under it read as one step. The
+   budget is measured from the pages, not guessed — it is the question every
+   reader asks before starting a nine-document set. */
+.stage-head {
+  grid-column: 1 / -1;
+  display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+  font-family: var(--sans); margin: 1.45rem 0 0.1rem;
+}
+.stage-head:first-child { margin-top: 0.3rem; }
+.stage-head .sh-n {
+  flex: none; align-self: center;
+  width: 1.5rem; height: 1.5rem; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: var(--paper);
+  font-size: 0.76rem; font-weight: 700;
+}
+.stage-head .sh-t { font-size: 0.94rem; font-weight: 650; color: var(--ink); }
+.stage-head .sh-t em { font-style: normal; font-weight: 400; color: var(--muted); }
+.stage-head .sh-time {
+  margin-left: auto; font-size: 0.78rem; color: var(--muted); white-space: nowrap;
+}
+.stage-head.later .sh-n { background: #E9EBE4; color: var(--muted); }
+.stage-head.later .sh-t { color: var(--muted); }
+
+.menu-intro {
+  font-family: var(--sans); font-size: 0.92rem; line-height: 1.55;
+  color: var(--muted); margin: 0 0 0.2rem;
+}
+.menu-intro b { color: var(--ink); font-weight: 650; }
+
 .menu-card {
   display: grid; grid-template-columns: 2.7rem 1fr; gap: 0.85rem;
   align-items: start; padding: 1.05rem 1.15rem;
@@ -762,6 +792,11 @@ a.menu-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3p
   font-family: var(--sans); font-weight: 650; font-size: 1.02rem;
   display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
 }
+.menu-card .mk-name { display: inline-flex; align-items: baseline; gap: 0.45rem; }
+.menu-card .mk-n {
+  font-family: var(--mono); font-size: 0.74rem; font-weight: 600; color: var(--muted);
+}
+.menu-card.soon .mk-n { opacity: 0.8; }
 .menu-card .mk-desc { font-size: 0.92rem; color: var(--muted); line-height: 1.52; margin-top: 0.28rem; }
 .menu-card.soon { opacity: 0.62; box-shadow: none; background: rgba(242, 243, 238, 0.4); }
 .menu-card.soon .mk-icon { background: #E9EBE4; color: var(--muted); border-color: var(--hairline); }

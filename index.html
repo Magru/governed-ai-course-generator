@@ -54,14 +54,14 @@
         </a>
         <a class="cta" href="#documents">
           <svg class="ico" aria-hidden="true"><use href="#i-down"></use></svg>
-          All eight documents
+          All nine documents, in order
         </a>
       </div>
 
       <div class="cover-facts">
         <span>Domain: <b>a production LXP</b></span>
         <span>Formal stack: <b>OPA · Z3 · Datalog · Prolog · LTL</b></span>
-        <span>States: <b>21 + 10</b></span>
+        <span>States: <b>21 + 11</b></span>
         <span>Registered actions: <b>11</b></span>
       </div>
     </div>
@@ -161,51 +161,67 @@
       <span class="count">Two reviewed · five draft · two planned</span>
     </div>
 
+    <p class="menu-intro">
+      Nine documents, written to be read <b>in this order</b> — each stage assumes the
+      one before it. About two hours end to end, and stage&nbsp;1 stands on its own
+      if that is all the time there is.
+    </p>
+
     <div class="menu-grid">
+      <div class="stage-head">
+        <span class="sh-n">1</span>
+        <span class="sh-t">Start here <em>— what the system is, and one run of it end to end</em></span>
+        <span class="sh-time">≈ 30 min</span>
+      </div>
+
       <a class="menu-card" href="specification.html">
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg></span>
         <span>
-          <span class="mk-title">Specification <span class="status draft">v2</span></span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">01</span>Specification</span> <span class="status draft">v2</span></span>
           <span class="mk-desc">Start here. The whole system in sixteen sections: three layers of responsibility, the generation gateway, the formal stack, what the architecture guarantees and where its limits are.</span>
-        </span>
-      </a>
-
-      <a class="menu-card" href="states.html">
-        <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg></span>
-        <span>
-          <span class="mk-title">State model <span class="status draft">draft</span></span>
-          <span class="mk-desc">The two-level state machine: 21 revision states and 11 node states, the event catalog, guards, temporal invariants, and nine situations the machine actually meets.</span>
         </span>
       </a>
 
       <a class="menu-card" href="walkthrough.html">
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg></span>
         <span>
-          <span class="mk-title">Walkthrough <span class="status reviewed">reviewed</span></span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">02</span>Walkthrough</span> <span class="status reviewed">reviewed</span></span>
           <span class="mk-desc">One course from an empty brief to publication in twenty-four steps: every state change, every check, every human stop, and what still reaches the course after it is live.</span>
         </span>
       </a>
 
-      <a class="menu-card" href="configuration.html">
-        <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg></span>
+      <div class="stage-head">
+        <span class="sh-n">2</span>
+        <span class="sh-t">The machine <em>— the states, every legal move, and what blocks the rest</em></span>
+        <span class="sh-time">≈ 45 min</span>
+      </div>
+
+      <a class="menu-card" href="states.html">
+        <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg></span>
         <span>
-          <span class="mk-title">Configuration <span class="status reviewed">reviewed</span></span>
-          <span class="mk-desc">The seven sources the generator reads at runtime — catalogs, access rules, guardrail policy, policy bundle, thresholds, model routing — their owners, their record shapes, and what is deliberately left as code.</span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">03</span>State model</span> <span class="status draft">draft</span></span>
+          <span class="mk-desc">The two-level state machine: 21 revision states and 11 node states, the event catalog, guards, temporal invariants, and nine situations the machine actually meets.</span>
         </span>
       </a>
 
       <a class="menu-card" href="transitions.html">
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg></span>
         <span>
-          <span class="mk-title">Transitions &amp; guards <span class="status draft">draft</span></span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">04</span>Transitions &amp; guards</span> <span class="status draft">draft</span></span>
           <span class="mk-desc">Every legal move in both machines — state, event, guard, layer, next state — with all thirty-four guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
         </span>
       </a>
 
+      <div class="stage-head">
+        <span class="sh-n">3</span>
+        <span class="sh-t">The rules it runs under <em>— who answers which question, what it may do, what it reads</em></span>
+        <span class="sh-time">≈ 50 min</span>
+      </div>
+
       <a class="menu-card" href="layers.html">
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg></span>
         <span>
-          <span class="mk-title">Validation layers <span class="status draft">draft</span></span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">05</span>Validation layers</span> <span class="status draft">draft</span></span>
           <span class="mk-desc">Which engine owns which question — schema, OPA, Z3, Datalog, Prolog, temporal logic — the rules written out in Rego, Python and Prolog, and the artifact each layer hands back when it refuses.</span>
         </span>
       </a>
@@ -213,15 +229,28 @@
       <a class="menu-card" href="safety.html">
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg></span>
         <span>
-          <span class="mk-title">Generation safety <span class="status draft">draft</span></span>
-          <span class="mk-desc">Eleven registered actions with risk levels and compensations, the membrane every one passes through, prompt architecture in full, injection defense across three surfaces, the autonomy ladder and the kill switch.</span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">06</span>Generation safety</span> <span class="status draft">draft</span></span>
+          <span class="mk-desc">Eleven registered actions with risk levels and compensations, the membrane every one passes through, prompt architecture in full, injection defense across four surfaces, the autonomy ladder and the kill switch.</span>
         </span>
       </a>
+
+      <a class="menu-card" href="configuration.html">
+        <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg></span>
+        <span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">07</span>Configuration</span> <span class="status reviewed">reviewed</span></span>
+          <span class="mk-desc">The seven sources the generator reads at runtime — catalogs, access rules, guardrail policy, policy bundle, thresholds, model routing — their owners, their record shapes, and what is deliberately left as code.</span>
+        </span>
+      </a>
+
+      <div class="stage-head later">
+        <span class="sh-n">4</span>
+        <span class="sh-t">Not written yet <em>— the two pages that finish the set</em></span>
+      </div>
 
       <div class="menu-card soon">
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-eval"></use></svg></span>
         <span>
-          <span class="mk-title">Evaluation &amp; red team <span class="status planned">planned</span></span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">08</span>Evaluation &amp; red team</span> <span class="status planned">planned</span></span>
           <span class="mk-desc">Test taxonomy, adversarial scenarios, trajectory evaluation, recorded fixtures and the signals worth watching in production.</span>
         </span>
       </div>
@@ -229,7 +258,7 @@
       <div class="menu-card soon">
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-plan"></use></svg></span>
         <span>
-          <span class="mk-title">Implementation plan <span class="status planned">planned</span></span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">09</span>Implementation plan</span> <span class="status planned">planned</span></span>
           <span class="mk-desc">Build order, scope boundaries, and the demo script shown at the defense — including the failure it deliberately triggers.</span>
         </span>
       </div>
