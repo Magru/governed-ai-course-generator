@@ -23,6 +23,7 @@
     <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="m3 12.5 9 4.5 9-4.5"/><path d="m3 17 9 4.5 9-4.5"/></symbol>
     <symbol id="i-safety" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 4.5-3.1 8.2-7.5 9.5C7.6 20.2 4.5 16.5 4.5 12V6L12 3z"/><path d="m8.8 12.3 2.3 2.3 4.1-4.7"/></symbol>
     <symbol id="i-eval" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-model" viewBox="0 0 24 24"><rect x="2.5" y="3.5" width="7.5" height="6" rx="1.5"/><rect x="14" y="3.5" width="7.5" height="6" rx="1.5"/><rect x="8.25" y="14.5" width="7.5" height="6" rx="1.5"/><path d="M10 6.5h4M6.25 9.5v2a1.5 1.5 0 0 0 1.5 1.5h.5M17.75 9.5v2a1.5 1.5 0 0 1-1.5 1.5h-.5"/></symbol>
     <symbol id="i-plan" viewBox="0 0 24 24"><path d="M3.5 6.5 5 8l2.8-3M3.5 12.5 5 14l2.8-3M3.5 18.5 5 20l2.8-3"/><path d="M11.5 6.5h9M11.5 12.5h9M11.5 18.5h6"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.6V20h11V9.6"/></symbol>
     <symbol id="i-toc" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
@@ -158,16 +159,30 @@
   <div class="cover-menu" id="documents">
     <div class="menu-head">
       <h2>The documents</h2>
-      <span class="count">Two reviewed · five draft · two planned</span>
+      <span class="count">Two reviewed · six draft · two planned</span>
     </div>
 
     <p class="menu-intro">
-      Nine documents, written to be read <b>in this order</b> — each stage assumes the
-      one before it. About two hours end to end, and stage&nbsp;1 stands on its own
-      if that is all the time there is.
+      Ten documents, written to be read <b>in this order</b> — each stage assumes the
+      one before it. About two hours end to end. Stage&nbsp;1 stands on its own if that
+      is all the time there is; stage&nbsp;0 is the ten-minute version of everything.
     </p>
 
     <div class="menu-grid">
+      <div class="stage-head">
+        <span class="sh-n">0</span>
+        <span class="sh-t">The map <em>— the whole system on one page, and what it still lacks</em></span>
+        <span class="sh-time">≈ 10 min</span>
+      </div>
+
+      <a class="menu-card" href="modeling.html">
+        <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-model"></use></svg></span>
+        <span>
+          <span class="mk-title"><span class="mk-name"><span class="mk-n">00</span>System model</span> <span class="status draft">draft</span></span>
+          <span class="mk-desc">The set read back as a model rather than a specification: the twenty artifacts a complete system model contains, each marked present, partial or absent, and the three worth building before the defense.</span>
+        </span>
+      </a>
+
       <div class="stage-head">
         <span class="sh-n">1</span>
         <span class="sh-t">Start here <em>— what the system is, and one run of it end to end</em></span>
@@ -208,7 +223,7 @@
         <span class="mk-icon"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg></span>
         <span>
           <span class="mk-title"><span class="mk-name"><span class="mk-n">04</span>Transitions &amp; guards</span> <span class="status draft">draft</span></span>
-          <span class="mk-desc">Every legal move in both machines — state, event, guard, layer, next state — with all thirty-four guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
+          <span class="mk-desc">Every legal move in both machines — state, event, guard, layer, next state — with all thirty-seven guards written out, four legal event chains, twelve forbidden ones, and the moves that have no transition at all.</span>
         </span>
       </a>
 

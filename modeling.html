@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System model — Governed AI Course Generator</title>
+<meta name="description" content="The Governed AI Course Generator read back as a system model: the twenty-artifact model package, what is present, what is partial, and what has never been written.">
+<meta property="og:title" content="System model — Governed AI Course Generator">
+<meta property="og:description" content="A specification is not a model. Twenty artifacts, four groups, each marked present, partial or absent — and the three that get built next.">
+<meta property="og:type" content="article">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+<link rel="stylesheet" href="spec.css?v=3">
+<style>
+  /* Coverage marks. Deliberately the same three colours the rest of the site
+     already uses for accept / hold / refuse, so a reader who has seen any
+     other page reads this table without a legend. */
+  .cov {
+    font-family: var(--sans); font-size: 0.62rem; font-weight: 700;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 0.15rem 0.5rem; border-radius: 999px; white-space: nowrap;
+  }
+  .cov.have { background: var(--accent-soft); color: var(--accent); }
+  .cov.part { background: var(--hitl-soft); color: var(--hitl); }
+  .cov.none { background: var(--blocked-soft); color: var(--blocked); }
+  .art { font-family: var(--mono); font-size: 0.78rem; word-break: break-word; }
+  .grp {
+    display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 0.45rem; margin: 1.6rem 0 0.8rem;
+  }
+  .grp h3 { margin: 0; }
+  .grp .tally { font-family: var(--sans); font-size: 0.76rem; color: var(--muted); }
+  .mvsm { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0; }
+  @media (max-width: 720px) { .mvsm { grid-template-columns: 1fr; } }
+  .mvsm > div {
+    border: 1px solid var(--hairline); border-radius: 8px;
+    background: var(--panel); padding: 0.85rem 1rem;
+  }
+  .mvsm .mv-h {
+    font-family: var(--sans); font-size: 0.67rem; font-weight: 700;
+    letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.6rem;
+  }
+  .mvsm ul { list-style: none; margin: 0; padding: 0; }
+  .mvsm li {
+    display: flex; gap: 0.55rem; align-items: baseline;
+    font-size: 0.9rem; line-height: 1.55; padding: 0.28rem 0;
+  }
+  .mvsm li + li { border-top: 1px solid var(--hairline); }
+  .mvsm li .cov { flex: 0 0 auto; }
+  .he { font-size: 0.86rem; color: var(--muted); direction: rtl; unicode-bidi: isolate; }
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-spec" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8.5 13h7M8.5 17h5"/></symbol>
+    <symbol id="i-states" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="10" r="2.6"/><circle cx="9" cy="18.5" r="2.6"/><path d="M8.5 7.3 15.5 9.3M7.1 8.5l1.5 7.5M15.9 11.9 11.2 16.9"/></symbol>
+    <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M8.5 18.5H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.5"/></symbol>
+    <symbol id="i-config" viewBox="0 0 24 24"><path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.4"/><circle cx="9" cy="16.5" r="2.4"/></symbol>
+    <symbol id="i-transitions" viewBox="0 0 24 24"><path d="M4 8h13M14 5l3 3-3 3"/><path d="M20 16H7M10 13l-3 3 3 3"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3z"/><path d="m3 12.5 9 4.5 9-4.5"/><path d="m3 17 9 4.5 9-4.5"/></symbol>
+    <symbol id="i-safety" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 4.5-3.1 8.2-7.5 9.5C7.6 20.2 4.5 16.5 4.5 12V6L12 3z"/><path d="m8.8 12.3 2.3 2.3 4.1-4.7"/></symbol>
+    <symbol id="i-eval" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-model" viewBox="0 0 24 24"><rect x="2.5" y="3.5" width="7.5" height="6" rx="1.5"/><rect x="14" y="3.5" width="7.5" height="6" rx="1.5"/><rect x="8.25" y="14.5" width="7.5" height="6" rx="1.5"/><path d="M10 6.5h4M6.25 9.5v2a1.5 1.5 0 0 0 1.5 1.5h.5M17.75 9.5v2a1.5 1.5 0 0 1-1.5 1.5h-.5"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M3.5 6.5 5 8l2.8-3M3.5 12.5 5 14l2.8-3M3.5 18.5 5 20l2.8-3"/><path d="M11.5 6.5h9M11.5 12.5h9M11.5 18.5h6"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.6V20h11V9.6"/></symbol>
+    <symbol id="i-toc" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 0 0 5.7 5.7l1.5-1.5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-top" viewBox="0 0 24 24"><path d="M12 19V6M6 12l6-6 6 6"/></symbol>
+  </defs>
+</svg>
+<div class="progress" role="presentation"></div>
+<button type="button" class="to-top" aria-label="Back to top"><svg class="ico" aria-hidden="true"><use href="#i-top"></use></svg></button>
+
+<nav class="rail" aria-label="Sections">
+  <a class="rail-home" href="specification.html"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg><span class="lbl">Specification</span></a>
+  <a href="#s1"><span class="tick"></span><span class="lbl">Five words</span></a>
+  <a href="#s2"><span class="tick"></span><span class="lbl">The journey</span></a>
+  <a href="#s3"><span class="tick"></span><span class="lbl">The package</span></a>
+  <a href="#s4"><span class="tick"></span><span class="lbl">Minimum viable</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">Build next</span></a>
+  <a href="#s6"><span class="tick"></span><span class="lbl">Open questions</span></a>
+</nav>
+
+<div class="wrap">
+
+  <div class="series">
+    <span class="series-label">Detailed specifications</span>
+    <a href="./" aria-label="Cover" title="Cover"><svg class="ico" aria-hidden="true"><use href="#i-home"></use></svg></a>
+    <span class="here"><svg class="ico" aria-hidden="true"><use href="#i-model"></use></svg>Model</span>
+    <a href="specification.html"><svg class="ico" aria-hidden="true"><use href="#i-spec"></use></svg>Specification</a>
+    <a href="walkthrough.html"><svg class="ico" aria-hidden="true"><use href="#i-walk"></use></svg>Walkthrough</a>
+    <a href="states.html"><svg class="ico" aria-hidden="true"><use href="#i-states"></use></svg>States</a>
+    <a href="transitions.html"><svg class="ico" aria-hidden="true"><use href="#i-transitions"></use></svg>Transitions</a>
+    <a href="layers.html"><svg class="ico" aria-hidden="true"><use href="#i-layers"></use></svg>Validation</a>
+    <a href="safety.html"><svg class="ico" aria-hidden="true"><use href="#i-safety"></use></svg>Safety</a>
+    <a href="configuration.html"><svg class="ico" aria-hidden="true"><use href="#i-config"></use></svg>Configuration</a>
+  </div>
+
+  <header>
+    <div class="eyebrow">Governed AI Course Generator · Working draft v0.1</div>
+    <h1>System model</h1>
+    <p class="kicker">The other seven documents say what this system is and what must hold in it. This one reads them back as a <em>model</em> — the system reduced to the artifacts that let a stranger check it before a line of it is built, with each artifact marked present, partial or absent.</p>
+    <div class="thesis">
+      <p><strong>A specification is not a model.</strong> A specification states what must hold. A model is a deliberately partial abstraction with defined semantics, built to answer one question — about structure, behaviour, time, resources or failure. Almost everything in this set was written as specification. Reading it back as a model is what exposed the six artifacts below that had never been written at all.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">Artifacts: <b>20</b></span>
+      <span class="meta-chip">Present: <b>8</b></span>
+      <span class="meta-chip">Partial: <b>6</b></span>
+      <span class="meta-chip">Absent: <b>6</b></span>
+      <span class="meta-chip">Status: <b>map, not a document</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
+    <ol>
+      <li><a href="#s1">Five words held apart</a></li>
+      <li><a href="#s2">The journey, in six parts</a></li>
+      <li><a href="#s3">The model package — twenty artifacts</a></li>
+      <li><a href="#s4">Minimum viable model</a></li>
+      <li><a href="#s5">The three that get built next</a></li>
+      <li><a href="#s6">Open questions</a></li>
+    </ol>
+  </nav>
+
+  <section id="s1" class="wrap-wide">
+    <div class="eyebrow">Section 1</div>
+    <h2>Five words held apart</h2>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <p>These five get used as synonyms and are not. Keeping them apart is what makes it possible to say honestly which parts of this project exist and which are still prose about parts that do not.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Term</th><th>What it is</th><th>Where ours stands</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="role">Specification</td>
+            <td>What must hold — requirements and constraints, stated so they can be checked</td>
+            <td>The seven documents in this set. This is the mature part</td>
+          </tr>
+          <tr>
+            <td class="role">Architecture</td>
+            <td>The structure of decisions and principles — what was chosen, and why</td>
+            <td>Present but scattered: the reasoning is inline on every page, never collected</td>
+          </tr>
+          <tr>
+            <td class="role">Model</td>
+            <td>An abstraction of the system, partial on purpose, fitted to a specific question</td>
+            <td><strong>This page</strong>, plus the artifacts it points at</td>
+          </tr>
+          <tr>
+            <td class="role">Simulation</td>
+            <td>Running possible behaviour under stated assumptions — not a proof</td>
+            <td>Not built. <a href="walkthrough.html">The walkthrough</a> is a trace executed by hand, on paper</td>
+          </tr>
+          <tr>
+            <td class="role">Implementation</td>
+            <td>The system that actually runs</td>
+            <td>Not built</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <div class="thesis">
+        <p><strong>The gap the last two rows describe is not a formality.</strong> A simulation that survives a thousand scenarios is not evidence that no dangerous scenario exists, and a specification that reads well is not evidence that the system it describes can meet its deadlines. Everything on this page above the line “absent” is an argument; everything below it is still a promise.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s2" class="wrap-wide">
+    <div class="eyebrow">Section 2</div>
+    <h2>The journey, in six parts</h2>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <p>A vague business request becomes a checkable model in six moves, each one standing on the one before it. Our system has been carried a long way through the middle of that sequence and barely into the end of it.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Part</th><th>The question it settles</th><th>Where this system stands</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="role">I · Point of departure<br><span class="he">נקודת המוצא</span></td>
+            <td>Why an excellent AI model does not give you an excellent AI system</td>
+            <td><span class="cov have">present</span> This is the governing principle of the whole set — the model proposes, the architecture decides, the editor leads. <a href="specification.html#s3">§3</a>–<a href="specification.html#s4">§4</a></td>
+          </tr>
+          <tr>
+            <td class="role">II · Defining the system<br><span class="he">הגדרת המערכת</span></td>
+            <td>Boundary, actors, authority, context, and what the system promises</td>
+            <td><span class="cov part">partial</span> All of it is stated in prose; none of it is drawn. There is no context diagram and no deployment view. <a href="specification.html#s1">§1</a>, <a href="specification.html#s7">§7</a></td>
+          </tr>
+          <tr>
+            <td class="role">III · State, events, interaction<br><span class="he">מצב, אירועים ואינטראקציות</span></td>
+            <td>What is permitted in each state, what the events mean, how traces behave</td>
+            <td><span class="cov have">present</span> The strongest part by a distance: <b>21 + 11</b> states, <b>55 + 19</b> transitions, <b>37</b> guards, <b>23</b> events. <a href="states.html">States</a>, <a href="transitions.html">Transitions</a></td>
+          </tr>
+          <tr>
+            <td class="role">IV · Time, capacity, failure<br><span class="he">זמן, קיבולת וכשל</span></td>
+            <td>Can this path meet its deadline, where is the bottleneck, how do we fail safely</td>
+            <td><span class="cov none">absent</span> Not one number. No latency budget, no capacity model, no failure matrix</td>
+          </tr>
+          <tr>
+            <td class="role">V · Simulation and verification<br><span class="he">סימולציה ואימות</span></td>
+            <td>What happens under stress, and does the model match the system</td>
+            <td><span class="cov part">partial</span> One happy path traced by hand over 24 steps. Nothing executable, nothing stressed. <a href="walkthrough.html">Walkthrough</a></td>
+          </tr>
+          <tr>
+            <td class="role">VI · From model to production<br><span class="he">מהמודל לפרודקשן</span></td>
+            <td>How we learn that an assumption has quietly stopped being true</td>
+            <td><span class="cov part">partial</span> Change-impact is modelled in unusual depth — the staleness cascade. Monitoring is not modelled at all. <a href="states.html#s4">Cascade</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <div class="thesis">
+        <p><strong>The shape of the gap is consistent.</strong> Everything about <em>logic</em> — who may act, in what order, under which rule — is modelled thoroughly. Everything about <em>quantity</em> — how long, how many, how fast — is missing entirely. That matters more than it sounds: a governed pipeline slow enough to exhaust an editor's patience produces rubber-stamped approvals, and every guard on this site still passes while the governance it exists to enforce quietly stops happening.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s3" class="wrap-wide">
+    <div class="eyebrow">Section 3</div>
+    <h2>The model package — twenty artifacts</h2>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <p>A complete system model is twenty artifacts in four groups. Each answers one specific question, each has an owner, and each is updated when the evidence behind it changes — a living asset, not documentation written after the design is done. Below, every one of the twenty is matched against what this project actually has.</p>
+    </div>
+
+    <div class="grp"><h3>Definition and scope</h3><span class="tally">3 artifacts · 1 present · 1 partial · 1 absent</span></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
+        <tbody>
+          <tr><td class="art">system-definition</td><td>What does the system promise?</td><td><span class="cov have">present</span> As prose, in full. <a href="specification.html#s1">§1</a>, <a href="specification.html#s2">§2</a></td></tr>
+          <tr><td class="art">context-diagram</td><td>Who is inside the boundary, who is outside?</td><td><span class="cov none">absent</span> The boundary is described but never drawn, so nobody can check it at a glance</td></tr>
+          <tr><td class="art">quality-attribute-scenarios</td><td>What is required, in measurable terms?</td><td><span class="cov part">partial</span> Quality is defined for the <em>content</em> the system produces, never for the system itself. <a href="specification.html#s12">§12</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grp"><h3>Structure and information</h3><span class="tally">4 artifacts · 2 present · 1 partial · 1 absent</span></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
+        <tbody>
+          <tr><td class="art">functional-model</td><td>What does the system do?</td><td><span class="cov have">present</span> The editor's journey and the generation gateway. <a href="specification.html#s5">§5</a>, <a href="specification.html#s7">§7</a></td></tr>
+          <tr><td class="art">component-model</td><td>Who does it?</td><td><span class="cov part">partial</span> Components are named per concern across <a href="layers.html">Validation</a> and <a href="safety.html">Safety</a>, but never assembled into one picture</td></tr>
+          <tr><td class="art">information-model</td><td>Who actually owns each piece of data?</td><td><span class="cov have">present</span> Every artifact's fields and owner. <a href="states.html#s9">States §9</a></td></tr>
+          <tr><td class="art">deployment-model</td><td>Where does it run, and who is trusted?</td><td><span class="cov none">absent</span> Trust boundaries are worked out for secrets only. <a href="safety.html#s8">Safety §8</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grp"><h3>State, events and behaviour</h3><span class="tally">5 artifacts · 4 present · 1 partial</span></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
+        <tbody>
+          <tr><td class="art">responsibility-matrix</td><td>Who holds authority, and who owns the outcome?</td><td><span class="cov have">present</span> As a column rather than a matrix — every one of the 74 transitions names its layer. <a href="transitions.html#s2">Transitions §2</a></td></tr>
+          <tr><td class="art">state-inventory</td><td>Where is state authoritative?</td><td><span class="cov have">present</span> 21 revision states, 11 node states, each with its owner. <a href="states.html#s2">§2</a>, <a href="states.html#s3">§3</a></td></tr>
+          <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 55 + 19 transitions behind 37 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a></td></tr>
+          <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> 23 events with producer and payload. <a href="states.html#s6">States §6</a></td></tr>
+          <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov part">partial</span> One happy path in prose. No failure sequences, and none drawn. <a href="walkthrough.html">Walkthrough</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grp"><h3>Quality, verification and monitoring</h3><span class="tally">8 artifacts · 1 present · 3 partial · 4 absent</span></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
+        <tbody>
+          <tr><td class="art">action_request.schema.json</td><td>What is a valid request?</td><td><span class="cov have">present</span> Schema first, before any other layer. <a href="layers.html#s2">Validation §2</a>, <a href="safety.html#s2">Safety §2</a></td></tr>
+          <tr><td class="art">latency-budget</td><td>Can this path meet its deadline?</td><td><span class="cov none">absent</span> The single largest hole in the set</td></tr>
+          <tr><td class="art">failure-scenarios</td><td>How do we fail safely?</td><td><span class="cov part">partial</span> Failure modes are listed and a kill switch is defined, but nothing is written as a walkable scenario. <a href="safety.html#s10">Safety §10</a></td></tr>
+          <tr><td class="art">simulation</td><td>What happens under load, spike, delay, retry storm?</td><td><span class="cov none">absent</span></td></tr>
+          <tr><td class="art">monitoring-map</td><td>How will we know the assumptions are still alive?</td><td><span class="cov none">absent</span> Nothing in this system notices when one of its premises stops being true</td></tr>
+          <tr><td class="art">assumptions</td><td>What does the model depend on?</td><td><span class="cov part">partial</span> Real, honest, and scattered across eight separate “Open questions” sections instead of held in one list</td></tr>
+          <tr><td class="art">architecture-decisions</td><td>Why did we decide it this way?</td><td><span class="cov part">partial</span> The reasoning exists inline on every page and was never collected into decision records</td></tr>
+          <tr><td class="art">traceability + model-lint</td><td>Are the views still consistent with each other?</td><td><span class="cov none">absent</span> Consistency across the seven documents is maintained by hand and by audit</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <div class="thesis">
+        <p><strong>Eight present, six partial, six absent — and the split is not random.</strong> Every absent artifact belongs to the two groups that deal in quantity and in time. The two groups that deal in structure and permission are all but complete. That is the honest summary of this project: a system that has been reasoned about very carefully and measured not at all.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s4" class="wrap-wide">
+    <div class="eyebrow">Section 4</div>
+    <h2>Minimum viable model</h2>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <p>A model does not need fifteen files. It needs the minimum that lets a decision be taken without hiding a critical assumption. The left column is that minimum; the right is what a production-ready package adds on top. Marked against this system as it stands.</p>
+    </div>
+    <div class="mvsm">
+      <div>
+        <div class="mv-h">Minimum viable package</div>
+        <ul>
+          <li><span class="cov part">partial</span><span>A measurable business outcome, in one sentence</span></li>
+          <li><span class="cov have">have</span><span>The system of interest, defined</span></li>
+          <li><span class="cov part">partial</span><span>Boundary, actors, external systems — stated, not drawn</span></li>
+          <li><span class="cov have">have</span><span>Decision authority and execution authority, held apart</span></li>
+          <li><span class="cov have">have</span><span>Hard constraints</span></li>
+          <li><span class="cov have">have</span><span>Safe fallbacks</span></li>
+          <li><span class="cov have">have</span><span>Critical state variables, each with an owner</span></li>
+          <li><span class="cov have">have</span><span>Critical events, each with a producer</span></li>
+          <li><span class="cov have">have</span><span>A happy path and at least one critical failure path</span></li>
+          <li><span class="cov part">partial</span><span>Assumptions made explicit</span></li>
+        </ul>
+      </div>
+      <div>
+        <div class="mv-h">Production-ready adds</div>
+        <ul>
+          <li><span class="cov none">no</span><span>All views consistent with one another</span></li>
+          <li><span class="cov part">partial</span><span>Traceable identifiers and versions</span></li>
+          <li><span class="cov none">no</span><span>Assumptions linked to actual measurements</span></li>
+          <li><span class="cov none">no</span><span>Failures tested rather than described</span></li>
+          <li><span class="cov none">no</span><span>A calibrated simulation</span></li>
+          <li><span class="cov none">no</span><span>A monitoring map wired to the running system</span></li>
+          <li><span class="cov have">have</span><span>Change-impact analysis defined</span></li>
+          <li><span class="cov part">partial</span><span>Architecture decisions documented as records</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="wrap" style="padding:0; max-width:var(--measure);">
+      <div class="thesis">
+        <p><strong>Seven of ten on the left, one of eight on the right.</strong> The minimum viable model is essentially here; what is missing is almost entirely the production half. The single production item this project does have — change-impact — it has in more depth than the checklist asks for, because the staleness cascade <em>is</em> a change-impact analysis, expressed as a state machine that runs.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="s5">
+    <div class="eyebrow">Section 5</div>
+    <h2>The three that get built next</h2>
+    <p>Twelve artifacts are absent or partial and they will not all be written. Three are worth building before the defence, chosen because each answers a question this project currently cannot answer at all.</p>
+
+    <h3>1 · The latency budget</h3>
+    <p>Because a governed pipeline that outruns nobody's patience is governed, and one that does not is theatre. Every guard on this site can hold while the editor, waiting four minutes for a lesson, learns to approve without reading. Nothing in the state machine can detect that, and no logical invariant is violated when it happens. The method is already exercised: the same budget-then-capacity pass done on the incident-containment system, applied to the generation path — schema, guardrail, the model call itself, the five formal layers, the write.</p>
+
+    <h3>2 · The monitoring map</h3>
+    <p>Because every guard on this site rests on an assumption that nothing currently watches. That the catalog version stamped on a block is the one the platform still serves. That the policy bundle in force is the one the revision was verified against. That the model routing table is honoured by the gateway rather than quietly overridden. Each of those is checked at the moment of the transition and never again, and a model without a monitoring map cannot tell you which of its premises died last Tuesday.</p>
+
+    <h3>3 · The executable simulation</h3>
+    <p>Because the staleness cascade is the one part of this system whose behaviour genuinely cannot be predicted by reading it. A single catalog version bump touches every node that cites the changed block, each of which re-enters verification, some of which invalidate an exam that depends on their topics, which invalidates the whole-course check. How many nodes that is, how long it takes, and whether it converges before an editor gives up are questions the transition table poses and cannot answer. Emergent behaviour is exactly what a simulation exists to find.</p>
+
+    <div class="callout">
+      <div class="eyebrow">Where these land</div>
+      <p>The first two belong on <b>Evaluation &amp; red team</b>, the eighth document, still unwritten. The third belongs with the prototype. Nothing on this page is a reason to change the seven documents that exist — it is a reason to finish the two that do not.</p>
+    </div>
+  </section>
+
+  <section id="s6">
+    <div class="eyebrow">Section 6</div>
+    <h2>Open questions</h2>
+    <ol class="questions">
+      <li><strong>Is this page a view, or a document?</strong> It currently claims to be a map: everything on it points somewhere else, and nothing is stated here that is not stated in full elsewhere. The moment the latency budget lands, that stops being true — a summary of numbers that exist nowhere else makes this the authority on those numbers, and two places will drift. Either the budget lands on Evaluation and this page links it, or this page absorbs it and stops being a map. It cannot be both.</li>
+      <li><strong>Which of the six absent artifacts are honestly out of scope?</strong> A deployment model and a traceability linter are the right things for a system with a deployment and a repository. This one has neither yet. Naming them absent is accurate; treating all six as debt is not, and the distinction should be made deliberately rather than by whichever gets written first.</li>
+      <li><strong>Do the assumptions belong in one list?</strong> They are currently distributed across eight “Open questions” sections, each next to the design decision it qualifies — which is where a reader wants them and not where an auditor does. Collecting them centralises the risk picture and guarantees the two copies disagree within a month.</li>
+    </ol>
+
+    <div class="callout">
+      <div class="eyebrow">Related pages</div>
+      <p><strong><a href="specification.html">Specification</a></strong> — the system in sixteen sections; the source for most of what this page marks present.</p>
+      <p><strong><a href="states.html">State model</a></strong> — the state inventory, event catalog and information model, which are three of the twenty artifacts in full.</p>
+      <p><strong><a href="transitions.html">Transitions &amp; guards</a></strong> — the state machines and the responsibility assignment, expressed as one table.</p>
+    </div>
+  </section>
+
+  <p class="footer-note">System model · draft v0.1 · 23 August 2026 · a map over the <a href="specification.html">spec v2</a> and its six companions</p>
+</div>
+
+<script src="spec.js?v=3" defer></script>
+</body>
+</html>
