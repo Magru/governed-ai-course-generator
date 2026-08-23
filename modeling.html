@@ -106,13 +106,14 @@
     <h1>System model</h1>
     <p class="kicker">The other seven documents say what this system is and what must hold in it. This one reads them back as a <em>model</em> — the system reduced to the artifacts that let a stranger check it before a line of it is built, with each artifact marked present, partial or absent.</p>
     <div class="thesis">
-      <p><strong>A specification is not a model.</strong> A specification states what must hold. A model is a deliberately partial abstraction with defined semantics, built to answer one question — about structure, behaviour, time, resources or failure. Almost everything in this set was written as specification. Reading it back as a model is what exposed the six artifacts below that had never been written at all.</p>
+      <p><strong>A specification is not a model.</strong> A specification states what must hold. A model is a deliberately partial abstraction with defined semantics, built to answer one question — about structure, behaviour, time, resources, failure, or whether the system can meet its goals at all. Almost everything in this set was written as specification. Reading it back as a model is what exposed the six artifacts below that had never been written at all.</p>
     </div>
     <div class="meta-row">
       <span class="meta-chip">Artifacts: <b>20</b></span>
-      <span class="meta-chip">Present: <b>8</b></span>
-      <span class="meta-chip">Partial: <b>6</b></span>
+      <span class="meta-chip">Answered somewhere: <b>6</b></span>
+      <span class="meta-chip">Partial: <b>8</b></span>
       <span class="meta-chip">Absent: <b>6</b></span>
+      <span class="meta-chip">Existing as a file: <b>0</b></span>
       <span class="meta-chip">Status: <b>map, not a document</b></span>
     </div>
   </header>
@@ -162,7 +163,7 @@
           <tr>
             <td class="role">Implementation</td>
             <td>The system that actually runs</td>
-            <td>Not built</td>
+            <td>Not built. <a href="specification.html#s15">§15</a> describes what it will run and what it will stub — written in the present tense, which is worth correcting before the defence</td>
           </tr>
         </tbody>
       </table>
@@ -178,7 +179,7 @@
     <div class="eyebrow">Section 2</div>
     <h2>The journey, in six parts</h2>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
-      <p>A vague business request becomes a checkable model in six moves, each one standing on the one before it. Our system has been carried a long way through the middle of that sequence and barely into the end of it.</p>
+      <p>A vague business request becomes a checkable model in six moves, each one standing on the one before it. The framework's own contents page names eight stations; the lecture delivers six, because interface contracts and system composition are taught inside part III rather than as parts of their own. The numbering below follows the six as delivered — worth saying, because composition is where emergent behaviour comes from, and section 5 leans on that idea without a part of its own to point at.</p>
     </div>
     <div class="table-scroll">
       <table>
@@ -197,12 +198,12 @@
           <tr>
             <td class="role">III · State, events, interaction<br><span class="he">מצב, אירועים ואינטראקציות</span></td>
             <td>What is permitted in each state, what the events mean, how traces behave</td>
-            <td><span class="cov have">present</span> The strongest part by a distance: <b>21 + 11</b> states, <b>55 + 19</b> transitions, <b>37</b> guards, <b>23</b> events. <a href="states.html">States</a>, <a href="transitions.html">Transitions</a></td>
+            <td><span class="cov have">present</span> The strongest part by a distance: <b>21 + 11</b> states, <b>55 + 19</b> transitions, <b>37</b> guards, <b>31</b> named events. <a href="states.html">States</a>, <a href="transitions.html">Transitions</a></td>
           </tr>
           <tr>
             <td class="role">IV · Time, capacity, failure<br><span class="he">זמן, קיבולת וכשל</span></td>
             <td>Can this path meet its deadline, where is the bottleneck, how do we fail safely</td>
-            <td><span class="cov none">absent</span> Not one number. No latency budget, no capacity model, no failure matrix</td>
+            <td><span class="cov part">partial</span> The failure matrix exists in full — 14 modes, each with what stops it and who owns it (<a href="safety.html#s10">Safety §10</a>). The other two thirds do not: not one number of latency anywhere, and no capacity model</td>
           </tr>
           <tr>
             <td class="role">V · Simulation and verification<br><span class="he">סימולציה ואימות</span></td>
@@ -219,7 +220,7 @@
     </div>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <div class="thesis">
-        <p><strong>The shape of the gap is consistent.</strong> Everything about <em>logic</em> — who may act, in what order, under which rule — is modelled thoroughly. Everything about <em>quantity</em> — how long, how many, how fast — is missing entirely. That matters more than it sounds: a governed pipeline slow enough to exhaust an editor's patience produces rubber-stamped approvals, and every guard on this site still passes while the governance it exists to enforce quietly stops happening.</p>
+        <p><strong>The shape of the gap is consistent.</strong> Everything about <em>logic</em> — who may act, in what order, under which rule — is modelled thoroughly. Everything about <em>quantity</em> — how long, how many, how fast — is barely modelled at all. Configuration carries thresholds and budgets, and safety carries a failure matrix, but nothing anywhere states a time this system must meet or a rate it must sustain. That matters more than it sounds: if a pipeline is slow enough to exhaust an editor's patience, approvals become a formality, and every guard on this site keeps passing while the governance it exists to enforce quietly stops happening.</p>
       </div>
     </div>
   </section>
@@ -229,6 +230,11 @@
     <h2>The model package — twenty artifacts</h2>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <p>A complete system model is twenty artifacts in four groups. Each answers one specific question, each has an owner, and each is updated when the evidence behind it changes — a living asset, not documentation written after the design is done. Below, every one of the twenty is matched against what this project actually has.</p>
+      <div class="callout">
+        <div class="eyebrow">How to read the marks</div>
+        <p><b>Present</b> means the question is answered somewhere in this set, usually in prose. It does <em>not</em> mean the artifact exists: <b>none of the twenty exists as a separate file with an owner and an update trigger</b>, which is what the framework asks for. On that stricter reading the score is nought out of twenty, and the useful information is which questions already have answers to move into a file.</p>
+        <p>The framework is also inconsistent with itself about the size of the package — one slide calls it fourteen artifacts, the enumeration and the closing summary both say twenty. Twenty is followed here because it is the only figure that comes with a list.</p>
+      </div>
     </div>
 
     <div class="grp"><h3>Definition and scope</h3><span class="tally">3 artifacts · 1 present · 1 partial · 1 absent</span></div>
@@ -243,28 +249,28 @@
       </table>
     </div>
 
-    <div class="grp"><h3>Structure and information</h3><span class="tally">4 artifacts · 2 present · 1 partial · 1 absent</span></div>
+    <div class="grp"><h3>Structure and information</h3><span class="tally">4 artifacts · 1 present · 2 partial · 1 absent</span></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
           <tr><td class="art">functional-model</td><td>What does the system do?</td><td><span class="cov have">present</span> The editor's journey and the generation gateway. <a href="specification.html#s5">§5</a>, <a href="specification.html#s7">§7</a></td></tr>
           <tr><td class="art">component-model</td><td>Who does it?</td><td><span class="cov part">partial</span> Components are named per concern across <a href="layers.html">Validation</a> and <a href="safety.html">Safety</a>, but never assembled into one picture</td></tr>
-          <tr><td class="art">information-model</td><td>Who actually owns each piece of data?</td><td><span class="cov have">present</span> Every artifact's fields and owner. <a href="states.html#s9">States §9</a></td></tr>
+          <tr><td class="art">information-model</td><td>Who actually owns each piece of data?</td><td><span class="cov part">partial</span> Every field a course and a node carry, listed in full — but as a flat list: no owner named per field, and no relations between entities. <a href="states.html#s9">States §9</a></td></tr>
           <tr><td class="art">deployment-model</td><td>Where does it run, and who is trusted?</td><td><span class="cov none">absent</span> Trust boundaries are worked out for secrets only. <a href="safety.html#s8">Safety §8</a></td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="grp"><h3>State, events and behaviour</h3><span class="tally">5 artifacts · 4 present · 1 partial</span></div>
+    <div class="grp"><h3>State, events and behaviour</h3><span class="tally">5 artifacts · 3 present · 2 partial</span></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
-          <tr><td class="art">responsibility-matrix</td><td>Who holds authority, and who owns the outcome?</td><td><span class="cov have">present</span> As a column rather than a matrix — every one of the 74 transitions names its layer. <a href="transitions.html#s2">Transitions §2</a></td></tr>
+          <tr><td class="art">responsibility-matrix</td><td>Who holds authority, and who owns the outcome?</td><td><span class="cov part">partial</span> A Layer column rather than a matrix: 65 of the 74 transitions name the layer that evaluates them and 9 name none — and which engine <em>checks</em> a move is a different fact from who owns its outcome. <a href="transitions.html#s2">Transitions §2</a></td></tr>
           <tr><td class="art">state-inventory</td><td>Where is state authoritative?</td><td><span class="cov have">present</span> 21 revision states, 11 node states, each with its owner. <a href="states.html#s2">§2</a>, <a href="states.html#s3">§3</a></td></tr>
           <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 55 + 19 transitions behind 37 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a></td></tr>
-          <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> 23 events with producer and payload. <a href="states.html#s6">States §6</a></td></tr>
+          <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> 23 catalog entries covering 31 named events, each with source and target. No payload is specified. <a href="states.html#s6">States §6</a></td></tr>
           <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov part">partial</span> One happy path in prose. No failure sequences, and none drawn. <a href="walkthrough.html">Walkthrough</a></td></tr>
         </tbody>
       </table>
@@ -275,12 +281,12 @@
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
-          <tr><td class="art">action_request.schema.json</td><td>What is a valid request?</td><td><span class="cov have">present</span> Schema first, before any other layer. <a href="layers.html#s2">Validation §2</a>, <a href="safety.html#s2">Safety §2</a></td></tr>
+          <tr><td class="art">action_request.schema.json</td><td>What is a valid request?</td><td><span class="cov part">partial</span> <code>schema_valid(args)</code> is step 2 of the eight-step membrane and the ordering is settled — but the only schema actually written is for content blocks, not for action requests. <a href="layers.html#s2">Validation §2</a>, <a href="safety.html#s3">Safety §3</a></td></tr>
           <tr><td class="art">latency-budget</td><td>Can this path meet its deadline?</td><td><span class="cov none">absent</span> The single largest hole in the set</td></tr>
-          <tr><td class="art">failure-scenarios</td><td>How do we fail safely?</td><td><span class="cov part">partial</span> Failure modes are listed and a kill switch is defined, but nothing is written as a walkable scenario. <a href="safety.html#s10">Safety §10</a></td></tr>
+          <tr><td class="art">failure-scenarios</td><td>How do we fail safely?</td><td><span class="cov have">present</span> Nine situations walked event by event — states changed, fields written, the editor's next move (<a href="states.html#s5">States §5</a>) — over a 14-mode matrix with owners (<a href="safety.html#s10">Safety §10</a>)</td></tr>
           <tr><td class="art">simulation</td><td>What happens under load, spike, delay, retry storm?</td><td><span class="cov none">absent</span></td></tr>
-          <tr><td class="art">monitoring-map</td><td>How will we know the assumptions are still alive?</td><td><span class="cov none">absent</span> Nothing in this system notices when one of its premises stops being true</td></tr>
-          <tr><td class="art">assumptions</td><td>What does the model depend on?</td><td><span class="cov part">partial</span> Real, honest, and scattered across eight separate “Open questions” sections instead of held in one list</td></tr>
+          <tr><td class="art">monitoring-map</td><td>How will we know the assumptions are still alive?</td><td><span class="cov none">absent</span> <a href="specification.html#s13">Seven production signals</a> are named, but they watch what the system <em>does</em> — not whether the premises it runs on still hold</td></tr>
+          <tr><td class="art">assumptions</td><td>What does the model depend on?</td><td><span class="cov part">partial</span> Real, honest, and scattered across six separate “Open questions” sections instead of held in one list</td></tr>
           <tr><td class="art">architecture-decisions</td><td>Why did we decide it this way?</td><td><span class="cov part">partial</span> The reasoning exists inline on every page and was never collected into decision records</td></tr>
           <tr><td class="art">traceability + model-lint</td><td>Are the views still consistent with each other?</td><td><span class="cov none">absent</span> Consistency across the seven documents is maintained by hand and by audit</td></tr>
         </tbody>
@@ -289,7 +295,7 @@
 
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <div class="thesis">
-        <p><strong>Eight present, six partial, six absent — and the split is not random.</strong> Every absent artifact belongs to the two groups that deal in quantity and in time. The two groups that deal in structure and permission are all but complete. That is the honest summary of this project: a system that has been reasoned about very carefully and measured not at all.</p>
+        <p><strong>Six present, eight partial, six absent — and not one of the twenty exists as a file.</strong> Four of the six absences sit in the last group, the one that deals in quantity, verification and monitoring. The other two — a context diagram and a deployment view — are absent for a different reason: nothing here has been drawn, and nothing has been deployed. Only the group covering state, events and behaviour has no absences at all. That is the honest summary of this project: a system reasoned about very carefully, drawn rarely, and measured not at all.</p>
       </div>
     </div>
   </section>
@@ -298,7 +304,7 @@
     <div class="eyebrow">Section 4</div>
     <h2>Minimum viable model</h2>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
-      <p>A model does not need fifteen files. It needs the minimum that lets a decision be taken without hiding a critical assumption. The left column is that minimum; the right is what a production-ready package adds on top. Marked against this system as it stands.</p>
+      <p>A model does not need every file in that package. It needs the minimum that lets a decision be taken without hiding a critical assumption. The left column is that minimum; the right is what a production-ready package adds on top. Marked against this system as it stands.</p>
     </div>
     <div class="mvsm">
       <div>
@@ -332,7 +338,7 @@
     </div>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <div class="thesis">
-        <p><strong>Seven of ten on the left, one of eight on the right.</strong> The minimum viable model is essentially here; what is missing is almost entirely the production half. The single production item this project does have — change-impact — it has in more depth than the checklist asks for, because the staleness cascade <em>is</em> a change-impact analysis, expressed as a state machine that runs.</p>
+        <p><strong>Seven of ten on the left, one of eight on the right.</strong> The minimum viable model is essentially here; what is missing is almost entirely the production half. The single production item this project does have — change-impact — it has in more depth than the checklist asks for, because the staleness cascade <em>is</em> a change-impact analysis, written as a state machine — though nothing yet executes it, which is precisely what the third artifact below is for.</p>
       </div>
     </div>
   </section>
@@ -340,20 +346,20 @@
   <section id="s5">
     <div class="eyebrow">Section 5</div>
     <h2>The three that get built next</h2>
-    <p>Twelve artifacts are absent or partial and they will not all be written. Three are worth building before the defence, chosen because each answers a question this project currently cannot answer at all.</p>
+    <p>Fourteen artifacts are absent or partial and they will not all be written. Three are worth building before the defence, chosen because each answers a question this project currently cannot answer at all.</p>
 
     <h3>1 · The latency budget</h3>
-    <p>Because a governed pipeline that outruns nobody's patience is governed, and one that does not is theatre. Every guard on this site can hold while the editor, waiting four minutes for a lesson, learns to approve without reading. Nothing in the state machine can detect that, and no logical invariant is violated when it happens. The method is already exercised: the same budget-then-capacity pass done on the incident-containment system, applied to the generation path — schema, guardrail, the model call itself, the five formal layers, the write.</p>
+    <p>Because a governed pipeline that outruns nobody's patience is governed, and one that does not is theatre. Every guard on this site can hold while the editor, waiting four minutes for a lesson, learns to approve without reading. No guard fails and no invariant is violated when that happens — the only things that would show it are numbers nobody is recording yet: time in state, and approvals per minute. The method is already exercised: the same budget-then-capacity pass done on the incident-containment system, applied to the generation path — schema, guardrail, the model call itself, the five formal layers, the write.</p>
 
-    <h3>2 · The monitoring map</h3>
-    <p>Because every guard on this site rests on an assumption that nothing currently watches. That the catalog version stamped on a block is the one the platform still serves. That the policy bundle in force is the one the revision was verified against. That the model routing table is honoured by the gateway rather than quietly overridden. Each of those is checked at the moment of the transition and never again, and a model without a monitoring map cannot tell you which of its premises died last Tuesday.</p>
+    <h3>2 · The assumption list, and the monitoring map over it</h3>
+    <p>Because every guard on this site rests on an assumption, and the assumptions are currently spread across six pages instead of held in one place where they can be counted. That the catalog version stamped on a block is the one the platform still serves. That the policy bundle in force is the one the revision was verified against. That the model routing table is honoured by the gateway rather than quietly overridden. Each is checked at the moment of the transition and never again. The framework's chain is assumption → runtime signal → observation → decision → model update, and this project has neither end of it: no list to start from, and no signal wired to anything on it. The seven production signals the specification already names are the right raw material and they measure activity, not whether a premise still holds. Both halves are design work and neither waits on a deployment.</p>
 
     <h3>3 · The executable simulation</h3>
     <p>Because the staleness cascade is the one part of this system whose behaviour genuinely cannot be predicted by reading it. A single catalog version bump touches every node that cites the changed block, each of which re-enters verification, some of which invalidate an exam that depends on their topics, which invalidates the whole-course check. How many nodes that is, how long it takes, and whether it converges before an editor gives up are questions the transition table poses and cannot answer. Emergent behaviour is exactly what a simulation exists to find.</p>
 
     <div class="callout">
       <div class="eyebrow">Where these land</div>
-      <p>The first two belong on <b>Evaluation &amp; red team</b>, the eighth document, still unwritten. The third belongs with the prototype. Nothing on this page is a reason to change the seven documents that exist — it is a reason to finish the two that do not.</p>
+      <p>The first two belong on <b>Evaluation &amp; red team</b>, card 08, still unwritten. The third belongs with the prototype. Nothing on this page is a reason to change the seven documents that exist — it is a reason to finish the two that do not.</p>
     </div>
   </section>
 
