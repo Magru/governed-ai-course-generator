@@ -48,7 +48,6 @@
   }
   .mvsm li + li { border-top: 1px solid var(--hairline); }
   .mvsm li .cov { flex: 0 0 auto; }
-  .he { font-size: 0.86rem; color: var(--muted); direction: rtl; unicode-bidi: isolate; }
 </style>
 </head>
 <body>
@@ -208,32 +207,32 @@
         <thead><tr><th>Part</th><th>The question it settles</th><th>Where this system stands</th></tr></thead>
         <tbody>
           <tr>
-            <td class="role">I · Point of departure<br><span class="he">נקודת המוצא</span></td>
+            <td class="role">I · Point of departure</td>
             <td>Why an excellent AI model does not give you an excellent AI system</td>
             <td><span class="cov have">present</span> This is the governing principle of the whole set — the model proposes, the architecture decides, the editor leads. <a href="specification.html#s3">§3</a>–<a href="specification.html#s4">§4</a></td>
           </tr>
           <tr>
-            <td class="role">II · Defining the system<br><span class="he">הגדרת המערכת</span></td>
+            <td class="role">II · Defining the system</td>
             <td>Boundary, actors, authority, context, and what the system promises</td>
             <td><span class="cov have">present</span> Boundary, actors and external systems, drawn — the model provider sits outside it and reaches only the schema validator. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/context-diagram.mmd">context-diagram</a>. A deployment view is still absent.</td>
           </tr>
           <tr>
-            <td class="role">III · State, events, interaction<br><span class="he">מצב, אירועים ואינטראקציות</span></td>
+            <td class="role">III · State, events, interaction</td>
             <td>What is permitted in each state, what the events mean, how traces behave</td>
             <td><span class="cov have">present</span> The strongest part by a distance: <b>21 + 11</b> states, <b>55 + 19</b> transitions, <b>37</b> guards, <b>31</b> named events. <a href="states.html">States</a>, <a href="transitions.html">Transitions</a></td>
           </tr>
           <tr>
-            <td class="role">IV · Time, capacity, failure<br><span class="he">זמן, קיבולת וכשל</span></td>
+            <td class="role">IV · Time, capacity, failure</td>
             <td>Can this path meet its deadline, where is the bottleneck, how do we fail safely</td>
             <td><span class="cov have">present</span> All three: a 14-mode failure matrix (<a href="safety.html#s10">Safety §10</a>), and a latency budget with a capacity model — governance costs <b>3.2%</b> of the path, one model worker carries about eight editors. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/latency-budget.yaml">latency-budget</a></td>
           </tr>
           <tr>
-            <td class="role">V · Simulation and verification<br><span class="he">סימולציה ואימות</span></td>
+            <td class="role">V · Simulation and verification</td>
             <td>What happens under stress, and does the model match the system</td>
             <td><span class="cov part">partial</span> One happy path traced by hand over 24 steps. Nothing executable, nothing stressed. <a href="walkthrough.html">Walkthrough</a></td>
           </tr>
           <tr>
-            <td class="role">VI · From model to production<br><span class="he">מהמודל לפרודקשן</span></td>
+            <td class="role">VI · From model to production</td>
             <td>How we learn that an assumption has quietly stopped being true</td>
             <td><span class="cov part">partial</span> Change-impact is modelled in unusual depth — the staleness cascade. Monitoring is not modelled at all. <a href="states.html#s4">Cascade</a></td>
           </tr>
