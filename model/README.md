@@ -1,63 +1,85 @@
 # Model package
 
 The seven specification pages one directory up are prose: they argue. These files
-are the same facts in a form something other than a person can read — a diff, a
+are the same system in a form something other than a person can read — a diff, a
 linter, a simulator.
 
 Each file answers one question, names an owner, and says what event should make
-someone change it. That is the whole convention.
+someone revise it. That is the whole convention.
 
-| File | Answers | How it is maintained |
+| File | Answers | Maintained |
 |---|---|---|
 | [`system-definition.yaml`](system-definition.yaml) | What does the system promise? | by hand |
-| [`functional-model.yaml`](functional-model.yaml) | What does the system do? | by hand |
-| [`state-inventory.yaml`](state-inventory.yaml) | Where is state authoritative? | exported |
+| [`functional-model.yaml`](functional-model.yaml) | What does it do? | by hand |
+| [`context-diagram.mmd`](context-diagram.mmd) | Who is inside the boundary, who is outside? — [rendered](diagrams.md#context) | by hand |
+| [`state-inventory.yaml`](state-inventory.yaml) | What does it remember, who is authoritative, how is it recovered? | by hand, **linted** |
+| [`event-catalog.yaml`](event-catalog.yaml) | What happened, and who may claim it? | by hand, **linted** |
 | [`transitions.yaml`](transitions.yaml) | What is permitted in each state? | exported |
-| [`state-machine-revision.mmd`](state-machine-revision.mmd) · [`state-machine-node.mmd`](state-machine-node.mmd) | the same, as a picture — [rendered](diagrams.md) | exported |
-| [`event-catalog.yaml`](event-catalog.yaml) | What do the events mean? | exported |
+| [`state-machine-revision.mmd`](state-machine-revision.mmd) · [`state-machine-node.mmd`](state-machine-node.mmd) | the same, as pictures — [rendered](diagrams.md) | exported |
 | [`failure-scenarios.yaml`](failure-scenarios.yaml) | How do we fail safely? | exported |
+| [`assumptions.yaml`](assumptions.yaml) | What does the model depend on, and how would we notice it stopped being true? | by hand |
+| [`latency-budget.yaml`](latency-budget.yaml) | Can the path meet a deadline, and how many editors fit? | by hand |
 
-**Six of the framework's twenty artifacts.** The other fourteen are either partial
-or absent, and the [system model page](../modeling.html) grades each one and says
-which get built next.
+**Nine of the framework's twenty artifacts**, and all ten items of its Minimum
+Viable System Model. The eleven that remain are the production-ready half — a
+deployment model, an executable simulation, a wired monitoring map, a traceability
+linter — and the [system model page](../modeling.html) grades every one.
 
-## Regenerating
+## Regenerating and checking
 
 ```
 python3 export-model.py
 ```
 
-Reads the tables in `../states.html`, `../transitions.html` and `../safety.html`
-and rewrites everything marked *exported* above. It refuses to write anything if
-a table has moved — the expected row counts are asserted first, so a silent
-half-export is not possible. The two hand-maintained files it never touches.
+Two jobs. It **generates** the transition table, the two state-machine diagrams
+and the failure scenarios from the tables in `../states.html`,
+`../transitions.html` and `../safety.html`. It **lints** the two hand-maintained
+files that mirror those tables: every state and every event name on the pages must
+appear in `state-inventory.yaml` and `event-catalog.yaml`, or it writes nothing and
+says which name went missing.
 
-## What the export found
+That is why the `updated_when` line in each header is a command rather than a
+promise. A row added to a page and forgotten here fails the run.
 
-Moving tables into files surfaced five things prose had been absorbing. None is
-cosmetic; each is a question the specification does not currently answer.
+## What building this found
 
-1. **`BlockedFinal` exists in both machines** with different exits — terminal with
-   no unblock path for a revision, terminal-to-the-machine for a node. Any tool
+Moving the tables into files surfaced five things the prose had been absorbing.
+None is cosmetic; each is a question the specification does not answer.
+
+1. **`BlockedFinal` exists in both machines** with different exits. Any tool
    reading state names unqualified will conflate them.
-2. **Seven transition endpoints are not state names.** Six are expressions resolved
-   at runtime — *the state that blocked*, *any state in the live lineage*, *the
-   state after the operation*. Each needs a resolution rule before this package can
-   drive a simulation. They are listed under `open_questions` in `transitions.yaml`.
+2. **Seven transition endpoints are not state names** — *the state that blocked*,
+   *any state in the live lineage*, *the state after the operation*. Each needs a
+   resolution rule before this package can drive a simulation. They are listed
+   under `open_questions` in `transitions.yaml`.
 3. **One node transition never says where the node goes.** `NodeRepair` on an
-   exhausted retry budget records `course → BlockedRecoverable`: what happens to the
-   *course*. The node's own target is unstated.
-4. **`·` is overloaded** in the transition tables. In `ContentInProgress ·
-   BlockedRecoverable` it means *either*; in `rev n+1 · ContentInProgress` it
-   qualifies an object in a different revision. A reader infers which from context.
-   A parser cannot.
-5. **No event declares a payload.** The catalog gives every event a source and a
-   target and leaves its fields to be inferred from the surrounding prose.
+   exhausted retry budget records `course → BlockedRecoverable` — what happens to
+   the *course*. The node's own target is unstated.
+4. **`·` is overloaded.** In `ContentInProgress · BlockedRecoverable` it means
+   *either*; in `rev n+1 · ContentInProgress` it qualifies a different revision.
+   A reader infers which. A parser cannot.
+5. **No event declares an envelope.** `event-catalog.yaml` now specifies the one
+   every event must acquire, and says what breaks when each field is missing.
+   Nothing emits it yet.
+
+## What the numbers say
+
+From `latency-budget.yaml`, all estimates and all resting on `unknowns` in
+`system-definition.yaml`:
+
+- Every check this architecture adds costs **412 ms against a twelve-second model
+  call — 3.2 % of the path**. Governance is not the bottleneck.
+- A node takes **16 s to produce and about 180 s to review**. The human is the
+  bottleneck by a factor of eleven, which is the intended outcome.
+- One model worker carries roughly **ten concurrent editors** at a safe
+  utilisation.
+- The staleness cascade **does not regenerate**: five hundred stale nodes
+  re-verify in under three minutes.
 
 ## Owners
 
-Every file names `system architect` today, which is honest for a one-person
-project and useless as governance. Real ownership splits at least three ways —
-guardrail policy belongs to a compliance officer, the skills catalog to the
-platform, pedagogical judgment to the editor — and the framework asks for the
-owner precisely so that a stale artifact has someone to go stale on.
+Ten distinct owners across the state inventory — the state store, the platform,
+the policy bundle, the guardrail service, the gateway, the editor. The file
+headers still say `system architect`, which is honest for a one-person project and
+useless as governance; the framework asks for an owner precisely so a stale
+artifact has someone to go stale on.

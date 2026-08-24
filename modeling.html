@@ -111,10 +111,11 @@
     </div>
     <div class="meta-row">
       <span class="meta-chip">Artifacts: <b>20</b></span>
-      <span class="meta-chip">Answered somewhere: <b>6</b></span>
+      <span class="meta-chip">Answered somewhere: <b>9</b></span>
       <span class="meta-chip">Partial: <b>8</b></span>
-      <span class="meta-chip">Absent: <b>6</b></span>
-      <span class="meta-chip">Kept as a file: <b>6</b></span>
+      <span class="meta-chip">Absent: <b>3</b></span>
+      <span class="meta-chip">Kept as a file: <b>9</b></span>
+      <span class="meta-chip">Minimum viable model: <b>10 of 10</b></span>
       <span class="meta-chip">Status: <b>map, not a document</b></span>
     </div>
   </header>
@@ -213,7 +214,7 @@
           <tr>
             <td class="role">II · Defining the system<br><span class="he">הגדרת המערכת</span></td>
             <td>Boundary, actors, authority, context, and what the system promises</td>
-            <td><span class="cov part">partial</span> All of it is stated in prose; none of it is drawn. There is no context diagram and no deployment view. <a href="specification.html#s1">§1</a>, <a href="specification.html#s7">§7</a></td>
+            <td><span class="cov have">present</span> Boundary, actors and external systems, drawn — the model provider sits outside it and reaches only the schema validator. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/context-diagram.mmd">context-diagram</a>. A deployment view is still absent.</td>
           </tr>
           <tr>
             <td class="role">III · State, events, interaction<br><span class="he">מצב, אירועים ואינטראקציות</span></td>
@@ -223,7 +224,7 @@
           <tr>
             <td class="role">IV · Time, capacity, failure<br><span class="he">זמן, קיבולת וכשל</span></td>
             <td>Can this path meet its deadline, where is the bottleneck, how do we fail safely</td>
-            <td><span class="cov part">partial</span> The failure matrix exists in full — 14 modes, each with what stops it and who owns it (<a href="safety.html#s10">Safety §10</a>). The other two thirds do not: not one number of latency anywhere, and no capacity model</td>
+            <td><span class="cov have">present</span> All three: a 14-mode failure matrix (<a href="safety.html#s10">Safety §10</a>), and a latency budget with a capacity model — governance costs <b>3.2%</b> of the path, one model worker carries about ten editors. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/latency-budget.yaml">latency-budget</a></td>
           </tr>
           <tr>
             <td class="role">V · Simulation and verification<br><span class="he">סימולציה ואימות</span></td>
@@ -258,13 +259,13 @@
       </div>
     </div>
 
-    <div class="grp"><h3>Definition and scope</h3><span class="tally">3 artifacts · 1 present · 1 partial · 1 absent</span></div>
+    <div class="grp"><h3>Definition and scope</h3><span class="tally">3 artifacts · 2 present · 1 partial</span></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
           <tr><td class="art">system-definition</td><td>What does the system promise?</td><td><span class="cov have">present</span> Promise, boundary, both authorities, constraints and fallbacks. <a href="specification.html#s1">§1</a>, <a href="specification.html#s2">§2</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/system-definition.yaml">file</a></td></tr>
-          <tr><td class="art">context-diagram</td><td>Who is inside the boundary, who is outside?</td><td><span class="cov none">absent</span> The boundary is described but never drawn, so nobody can check it at a glance</td></tr>
+          <tr><td class="art">context-diagram</td><td>Who is inside the boundary, who is outside?</td><td><span class="cov have">present</span> Three zones, and the property worth checking: no path from the model into course state that skips the gateway. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/context-diagram.mmd">file</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/diagrams.md#context">rendered</a></td></tr>
           <tr><td class="art">quality-attribute-scenarios</td><td>What is required, in measurable terms?</td><td><span class="cov part">partial</span> Quality is defined for the <em>content</em> the system produces, never for the system itself. <a href="specification.html#s12">§12</a></td></tr>
         </tbody>
       </table>
@@ -297,17 +298,17 @@
       </table>
     </div>
 
-    <div class="grp"><h3>Quality, verification and monitoring</h3><span class="tally">8 artifacts · 1 present · 3 partial · 4 absent</span></div>
+    <div class="grp"><h3>Quality, verification and monitoring</h3><span class="tally">8 artifacts · 3 present · 3 partial · 2 absent</span></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
           <tr><td class="art">action_request.schema.json</td><td>What is a valid request?</td><td><span class="cov part">partial</span> <code>schema_valid(args)</code> is step 2 of the eight-step membrane and the ordering is settled — but the only schema actually written is for content blocks, not for action requests. <a href="layers.html#s2">Validation §2</a>, <a href="safety.html#s3">Safety §3</a></td></tr>
-          <tr><td class="art">latency-budget</td><td>Can this path meet its deadline?</td><td><span class="cov none">absent</span> The single largest hole in the set</td></tr>
+          <tr><td class="art">latency-budget</td><td>Can this path meet its deadline?</td><td><span class="cov have">present</span> Twelve stages, estimates not measurements, with a capacity model and three findings on top of it. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/latency-budget.yaml">file</a></td></tr>
           <tr><td class="art">failure-scenarios</td><td>How do we fail safely?</td><td><span class="cov have">present</span> Nine situations walked event by event — states changed, fields written, the editor's next move (<a href="states.html#s5">States §5</a>) — over a 14-mode matrix with owners (<a href="safety.html#s10">Safety §10</a>) <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/failure-scenarios.yaml">file</a></td></tr>
           <tr><td class="art">simulation</td><td>What happens under load, spike, delay, retry storm?</td><td><span class="cov none">absent</span></td></tr>
-          <tr><td class="art">monitoring-map</td><td>How will we know the assumptions are still alive?</td><td><span class="cov none">absent</span> <a href="specification.html#s13">Seven production signals</a> are named, but they watch what the system <em>does</em> — not whether the premises it runs on still hold</td></tr>
-          <tr><td class="art">assumptions</td><td>What does the model depend on?</td><td><span class="cov part">partial</span> Real, honest, and scattered across six separate “Open questions” sections instead of held in one list</td></tr>
+          <tr><td class="art">monitoring-map</td><td>How will we know the assumptions are still alive?</td><td><span class="cov part">partial</span> Every assumption now names its signal, threshold, response and owner (<a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/assumptions.yaml">assumptions.yaml</a>), but none is wired to anything. <a href="specification.html#s13">Seven production signals</a> exist and watch what the system <em>does</em>, not whether its premises hold</td></tr>
+          <tr><td class="art">assumptions</td><td>What does the model depend on?</td><td><span class="cov have">present</span> Nine dependencies in one register, each with the signal, threshold, response and owner the framework asks for — and each marked <code>monitored: false</code>, which is the truth. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/assumptions.yaml">file</a></td></tr>
           <tr><td class="art">architecture-decisions</td><td>Why did we decide it this way?</td><td><span class="cov part">partial</span> The reasoning exists inline on every page and was never collected into decision records</td></tr>
           <tr><td class="art">traceability + model-lint</td><td>Are the views still consistent with each other?</td><td><span class="cov none">absent</span> Consistency across the seven documents is maintained by hand and by audit</td></tr>
         </tbody>
@@ -316,7 +317,7 @@
 
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <div class="thesis">
-        <p><strong>Six present, eight partial, six absent — and not one of the twenty exists as a file.</strong> Four of the six absences sit in the last group, the one that deals in quantity, verification and monitoring. The other two — a context diagram and a deployment view — are absent for a different reason: nothing here has been drawn, and nothing has been deployed. Only the group covering state, events and behaviour has no absences at all. That is the honest summary of this project: a system reasoned about very carefully, drawn rarely, and measured not at all.</p>
+        <p><strong>Nine present, eight partial, three absent — and every one of the nine is a file.</strong> What remains absent is the production-ready half and nothing else: a deployment view for a system with no deployment, an executable simulation, and a traceability linter. The earlier version of this page said the project had been reasoned about carefully and measured not at all. The second half of that is no longer true, and the measuring changed the argument rather than decorating it — see part IV above.</p>
       </div>
     </div>
   </section>
@@ -331,16 +332,16 @@
       <div>
         <div class="mv-h">Minimum viable package</div>
         <ul>
-          <li><span class="cov part">partial</span><span>A measurable business outcome, in one sentence</span></li>
+          <li><span class="cov have">have</span><span>A measurable business outcome, in one sentence</span></li>
           <li><span class="cov have">have</span><span>The system of interest, defined</span></li>
-          <li><span class="cov part">partial</span><span>Boundary, actors, external systems — stated, not drawn</span></li>
+          <li><span class="cov have">have</span><span>Boundary, actors, external systems — drawn</span></li>
           <li><span class="cov have">have</span><span>Decision authority and execution authority, held apart</span></li>
           <li><span class="cov have">have</span><span>Hard constraints</span></li>
           <li><span class="cov have">have</span><span>Safe fallbacks</span></li>
           <li><span class="cov have">have</span><span>Critical state variables, each with an owner</span></li>
           <li><span class="cov have">have</span><span>Critical events, each with a producer</span></li>
           <li><span class="cov have">have</span><span>A happy path and at least one critical failure path</span></li>
-          <li><span class="cov part">partial</span><span>Assumptions made explicit</span></li>
+          <li><span class="cov have">have</span><span>Assumptions made explicit</span></li>
         </ul>
       </div>
       <div>
@@ -351,7 +352,7 @@
           <li><span class="cov none">no</span><span>Assumptions linked to actual measurements</span></li>
           <li><span class="cov none">no</span><span>Failures tested rather than described</span></li>
           <li><span class="cov none">no</span><span>A calibrated simulation</span></li>
-          <li><span class="cov none">no</span><span>A monitoring map wired to the running system</span></li>
+          <li><span class="cov part">partial</span><span>A monitoring map — signals named per assumption, none wired</span></li>
           <li><span class="cov have">have</span><span>Change-impact analysis defined</span></li>
           <li><span class="cov part">partial</span><span>Architecture decisions documented as records</span></li>
         </ul>
@@ -359,7 +360,7 @@
     </div>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <div class="thesis">
-        <p><strong>Seven of ten on the left, one of eight on the right.</strong> The minimum viable model is essentially here; what is missing is almost entirely the production half. The single production item this project does have — change-impact — it has in more depth than the checklist asks for, because the staleness cascade <em>is</em> a change-impact analysis, written as a state machine — though nothing yet executes it, which is precisely what the third artifact below is for.</p>
+        <p><strong>Ten of ten on the left; on the right, one done and three begun of eight.</strong> The minimum viable model is complete: the framework says a model need not contain every file, only the minimum that lets a decision be taken without hiding a critical assumption, and that line is now crossed. What is missing is the production half, which mostly waits on a system that runs. The one production item already in hand — change-impact — is here in more depth than the checklist asks, because the staleness cascade <em>is</em> a change-impact analysis written as a state machine; nothing executes it yet, which is what the simulation is for.</p>
       </div>
     </div>
   </section>
@@ -367,7 +368,7 @@
   <section id="s5">
     <div class="eyebrow">Section 5</div>
     <h2>The three that get built next</h2>
-    <p>Fourteen artifacts are absent or partial and they will not all be written. Three are worth building before the defence, chosen because each answers a question this project currently cannot answer at all.</p>
+    <p>Eleven artifacts are absent or partial and they will not all be written. Three are worth building before the defence, chosen because each answers a question this project currently cannot answer at all.</p>
 
     <h3>1 · The latency budget</h3>
     <p>Because a governed pipeline that outruns nobody's patience is governed, and one that does not is theatre. Every guard on this site can hold while the editor, waiting four minutes for a lesson, learns to approve without reading. No guard fails and no invariant is violated when that happens — the only things that would show it are numbers nobody is recording yet: time in state, and approvals per minute. The method is already exercised: the same budget-then-capacity pass done on the incident-containment system, applied to the generation path — schema, guardrail, the model call itself, the five formal layers, the write.</p>
@@ -389,8 +390,8 @@
     <h2>Open questions</h2>
     <ol class="questions">
       <li><strong>Is this page a view, or a document?</strong> It currently claims to be a map: everything on it points somewhere else, and nothing is stated here that is not stated in full elsewhere. The moment the latency budget lands, that stops being true — a summary of numbers that exist nowhere else makes this the authority on those numbers, and two places will drift. Either the budget lands on Evaluation and this page links it, or this page absorbs it and stops being a map. It cannot be both.</li>
-      <li><strong>Which of the six absent artifacts are honestly out of scope?</strong> A deployment model and a traceability linter are the right things for a system with a deployment and a repository. This one has neither yet. Naming them absent is accurate; treating all six as debt is not, and the distinction should be made deliberately rather than by whichever gets written first.</li>
-      <li><strong>Do the assumptions belong in one list?</strong> They are currently distributed across eight “Open questions” sections, each next to the design decision it qualifies — which is where a reader wants them and not where an auditor does. Collecting them centralises the risk picture and guarantees the two copies disagree within a month.</li>
+      <li><strong>Which of the three absent artifacts are honestly out of scope?</strong> A deployment model is the right thing for a system with a deployment, and this one has none. A traceability linter has no such excuse — an earlier draft of this page claimed there was no repository, which was simply false: these pages are a git repository, and a working <code>model_lint.py</code> already exists from a course assignment. That artifact is debt, not scope.</li>
+      <li><strong>Now that the assumptions are in one list, which copy is authoritative?</strong> They were distributed across six “Open questions” sections, each beside the decision it qualifies — where a reader wants them and an auditor does not. They are now also in <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/assumptions.yaml">assumptions.yaml</a>, which is where the signals and thresholds live. Two copies of a risk picture disagree within a month unless one of them is declared the source; that declaration has not been made.</li>
     </ol>
 
     <div class="callout">

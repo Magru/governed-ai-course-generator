@@ -1,115 +1,151 @@
 artifact: state-inventory
-question: "Where is state authoritative?"
+question: "What does the system remember, who is authoritative for it, and how is it recovered after a failure?"
 owner: "system architect"
-updated_when: "a state is added, removed, or its exit conditions change"
-source: "states.html §2 (revision FSM) and §3 (node FSM)"
-generated: "2026-08-24"
-generator: "model/export-model.py"
+updated_when: "a variable is added, changes owner, or changes how it is recovered"
+source: "states.html §2, §3 (valid values), §9 (fields carried); transitions.html §4 (guards that read them)"
+authored: "2026-08-24"
+# Rows are state VARIABLES, not states. The 21 revision states and 11 node states
+# are the valid values of two of the variables below — they are enumerations, not
+# the inventory. Names are reproduced verbatim: transitions.yaml and both
+# generated diagrams key on them.
+#
+# Type vocabulary
+#   Durable                persists across sessions; the editor may leave and return
+#   Authoritative Durable  durable, and this owner is the source of truth for it
+#   Authoritative          owned elsewhere; a local copy is a cache and may be stale
+#   Durable Binding ID     identity of an operation, recomputable from its inputs
+#   Operational            bookkeeping; reconstructable, not itself a fact
+#   Provenance             immutable record of what something was judged against
 
-# Both machines are held in the same state store; the store is authoritative
-# for every state below. `BlockedFinal` occurs in BOTH machines with different
-# exits — always qualify it by machine.
-
-machines:
-  revision:
+variables:
+  - variable: "revision.state"
+    type: "Durable"
+    owner: "State store"
+    valid_values: ["AwaitingBrief", "BriefValidation", "BriefFeasibility", "OutlineDrafting",
+                   "OutlineGuardrail", "OutlineChecks", "OutlineRepair", "OutlineReview",
+                   "ContentInProgress", "ReadyForReview", "WholeCourseChecks",
+                   "PendingApproval", "Approved", "Published", "StaleReview", "Withdrawn",
+                   "Superseded", "Archived", "BlockedFinal", "BlockedRecoverable",
+                   "ErrorRecovery"]
     count: 21
-    states:
-      - name: "AwaitingBrief"
-        meaning: "The course record exists; no brief yet."
-        editor_can_do: "Write the brief, discard the draft"
-      - name: "BriefValidation"
-        meaning: "The input is checked in three hops: JSON schema → OPA (role, limits) → guardrail (denied topics, PII)."
-        editor_can_do: "Wait; read the refusal reason"
-      - name: "BriefFeasibility"
-        meaning: "Z3 pre-flight: are the brief's requirements mutually satisfiable at all?"
-        editor_can_do: "On unsat — read the core and fix the brief"
-      - name: "OutlineDrafting"
-        meaning: "The model proposes the structure through a forced JSON schema."
-        editor_can_do: "Cancel the run"
-      - name: "OutlineGuardrail"
-        meaning: "The managed guardrail screens the produced outline text."
-        editor_can_do: "Wait"
-      - name: "OutlineChecks"
-        meaning: "Schema, Datalog (skills grounded, no prerequisite cycles), OPA (structural policy), Z3 (counts and budgets)."
-        editor_can_do: "Wait"
-      - name: "OutlineRepair"
-        meaning: "Bounded repair: the formal explanation is fed back into the prompt, retry ≤ 2."
-        editor_can_do: "Watch the repair; abort"
-      - name: "OutlineReview"
-        meaning: "Human. The editor rewrites, renames, deletes, and approves the skeleton — before any content is paid for."
-        editor_can_do: "Edit, approve, reject with notes"
-      - name: "ContentInProgress"
-        meaning: "The long phase. An aggregate of node states; the editor comes and goes."
-        editor_can_do: "Pick a node, generate, edit, approve"
-      - name: "ReadyForReview"
-        meaning: "Guard satisfied: every node approved, none stale."
-        editor_can_do: "Start the course-level checks"
-      - name: "WholeCourseChecks"
-        meaning: "Completeness, ordering, consistency, LTL over the trace, a permission sweep across all sources used."
-        editor_can_do: "Wait; on failure see which nodes are at fault"
-      - name: "PendingApproval"
-        meaning: "Human. The final publication decision, with everything the approver needs on screen."
-        editor_can_do: "Approve, reject with notes"
-      - name: "Approved"
-        meaning: "Approved and stamped with the policy, guardrail, catalog, and model versions it passed under."
-        editor_can_do: "Publish, or send back to work"
-      - name: "Published"
-        meaning: "Live for its audience, and immutable: no transition edits its content. A change forks a new revision beside it."
-        editor_can_do: "Request a revision; withdraw it"
-      - name: "StaleReview"
-        meaning: "New in v2. A revision is being re-verified against the current versions — because a policy, catalog, or source change touched it, or because a rollback wants to put it back on air. It is never rewritten here, only re-judged."
-        editor_can_do: "Wait for the re-check; withdraw early"
-      - name: "Withdrawn"
-        meaning: "New. Out of service: re-verification failed, so this revision no longer serves — and unlike Superseded, readers part-way through lose access, because a rule violation is exactly the case where letting them finish defeats the purpose. The explanation names what changed. If no earlier revision can pass re-verification either, the course serves nothing at all: that is an accepted outcome, not a gap — withdrawal is never refused for want of a replacement, or availability would start outranking compliance."
-        editor_can_do: "Request a revision that complies"
-      - name: "Superseded"
-        meaning: "New. A later revision took the live pointer. Kept intact, still stamped, still readable by learners who started on it. Quasi-terminal: the only way back into service is a rollback, and only through re-verification; it can also be swept by a policy change while readers remain, or retired outright. Learners who started on it finish on it, within a bounded window."
-        editor_can_do: "Read; request a rollback"
-      - name: "Archived"
-        meaning: "Terminal: deliberately retired, kept for audit."
-        editor_can_do: "Clone as the basis for a new course"
-      - name: "BlockedFinal"
-        meaning: "Terminal, with no unblock path: a policy violation (OPA deny or a denied topic). An admin does not reopen it — they start a new brief, because a terminal state an admin can undo is terminal in name only. Carries the deny reason and the audit entry."
-        editor_can_do: "Read only"
-      - name: "BlockedRecoverable"
-        meaning: "The process stopped and needs a human move: retries exhausted, a contradictory brief, a rights refusal."
-        editor_can_do: "Fix the input and re-enter the relevant state"
-      - name: "ErrorRecovery"
-        meaning: "Infrastructure trouble: a model error or a timeout — an unknown, not a failure."
-        editor_can_do: "Wait; cancel"
-  node:
+    recovery: "replay the event log for this revision"
+    note: "BlockedFinal also names a node state with a different exit — always qualify by machine"
+
+  - variable: "node.state"
+    type: "Durable"
+    owner: "State store"
+    valid_values: ["Planned", "ContentDrafting", "Generated", "OutputGuardrail", "NodeChecks",
+                   "NodeRepair", "Validated", "NodeApproved", "NeedsRevalidation",
+                   "BlockedFinal", "Removed"]
     count: 11
-    states:
-      - name: "Planned"
-        meaning: "From the approved skeleton: a title and learning objectives, nothing else."
-        exit: "The editor starts generation"
-      - name: "ContentDrafting"
-        meaning: "Retrieval scoped to this topic; the model assembles blocks against the catalog's schemas."
-        exit: "→ Generated"
-      - name: "Generated"
-        meaning: "A draft exists and nothing has checked it yet."
-        exit: "→ OutputGuardrail"
-      - name: "OutputGuardrail"
-        meaning: "New in v2. The managed guardrail screens the generated text and any generated image."
-        exit: "Clean → NodeChecks · unsafe → NodeRepair"
-      - name: "NodeChecks"
-        meaning: "Block schemas · grounding (Datalog) · rights over the chunk IDs used · arithmetic (Z3) · objective coverage (Prolog)."
-        exit: "Pass → Validated · violation → NodeRepair · policy → BlockedFinal"
-      - name: "NodeRepair"
-        meaning: "The unsat core, deny reason, or proof tree is fed back into the prompt; retry ≤ 2."
-        exit: "Budget left → ContentDrafting · spent → BlockedRecoverable"
-      - name: "Validated"
-        meaning: "Formally clean, waiting on a person."
-        exit: "→ NodeApproved"
-      - name: "NodeApproved"
-        meaning: "Human. The editor approved this node; versions are stamped onto it."
-        exit: "An edit → NeedsRevalidation"
-      - name: "NeedsRevalidation"
-        meaning: "This node or something it depends on changed — including a node it points at leaving the skeleton; the approval is honestly withdrawn."
-        exit: "Hand-edited → OutputGuardrail · otherwise → NodeChecks"
-      - name: "BlockedFinal"
-        meaning: "A policy violation. Nothing the machine does moves it — no retry, no re-check, no repair."
-        exit: "Only removal, and only by a person"
-      - name: "Removed"
-        meaning: "New. The editor committed a skeleton that no longer contains this node. Terminal, and deliberately not a failure: the record, its trace and its stamps are kept for audit, but the node is no longer part of the course and no guard counts it. Re-adding a node with the same title creates a different one — the same rule that makes an edit fork rather than overwrite."
-        exit: "—"
+    recovery: "replay the event log for this node"
+
+  - variable: "revision"
+    type: "Durable Binding ID"
+    owner: "State store"
+    valid_values: "monotonic integer, one lineage per course"
+    recovery: "immutable once assigned"
+
+  - variable: "forked_from"
+    type: "Provenance"
+    owner: "State store"
+    valid_values: "a revision id, or null for the first"
+    recovery: "trace"
+    note: "a published revision is immutable; an edit forks, and this is the only link back"
+
+  - variable: "live_pointer"
+    type: "Authoritative Durable"
+    owner: "State store"
+    valid_values: "the revision id learners currently see, or null"
+    recovery: "last LivePointerMoved event"
+
+  - variable: "outline_version"
+    type: "Durable"
+    owner: "State store"
+    valid_values: "integer >= 0"
+    recovery: "count OutlineApproved events on this revision"
+    note: "advanced by the same transition that evaluates in_outline, so guards must read committed_outline instead"
+
+  - variable: "committed_outline"
+    type: "Durable"
+    owner: "State store"
+    valid_values: "the set of node ids in the approved skeleton"
+    recovery: "payload of the OutlineApproved event that set the current outline_version"
+
+  - variable: "repair_count"
+    type: "Operational"
+    owner: "State store"
+    valid_values: "integer >= 0, per revision and per node"
+    recovery: "count CheckFailed events since the last approval"
+    note: "read by retry_budget_left; exhausting it is what sends work to a person"
+
+  - variable: "blocked_at"
+    type: "Durable"
+    owner: "State store"
+    valid_values: ["brief", "outline", "node"]
+    recovery: "the CheckFailed event that caused the block"
+    note: "resolves the transition target written as 'the state that blocked'"
+
+  - variable: "approvals[]"
+    type: "Authoritative Durable"
+    owner: "The editor, recorded by the State store"
+    valid_values: "list of { actor, scope, at, what_was_shown }"
+    recovery: "not recoverable — an approval that was not recorded did not happen"
+    note: "what_was_shown is what makes the approval auditable a year later"
+
+  - variable: "idempotency_key"
+    type: "Durable Binding ID"
+    owner: "Generation gateway"
+    valid_values: "sha256 of the canonical action and its arguments"
+    recovery: "recompute from the canonical action"
+    note: "a repeat is a no-op, not a second effect"
+
+  - variable: "trace_id"
+    type: "Provenance"
+    owner: "Audit trace"
+    valid_values: "uuid, one per revision lineage"
+    recovery: "trace"
+
+  - variable: "policy_version"
+    type: "Authoritative"
+    owner: "OPA policy bundle"
+    valid_values: "immutable bundle identifier"
+    recovery: "re-query the bundle"
+    note: "stamped on the artifact; a change to it is what can make an approved revision stale"
+
+  - variable: "guardrail_version"
+    type: "Authoritative"
+    owner: "Managed guardrail service"
+    valid_values: "immutable policy identifier"
+    recovery: "service query"
+    note: "owned by a compliance officer and changed without a deployment"
+
+  - variable: "catalog_version"
+    type: "Authoritative"
+    owner: "Sylla platform — skills and block catalog"
+    valid_values: "immutable catalog identifier"
+    recovery: "platform query"
+    note: "the staleness cascade is driven by this changing under an approved node"
+
+  - variable: "kb_snapshot"
+    type: "Authoritative"
+    owner: "Sylla platform — knowledge base"
+    valid_values: "immutable snapshot identifier"
+    recovery: "platform query"
+
+  - variable: "model_id + model_version"
+    type: "Provenance"
+    owner: "Generation gateway routing table"
+    valid_values: "immutable provider model identifier"
+    recovery: "trace"
+
+  - variable: "threshold_set"
+    type: "Authoritative"
+    owner: "Configuration"
+    valid_values: "named threshold-set identifier"
+    recovery: "configuration query"
+    note: "which numbers the budgets and windows came from"
+
+open_questions:
+  - "Four variables are owned outside this system — policy, guardrail, catalog and knowledge base. Each is stamped at the moment of a transition and never re-read until something forces it. Nothing currently notices when the upstream copy moves; that is the monitoring map."
+  - "approvals[] is the only variable with no recovery path. That is deliberate and it means the state store is the single point of failure for the one fact the whole governance argument rests on."

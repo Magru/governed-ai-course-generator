@@ -1,87 +1,149 @@
 artifact: event-catalog
-question: "What do the events mean?"
+question: "What happened, and who is authorised to claim it?"
 owner: "system architect"
-updated_when: "an event is added, renamed, or changes its source or target"
-source: "states.html §6"
-generated: "2026-08-24"
-generator: "model/export-model.py"
+updated_when: "an event is added or renamed, or its envelope changes"
+source: "states.html §6; transitions.html §2, §3 (where each one is consumed)"
+authored: "2026-08-24"
+# Split into commands and events, which is the distinction the previous version
+# of this file collapsed. A command asks for something to happen, may be refused,
+# and its producer waits for an answer. An event states that something happened;
+# it is a historical fact and its producer waits for nothing.
+#
+# 7 commands + 24 events across 23 rows of the source table.
 
-# 23 catalog entries covering 31 named events. Entries that
-# carry several names group events that behave identically in the machine.
-# No payload is specified anywhere yet — see open_questions.
+envelope:
+  note: >-
+    No event in this system carries a declared envelope today. This is the shape
+    every one of them must acquire, and the failure column is why — each field is
+    here because omitting it breaks something specific.
+  fields:
+    - field: event_id
+      required: true
+      breaks_if_missing: "deduplication reuses an id and silently deletes a real event"
+    - field: event_type
+      required: true
+    - field: event_time
+      required: true
+      means: "when the producer says it happened — never processing time"
+      breaks_if_missing: "a delayed event cannot be told from a current one"
+    - field: producer
+      required: true
+      means: "the component authorised to make this claim"
+    - field: correlation_id
+      required: true
+      means: "the revision this belongs to — the thread across editor sessions"
+      note: "maps to trace_id in the state inventory"
+    - field: causation_id
+      required: true
+      means: "the event that caused this one"
+      breaks_if_missing: "out-of-order arrival can drive a transition that never legally happened"
+    - field: schema_version
+      required: true
+    - field: idempotency_key
+      required: "on any event recording a side effect"
+      breaks_if_missing: "a retry executes the effect twice instead of being a no-op"
+    - field: payload
+      required: true
 
-entry_count: 23
-event_count: 31
+commands:
+  - name: "PublishRequested"
+    producer: "editor"
+    asks: "put this revision on air"
+    may_be_refused_by: "OPA, and by the whole-course checks before it is even offered"
+    answered_by: ["ApprovalGranted", "ApprovalRejected"]
+  - name: "NodeGenerationRequested"
+    producer: "editor"
+    asks: "generate content for this node"
+    may_be_refused_by: "OPA, Datalog (are the topics this depends on approved)"
+    answered_by: ["NodeGenerated", "ModelError", "Timeout"]
+  - name: "CourseChecksRequested"
+    producer: "editor"
+    asks: "declare the revision done and run the whole-course checks"
+    may_be_refused_by: "the guard requiring every node approved and none stale"
+    answered_by: ["CheckFailed", "(auto) advance to PendingApproval"]
+  - name: "ReviseRequested"
+    producer: "editor"
+    asks: "fork a new revision from a published or withdrawn one"
+    answered_by: ["a new revision in ContentInProgress"]
+  - name: "RollbackRequested"
+    producer: "editor, with a reason"
+    asks: "put a superseded revision back on air"
+    answered_by: ["the revision enters StaleReview and must re-verify to earn the pointer"]
+    note: "rollback is not a restore — it is a re-entry through verification"
+  - name: "WithdrawRequested"
+    producer: "editor"
+    asks: "pull a live revision off air without waiting for a re-check"
+    answered_by: ["Withdrawn"]
+  - name: "ArchiveRequested"
+    producer: "editor"
+    asks: "close this course"
+    answered_by: ["Archived"]
+
 events:
-  - names: ["BriefSubmitted"]
-    source: "editor"
-    target: "course"
+  - name: "BriefSubmitted"
+    producer: "editor"
+    affects: "course"
   - names: ["OutlineGenerated", "NodeGenerated"]
-    source: "model"
-    target: "course / node"
-  - names: ["GuardrailVerdict"]
-    source: "managed service"
-    target: "course / node"
-  - names: ["CheckFailed(layer, reason)"]
-    source: "formal layer"
-    target: "course / node"
+    producer: "model, through the generation gateway"
+    affects: "course / node"
+  - name: "GuardrailVerdict"
+    producer: "managed guardrail service"
+    affects: "course / node"
+    payload_must_carry: ["verdict", "reason", "guardrail_version"]
+  - name: "CheckFailed(layer, reason)"
+    producer: "formal layer"
+    affects: "course / node"
+    payload_must_carry: ["layer", "reason", "the refusal artifact — unsat core, leak path, proof tree, or named rule"]
   - names: ["OutlineApproved", "OutlineRejected"]
-    source: "human"
-    target: "course / node"
+    producer: "human"
+    affects: "course / node"
+    payload_must_carry: ["actor", "what_was_shown", "committed_outline on approval"]
   - names: ["NodeApproved", "NodeRejected"]
-    source: "human"
-    target: "node"
-  - names: ["NodeEdited"]
-    source: "human"
-    target: "node, then the cascade"
+    producer: "human"
+    affects: "node"
+    payload_must_carry: ["actor", "what_was_shown"]
+  - names: ["ApprovalGranted", "ApprovalRejected"]
+    producer: "human"
+    affects: "course"
+    answers: "PublishRequested"
+    payload_must_carry: ["actor", "what_was_shown", "the revision id being approved"]
+    note: >-
+      These were grouped with PublishRequested in the previous catalog. A command
+      and the two events that answer it are three different things.
+  - name: "NodeEdited"
+    producer: "human"
+    affects: "node, then the staleness cascade"
   - names: ["PolicyChanged", "CatalogChanged", "KBUpdated"]
-    source: "organization configuration"
-    target: "every stamped artifact"
-  - names: ["PublishRequested", "ApprovalGranted", "ApprovalRejected"]
-    source: "human"
-    target: "course"
-  - names: ["NodeGenerationRequested"]
-    source: "human"
-    target: "node — the editor starts one, distinct from the model finishing it"
-  - names: ["CourseChecksRequested"]
-    source: "human"
-    target: "course — the editor declares the revision done"
-  - names: ["ReviseRequested"]
-    source: "human"
-    target: "forks a new revision from a published or withdrawn one"
-  - names: ["RollbackRequested"]
-    source: "human, with a reason"
-    target: "a superseded revision → StaleReview, to earn its way back"
-  - names: ["WithdrawRequested"]
-    source: "human"
-    target: "pulls a live revision off air without waiting for the re-check"
-  - names: ["BlockedInputFixed"]
-    source: "human"
-    target: "a recoverable stop is cleared and the revision returns to the state that blocked"
-  - names: ["OutlineRevised"]
-    source: "human"
-    target: "the skeleton changes after content exists — the move behind removing a blocked node"
-  - names: ["ReturnedToWork"]
-    source: "human"
-    target: "an approved revision is sent back to ContentInProgress"
-  - names: ["DraftDiscarded"]
-    source: "human"
-    target: "a draft revision is abandoned — the transition behind “cancel” and “discard”"
-  - names: ["ServiceUnreachable"]
-    source: "infrastructure"
-    target: "a guardrail hop got no answer — an unknown, not a denial"
-  - names: ["LivePointerMoved"]
-    source: "system, on publication or rollback"
-    target: "the revision losing the pointer → Superseded"
-  - names: ["LearnersNotified"]
-    source: "system, on publication — to the learners a change lands ahead of"
-    target: "none; the revision does not move, the notice is recorded"
+    producer: "organization configuration"
+    affects: "every stamped artifact"
+    note: "the only events produced outside this system; they are what make an approved revision stale"
+  - name: "BlockedInputFixed"
+    producer: "human"
+    affects: "a recoverable stop is cleared; the revision returns to the state named by blocked_at"
+  - name: "OutlineRevised"
+    producer: "human"
+    affects: "the skeleton changes after content exists"
+  - name: "ReturnedToWork"
+    producer: "human"
+    affects: "an approved revision goes back to ContentInProgress"
+  - name: "DraftDiscarded"
+    producer: "human"
+    affects: "a draft revision is abandoned"
+  - name: "ServiceUnreachable"
+    producer: "infrastructure"
+    affects: "an unknown, never a denial"
+  - name: "LivePointerMoved"
+    producer: "system, on publication or rollback"
+    affects: "the revision losing the pointer becomes Superseded"
+    payload_must_carry: ["from_revision", "to_revision"]
+  - name: "LearnersNotified"
+    producer: "system, on publication"
+    affects: "none — the revision does not move, the notice is recorded"
   - names: ["ModelError", "Timeout"]
-    source: "infrastructure"
-    target: "the current state"
-  - names: ["ArchiveRequested"]
-    source: "human"
-    target: "course"
+    producer: "infrastructure"
+    affects: "the current state routes to ErrorRecovery"
+    note: "a timeout is an unknown; whether the write landed is decided by idempotency_key, not assumed"
 
 open_questions:
-  - "No event carries a declared payload; consumers infer fields from prose."
+  - "No event is emitted today with any of the envelope fields above. Until they exist, causation cannot be reconstructed and the audit trace is a log rather than a model."
+  - "Commands are recorded in the same stream as events. Whether they belong in one log or two is undecided; the deck separates them conceptually but not physically."

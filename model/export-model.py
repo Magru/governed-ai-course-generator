@@ -104,49 +104,6 @@ def emit_endpoint(prefix, parsed, lines, indent="    "):
 
 # ----------------------------------------------------------------- artifacts
 
-def write_state_inventory(revision, node):
-    out = []
-    header("state-inventory", "Where is state authoritative?",
-           "a state is added, removed, or its exit conditions change",
-           "states.html §2 (revision FSM) and §3 (node FSM)", out)
-    out += ["# Both machines are held in the same state store; the store is authoritative",
-            "# for every state below. `BlockedFinal` occurs in BOTH machines with different",
-            "# exits — always qualify it by machine.", "",
-            "machines:", "  revision:",
-            f"    count: {len(revision)}",
-            "    states:"]
-    for name, meaning, editor in revision:
-        out += [f"      - name: {q(name)}",
-                f"        meaning: {q(meaning)}",
-                f"        editor_can_do: {q(editor)}"]
-    out += ["  node:", f"    count: {len(node)}", "    states:"]
-    for name, meaning, exit_ in node:
-        out += [f"      - name: {q(name)}",
-                f"        meaning: {q(meaning)}",
-                f"        exit: {q(exit_)}"]
-    return "\n".join(out) + "\n"
-
-
-def write_event_catalog(rows):
-    out = []
-    header("event-catalog", "What do the events mean?",
-           "an event is added, renamed, or changes its source or target",
-           "states.html §6", out)
-    names = [n for row in rows for n in re.split(r"\s*/\s*", row[0])]
-    out += [f"# {len(rows)} catalog entries covering {len(names)} named events. Entries that",
-            "# carry several names group events that behave identically in the machine.",
-            "# No payload is specified anywhere yet — see open_questions.", "",
-            f"entry_count: {len(rows)}", f"event_count: {len(names)}", "events:"]
-    for name, source, target in rows:
-        split = [n.strip() for n in re.split(r"\s*/\s*", name)]
-        out += [f"  - names: [{', '.join(q(n) for n in split)}]",
-                f"    source: {q(source)}",
-                f"    target: {q(target)}"]
-    out += ["", "open_questions:",
-            "  - " + q("No event carries a declared payload; consumers infer fields from prose.")]
-    return "\n".join(out) + "\n"
-
-
 def write_transitions(revision, node, known):
     out = []
     header("transitions", "What is permitted in each state?",
@@ -224,6 +181,33 @@ def write_mermaid(rows, known, title, terminal_hint):
     return "\n".join(lines) + "\n"
 
 
+# ----------------------------------------------------------------------- lint
+
+def lint(rev_states, node_states, events):
+    """state-inventory.yaml and event-catalog.yaml are maintained by hand, because
+    the facts they carry — variable types, owners, recovery, command-vs-event — are
+    nowhere in the HTML. They are checked against the tables instead of generated,
+    so a name added to a page and forgotten in the model is caught here."""
+    problems = []
+
+    inv = (HERE / "state-inventory.yaml").read_text(encoding="utf-8")
+    for name, _, _ in rev_states + node_states:
+        if f'"{name}"' not in inv:
+            problems.append(f"state-inventory.yaml is missing state {name}")
+
+    cat = (HERE / "event-catalog.yaml").read_text(encoding="utf-8")
+    for row in events:
+        for name in re.split(r"\s*/\s*", row[0]):
+            if f'"{name.strip()}"' not in cat:
+                problems.append(f"event-catalog.yaml is missing event {name.strip()}")
+
+    if problems:
+        sys.exit("NOTHING WRITTEN — the hand-maintained files have fallen behind:\n  "
+                 + "\n  ".join(problems))
+    print(f"  · lint ok: {len(rev_states) + len(node_states)} states and "
+          f"{sum(len(re.split(chr(47), r[0])) for r in events)} event names accounted for")
+
+
 # ---------------------------------------------------------------------- main
 
 def main():
@@ -245,9 +229,9 @@ def main():
 
     known = {r[0] for r in rev_states} | {r[0] for r in node_states}
     transitions, unresolved = write_transitions(rev_tr, node_tr, known)
+    lint(rev_states, node_states, events)
+
     files = {
-        "state-inventory.yaml": write_state_inventory(rev_states, node_states),
-        "event-catalog.yaml": write_event_catalog(events),
         "transitions.yaml": transitions,
         "failure-scenarios.yaml": write_failures(situations, modes),
         "state-machine-revision.mmd": write_mermaid(rev_tr, known, "Revision state machine", "AwaitingBrief"),
@@ -262,7 +246,9 @@ def main():
         "## Revision machine\n\n```mermaid\n"
         + files["state-machine-revision.mmd"] + "```\n\n"
         "## Node machine\n\n```mermaid\n"
-        + files["state-machine-node.mmd"] + "```\n")
+        + files["state-machine-node.mmd"] + "```\n\n"
+        "## Context\n\nHand-maintained in `context-diagram.mmd`; reproduced here so it renders.\n\n"
+        "```mermaid\n" + (HERE / "context-diagram.mmd").read_text(encoding="utf-8") + "```\n")
 
     for name, body in files.items():
         (HERE / name).write_text(body, encoding="utf-8")

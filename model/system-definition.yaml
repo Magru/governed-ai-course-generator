@@ -21,10 +21,14 @@ business_outcome:
       target: 0
     - metric: "published courses carrying a desynchronised node"
       target: 0
-  not_yet_measurable: >-
-    Nothing here states a generation latency or a throughput the system must
-    sustain. That is the absent latency-budget artifact, and until it exists
-    the outcome above is only half measurable.
+  operating_estimates:
+    note: >-
+      Estimates, not measurements — see latency-budget.yaml, and see `unknowns`
+      below for what every one of them rests on.
+    node_generation_s: 16.3
+    node_review_s: 180
+    governance_overhead_share: "3.2% of the path"
+    editors_per_model_worker: 9.6
 
 system_of_interest:
   name: "Governed AI Course Generator"
@@ -55,6 +59,13 @@ boundary:
     - "compliance officer — owns guardrail policy, changes it without a deployment"
 
 authority:
+  # The canvas asks for ONE primary decision with one authority. This system makes
+  # many judgments, but exactly one of them is the reason it exists.
+  primary_decision:
+    name: "admit_generated_content_into_a_revision"
+    authority: "the formal layer stack — schema, OPA, guardrail, Datalog, Z3, Prolog, temporal logic"
+    note: "the model proposes this decision and never makes it"
+
   decision:
     - holder: "formal engines"
       over: "structure — rights, ordering, dependencies, arithmetic, coverage, staleness"
@@ -104,3 +115,30 @@ assumptions:
   note: >-
     The framework wants one list an auditor can read. Collecting them is
     prerequisite to the monitoring map and is not done.
+
+evidence:
+  # What will let us prove, later, what actually happened.
+  - item: "the brief and the guardrail verdict on it"
+    proves: "the course was screened before a single token was paid for"
+  - item: "the refusal artifact from each layer — unsat core, leak path, proof tree, named rule"
+    proves: "a refusal was a finding, not an opinion, and can be re-read a year later"
+  - item: "approvals[] with what_was_shown"
+    proves: "a person approved this content, and which content they were looking at"
+  - item: "the stamped versions — policy, guardrail, catalog, knowledge base, model"
+    proves: "what the artifact was judged against, which is what makes staleness detectable"
+  - item: "the audit trace, threaded by trace_id"
+    proves: "the order events actually occurred in"
+  - item: "idempotency_key per side-effecting operation"
+    proves: "a repeated operation was the same operation, not a second one"
+
+unknowns:
+  # Deliberately separate from assumptions. An assumption is something we are
+  # relying on; an unknown is something nobody has measured and nobody should
+  # pretend to know. Every number the latency budget states is an estimate
+  # standing on these.
+  - "generation latency per node, in production, against a real catalog"
+  - "how long an editor actually spends reviewing one node before approving it"
+  - "how often the catalog or policy changes under a live course — this drives the entire cascade volume"
+  - "tail latency of the managed guardrail service, which is a network hop we do not own"
+  - "how many nodes a real course has; every capacity figure scales linearly with it"
+  - "whether editors approve faster as their queue grows — the failure this architecture is most exposed to and the one it cannot currently see"

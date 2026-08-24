@@ -1,0 +1,96 @@
+artifact: latency-budget
+question: "Can the generation path meet a deadline an editor will tolerate, and how many editors can one deployment carry?"
+owner: "system architect"
+updated_when: "a stage is added to the gateway, or any figure below is replaced by a measurement"
+source: "gateway stages from specification.html §7; per-layer costs from layers.html §10"
+authored: "2026-08-24"
+# EVERY NUMBER HERE IS AN ESTIMATE. Only one is taken from the specification —
+# the ~100 ms guardrail hop. The rest are engineering judgment resting on the
+# unknowns listed in system-definition.yaml, and the first measurement should
+# replace them. They are stated anyway, because a budget of estimates can be
+# argued with and an absent budget cannot.
+#
+# Path modelled: generate the content of ONE node. That is the dominant path —
+# a course is one skeleton and then this, repeated per node.
+
+path: "generate one node"
+stages:
+  - { stage: "schema — is the request well formed",        ms: 1,     basis: "in-process; the specification says microseconds" }
+  - { stage: "OPA — role, audience, limits, legal in state", ms: 5,   basis: "local bundle, no network" }
+  - { stage: "guardrail in — forbidden topics, personal data", ms: 100, basis: "specification: ~100 ms network hop" }
+  - { stage: "routing — task to model, by policy",          ms: 1,     basis: "table lookup" }
+  - { stage: "retrieval, scoped to this topic",             ms: 300,   basis: "estimate; a knowledge-base query" }
+  - { stage: "model generation — forced schema output",     ms: 12000, basis: "ESTIMATE; a lesson's worth of blocks" }
+  - { stage: "guardrail out — text and images",             ms: 200,   basis: "estimate; larger payload than the inbound check" }
+  - { stage: "block schemas from the catalog",              ms: 5,     basis: "in-process" }
+  - { stage: "grounding and rights — Datalog",              ms: 20,    basis: "over facts already in memory" }
+  - { stage: "constraints and coverage — Z3, Prolog",       ms: 50,    basis: "narrow queries only" }
+  - { stage: "admission into course state",                 ms: 20,    basis: "one write" }
+  - { stage: "audit append",                                ms: 10,    basis: "one append" }
+
+totals:
+  nominal_ms: 12712
+  nominal_s: 12.71
+  model_call_ms: 12000
+  model_call_share: "94.4%"
+  everything_else_ms: 712
+  everything_else_share: "5.6%"
+  governance_only_ms: 412
+  governance_only_share: "3.2%"
+
+finding_1:
+  claim: "Governance is not the bottleneck, and it is not close."
+  detail: >-
+    Every check this architecture adds — schema, policy, both guardrail hops,
+    Datalog, Z3, Prolog, admission and audit — sums to 412 ms against a model
+    call of twelve seconds. Three per cent. The three refusals available before
+    the first token cost 106 ms and can save the whole twelve seconds, so the
+    ordering is not merely defensible, it is the cheap direction.
+  answers: "the objection that formal verification makes a generator too slow to use"
+
+repair_loop:
+  assumed_first_pass_failure_rate: 0.30
+  note: "estimate; A6 in assumptions.yaml is the dependency, and it is unmonitored"
+  mean_model_calls_per_node: 1.3
+  mean_node_ms: 16312
+  mean_node_s: 16.31
+
+capacity:
+  model: "M/M/1 per model worker; arrival is editors requesting nodes"
+  service_rate_per_worker_nodes_per_s: 0.06130
+  throughput_per_worker_nodes_per_hour: 220.7
+  editor_cycle:
+    wait_s: 16.31
+    review_s: 180
+    note: "review time is an ESTIMATE and is the single figure that moves every conclusion below"
+    total_s: 196.3
+    arrival_rate_per_editor_nodes_per_s: 0.005094
+  editors_per_worker:
+    at_utilisation_1_0: 12.0
+    at_utilisation_0_8: 9.6
+    recommendation: "provision one model worker per eight editors and measure before trusting it"
+
+finding_2:
+  claim: "The human is the bottleneck by a factor of eleven, and that is the desired outcome."
+  detail: >-
+    A node takes 16 s to produce and 180 s to review. A twenty-node course is
+    about five minutes of generation and an hour of human attention. Authoring
+    does drop from days to hours — and the hours are review, not waiting. The
+    architecture cannot make that number smaller without removing the person,
+    which is the one thing it exists not to do.
+
+finding_3:
+  claim: "The staleness cascade is cheap, because it does not regenerate."
+  detail: >-
+    A node re-entering verification after a catalog or policy change skips
+    retrieval and the model call entirely — guardrail out, schemas, Datalog, Z3,
+    Prolog, admission, audit, about 311 ms. Five hundred stale nodes re-verify in
+    under three minutes. The cascade is frightening on paper and inexpensive in
+    practice; what it costs is the editor's attention on whatever it surfaces,
+    not machine time.
+  caveat: "a hand-edited node re-enters at OutputGuardrail and costs the same 311 ms; only a node needing regeneration pays the twelve seconds again"
+
+open_questions:
+  - "The twelve-second model call carries the entire result. If it is four seconds, one worker serves thirty editors; if it is forty, it serves four. This is the first thing to measure and nothing else on this page is worth refining before it."
+  - "Review time is assumed at three minutes per node with no evidence. Assumption A8 — that the editor reads what they approve — is measured by exactly this number, and if it falls the governance is failing whatever the guards report."
+  - "No p95 is stated anywhere here. These are means. A tail figure needs a distribution, and no distribution has been observed — see unknowns in system-definition.yaml."

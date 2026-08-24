@@ -1,0 +1,56 @@
+---
+title: Context — Governed AI Course Generator
+---
+%% The boundary separates what we control from what we depend on. The model
+%% provider sits OUTSIDE it and produces a proposal only; there is no path from
+%% the model to course state that does not cross the generation gateway, which is
+%% the single admission point and the only holder of platform credentials.
+flowchart LR
+  subgraph HUMANS["Human actors"]
+    EDITOR["Course author / editor"]
+    ADMIN["Training administrator"]
+    COMPLIANCE["Compliance officer"]
+  end
+
+  subgraph EXTERNAL["External systems — depended on, not controlled"]
+    CATALOG["Sylla platform — skills and block catalog"]
+    KB["Sylla knowledge base"]
+    PERMS["Sylla permission model"]
+    GUARD["Managed guardrail service"]
+    MODEL["Model provider"]
+    LEARNERS["Learners"]
+  end
+
+  subgraph SYS["Governed AI Course Generator — system of interest"]
+    ORCH["Orchestrator — revision and node state machines"]
+    RET["Retrieval, scoped per topic"]
+    SCHEMA["Schema validator"]
+    OPA["Policy engine — OPA"]
+    FORMAL["Formal layers — Z3, Datalog, Prolog, temporal logic"]
+    GW["Generation gateway — sole admission authority"]
+    STORE["State store"]
+    AUDIT["Audit trace"]
+  end
+
+  EDITOR -->|brief, edits, approvals| ORCH
+  ADMIN -->|thresholds, audience rules| ORCH
+  COMPLIANCE -->|guardrail policy, no deployment| GUARD
+
+  ORCH --> RET
+  RET --> KB
+  RET --> CATALOG
+
+  GW -->|prompt| MODEL
+  MODEL -->|proposal only| SCHEMA
+  SCHEMA --> GW
+  GW --> OPA
+  OPA --> PERMS
+  GW --> GUARD
+  GW --> FORMAL
+  FORMAL --> CATALOG
+
+  GW -->|admission| STORE
+  STORE --> ORCH
+  GW --> AUDIT
+  ORCH -->|prepared, never performed| EDITOR
+  EDITOR -->|publishes| LEARNERS
