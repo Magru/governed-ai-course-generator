@@ -17,11 +17,14 @@ someone revise it. That is the whole convention.
 | [`transitions.yaml`](transitions.yaml) | What is permitted in each state? | exported |
 | [`state-machine-revision.mmd`](state-machine-revision.mmd) · [`state-machine-node.mmd`](state-machine-node.mmd) | the same, as pictures — [rendered](diagrams.md) | exported |
 | [`failure-scenarios.yaml`](failure-scenarios.yaml) | How do we fail safely? | exported |
+| [`invariants.yaml`](invariants.yaml) | What must be true of every trace, and what does each rule forbid? | by hand, **linted** |
 | [`assumptions.yaml`](assumptions.yaml) | What does the model depend on, and how would we notice it stopped being true? | by hand |
 | [`latency-budget.yaml`](latency-budget.yaml) | Can the path meet a deadline, and how many editors fit? | by hand |
 
-**Nine of the framework's twenty artifacts**, and all ten items of its Minimum
-Viable System Model. The eleven that remain are the production-ready half — a
+**Nine of the framework's twenty artifacts**, and all ten items of its Minimum Viable
+System Model — plus `invariants.yaml`, which the framework's list does not contain and
+without which this system cannot be modelled: it carries the thirteen temporal properties
+the architecture exists to guarantee. The eleven that remain are the production-ready half — a
 deployment model, an executable simulation, a wired monitoring map, a traceability
 linter — and the [system model page](../modeling.html) grades every one.
 
@@ -77,7 +80,7 @@ From `latency-budget.yaml`, all estimates and all resting on `unknowns` in
 - A node takes **17 s to produce and about 180 s to review**. The human is the
   bottleneck by roughly a factor of ten, which is the intended outcome.
 - One model worker carries about **eight concurrent editors** at a safe utilisation —
-  saturation is eleven and change, and eight is that with headroom.
+  saturation is 11.35 editors per worker; eight is that with headroom.
 - The staleness cascade **does not regenerate**: five hundred stale nodes re-verify in
   under three minutes of compute — but every one it surfaces for a person is three
   minutes of review, so the same five hundred are about **25 hours of editor attention**.

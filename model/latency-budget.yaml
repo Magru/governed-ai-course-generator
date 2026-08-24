@@ -93,7 +93,7 @@ finding_1:
     twelve seconds. Three per cent. The three refusals available before the first
     token cost 106 ms together and can save the whole twelve.
   answers: "the objection that formal verification makes a generator too slow to use"
-  rests_on: "the twelve-second estimate. If the model call is two seconds, governance is 17% and this finding needs rewriting."
+  rests_on: "the twelve-second estimate. If the model call is two seconds, governance is 15.2% and this finding needs rewriting."
 
 finding_2:
   claim: "On these estimates the human is the bottleneck by roughly a factor of ten, which is the intended outcome."
@@ -109,13 +109,16 @@ finding_3:
   claim: "The staleness cascade is cheap in machine time and expensive in the only currency that matters."
   detail: >-
     A node re-entering verification after a catalog or policy change skips
-    retrieval and the model call: schema 1, OPA 5, guardrail out 200, block
-    schemas 5, Datalog 20, Z3 and Prolog 50, admission 20, audit 10 — about
-    311 ms. Five hundred stale nodes re-verify in under three minutes of compute.
-    But every node the cascade surfaces for a human is 180 s of review, so the
-    same five hundred are roughly 25 hours of editor attention. Reporting the
-    156 seconds and stopping would repeat the mistake this whole file exists to
-    avoid: pricing a system in the resource that is not scarce.
+    retrieval, the model call AND the outbound guardrail — the transition table
+    sends an unedited node straight to the checks: schema 1, OPA 5, block schemas
+    5, Datalog 20, Z3 and Prolog 50, admission 20, audit 10 — about 111 ms. Only a
+    hand-edited node re-enters through the guardrail and pays 311 ms; an earlier
+    version of this file charged every node the guardrail and had that backwards.
+    Five hundred stale nodes therefore re-verify in about a minute of compute. But
+    every node the cascade surfaces for a person is 180 s of review, so the same
+    five hundred are roughly 25 hours of editor attention. Reporting the compute
+    and stopping would repeat the mistake this whole file exists to avoid: pricing
+    a system in the resource that is not scarce.
   consequence: "the cascade needs a triage rule — which stale nodes actually require a person — and no such rule exists"
 
 open_questions:

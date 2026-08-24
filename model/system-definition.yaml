@@ -21,14 +21,10 @@ business_outcome:
       target: 0
     - metric: "published courses carrying a desynchronised node"
       target: 0
-  operating_estimates:
-    note: >-
-      Estimates, not measurements — see latency-budget.yaml, and see `unknowns`
-      below for what every one of them rests on.
-    node_generation_s: 16.3
-    node_review_s: 180
-    governance_overhead_share: "3.2% of the path"
-    editors_per_model_worker: 9.6
+  measured_by: >-
+    latency-budget.yaml. The figures are deliberately not restated here — they
+    were, and they drifted the moment the budget was recomputed. One file owns
+    a number.
 
 system_of_interest:
   name: "Governed AI Course Generator"
@@ -130,13 +126,20 @@ safe_fallbacks:
     fallback: "stop admitting work rather than admit it unchecked"
   - trigger: "the audit trace is unavailable"
     fallback: "durable outbox, and an alert — admission continues, the record is never dropped"
-    note: "an unrecorded approval did not happen; the outbox is what keeps that true under failure"
+    status: "PROPOSED — not in the specification"
+    note: >-
+      The seven specification pages name no behaviour for an unavailable audit.
+      This fills the gap the way the framework's own worked example does, which
+      makes it a design decision rather than a reading of the spec: continuing
+      admission while buffering trades a stalled system for a delayed record. The
+      opposite choice — stop admitting — is equally defensible and belongs to
+      whoever owns the compliance requirement.
   - trigger: "operator intervention"
     fallback: "kill switch"
 
 assumptions:
   status: "consolidated"
-  where: "assumptions.yaml — nine dependencies, each with a signal, threshold, response and owner"
+  where: "assumptions.yaml — ten dependencies, each with a signal, threshold, response and owner"
   monitored: 0
   note: >-
     The list exists; nothing on it is watched. Collecting them was the

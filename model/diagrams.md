@@ -1,6 +1,6 @@
 # State machines
 
-Generated from `transitions.yaml` by `export-model.py` on 2026-08-24.
+Generated from the tables in `../transitions.html` by `export-model.py` on 2026-08-25.
 Do not edit: change `../transitions.html` and re-run the exporter.
 
 ## Revision machine
@@ -123,6 +123,15 @@ Hand-maintained in `context-diagram.mmd`; reproduced here so it renders.
 ---
 title: Context — Governed AI Course Generator
 ---
+%% artifact:     context-diagram
+%% question:     Who is inside the boundary and who is outside?
+%% owner:        system architect
+%% updated_when: a component crosses the boundary, or a new external dependency appears
+%% source:       specification.html §1, §4, §7; safety.html §8
+%% authored:     2026-08-24
+%%
+%% Metadata lives in comments rather than the front matter: mermaid's front
+%% matter accepts only its own keys, and an unknown one risks the render.
 %% The boundary separates what we control from what we depend on. The model
 %% provider sits OUTSIDE it and produces a proposal only; there is no path from
 %% the model to course state that does not cross the generation gateway, which is
@@ -156,7 +165,7 @@ flowchart LR
     GW["Generation gateway — sole admission authority"]
     STORE["State store"]
     AUDIT["Audit trace"]
-    MON["Runtime monitor"]
+    MON["Runtime monitor — PROPOSED, does not exist"]
     REPAIR["Repair loop — bounded retries"]
   end
 
@@ -164,6 +173,7 @@ flowchart LR
   ADMIN -->|thresholds, audience rules| ORCH
   COMPLIANCE -->|guardrail policy, no deployment| GUARD
 
+  ORCH -->|generate this node| GW
   ORCH --> RET
   RET --> KB
   RET --> CATALOG

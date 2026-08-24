@@ -1,0 +1,101 @@
+artifact: invariants
+question: "What must be true of every trace this system produces, and what does each rule forbid?"
+owner: "system architect"
+updated_when: "an invariant is added, weakened, or its checking point moves"
+source: "states.html §8 — formulas reproduced verbatim; layers.html §7 for how they are evaluated"
+authored: "2026-08-24"
+# The most load-bearing content of the whole project, and it was missing from
+# this package until now: a model that cannot express the properties the system
+# guarantees is missing its point. Formulas are copied character for character
+# from the specification and linted against it — the meaning and forbids lines
+# are a reading of them.
+#
+# Operators, over a FINITE trace:
+#   G φ   φ holds at every step             F φ   φ holds at some later step
+#   X φ   φ holds at the next step          O φ   φ held at some earlier step
+#   φ U ψ φ holds until ψ does
+#
+# Evaluated by replaying the audit trace. Today that happens once per revision,
+# at WholeCourseChecks — see open_questions.
+
+count: 13
+evaluated_at: "WholeCourseChecks, by replaying the trace for the revision"
+evaluated_by: "temporal logic layer — no model checker; a finite trace is walked"
+refusal_artifact: "the violated formula and the event that broke it"
+
+invariants:
+  - id: I1
+    formula: "G(content_generated(N) → course_state = ContentInProgress)"
+    means: "content only ever appears while the revision is in its content phase"
+    forbids: "generating a node against an approved, published or blocked revision"
+
+  - id: I2
+    formula: "G(exam_generated(E) → O content_approved(topics(E)))"
+    means: "an exam may only be generated after every topic it tests was approved"
+    forbids: "an exam that tests material nobody has signed off, or that does not yet exist"
+
+  - id: I3
+    formula: "G(published(C) → all_nodes_approved(C) ∧ ¬∃ stale(C))"
+    means: "publication requires every node approved and not one of them stale"
+    forbids: "shipping a course with an unreviewed or out-of-date node in it"
+
+  - id: I4
+    formula: "G(node_edited(N) → X needs_revalidation(N))"
+    means: "editing a node moves it to revalidation on the very next step"
+    forbids: "an edit that quietly keeps its old approval — this is the cascade's first link"
+    note: "the only invariant using X; the transition is immediate, not eventual"
+
+  - id: I5
+    formula: "G(removed(N) → O outline_committed_without(N))"
+    means: "a node can only be removed after an outline was committed that excludes it"
+    forbids: "deleting a node the approved skeleton still calls for"
+
+  - id: I6
+    formula: "G(generated(A) → O guardrail_checked(A))"
+    means: "nothing generated exists in the record without having been screened first"
+    forbids: "admitting model output that never met the guardrail"
+
+  - id: I7
+    formula: "G(published(C) → policy_version(C) = current ∨ stale(C) ∨ ¬affected(C))"
+    means: >-
+      a live course either was judged under the policy in force, or is marked
+      stale, or the policy change does not touch it
+    forbids: "a course quietly live under a rule that was never applied to it"
+    note: "the ∨ ¬affected(C) clause is what stops every policy edit invalidating the catalogue"
+
+  - id: I8
+    formula: "G(restricted_chunk_used(N) → O permission_checked(N))"
+    means: "restricted material can only be used after rights were checked"
+    forbids: "a leak — restricted source reaching an audience without rights to it"
+
+  - id: I9
+    formula: "G(action → F audit(action))"
+    means: "every action is eventually recorded"
+    forbids: "an unlogged side effect"
+    note: "the only F: the audit may lag, it may not be skipped. Assumption A-audit-lag bounds the lag."
+
+  - id: I10
+    formula: "G(published(R) → G ¬node_edited(R))"
+    means: "once a revision is published, no node in it is ever edited again"
+    forbids: "mutating live content — an edit forks a new revision instead"
+    note: "nested G: immutability holds for the whole remaining trace, not just the next step"
+
+  - id: I11
+    formula: "G(live(C) = R → published(R))"
+    means: "whatever revision learners see is a published one"
+    forbids: "pointing the live course at a draft, a withdrawn or an archived revision"
+
+  - id: I12
+    formula: "G(superseded(R) → O ∃R' (successor(R', R) ∧ published(R')))"
+    means: "a revision only becomes superseded because a successor was published"
+    forbids: "a revision losing the pointer for any other reason"
+
+  - id: I13
+    formula: "G(rolled_back_to(R) → O re_verified(R))"
+    means: "a revision can only be rolled back to after it re-earned verification"
+    forbids: "restoring an old revision as-is — rollback is re-entry through the checks, not a restore"
+
+open_questions:
+  - "All thirteen are checked once, at review time. Several — I10 especially — could be evaluated on every event, turning a review-time audit into a runtime assertion. That is strictly better and strictly more expensive, and nothing here has measured which are worth it."
+  - "I9 is the only F. On a finite trace, F is only meaningful if the trace ends after the audit lands; a run cut short by a crash satisfies nothing. The bound belongs in the audit-lag quality attribute and the two are not yet connected."
+  - "No invariant covers the node machine's own recovery. That is not an oversight in this file — the node machine reaches ErrorRecovery and never leaves it, and no property can be stated about a state with no exit. See transitions.yaml."

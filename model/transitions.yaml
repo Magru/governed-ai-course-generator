@@ -3,7 +3,7 @@ question: "What is permitted in each state?"
 owner: "system architect"
 updated_when: "any row of the transition tables changes"
 source: "transitions.html §2 (revision) and §3 (node)"
-generated: "2026-08-24"
+generated: "2026-08-25"
 generator: "model/export-model.py"
 
 # 55 revision transitions + 19 node transitions.
@@ -696,7 +696,7 @@ open_questions:
   cross_machine_leak:
     defect: "Two node transitions target ErrorRecovery — ContentDrafting on Timeout or ModelError, and OutputGuardrail on Timeout or ServiceUnreachable. ErrorRecovery is a REVISION state; the node machine neither declares it nor leaves it."
     consequence: "A node entering it has no transition out. Either the node machine needs its own recovery state with an exit, or these two edges belong to the revision and the node stays put."
-    found_by: "exporting the tables into files; six months of prose never surfaced it"
+    found_by: "exporting the tables into files; a month of prose and four rounds of review never surfaced it"
   unresolved_endpoints:
     - machine: revision
       event: "BlockedInputFixed"

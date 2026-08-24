@@ -140,8 +140,8 @@ def write_transitions(revision, node, known):
             "    consequence: " + q("A node entering it has no transition out. Either the node "
                                     "machine needs its own recovery state with an exit, or these "
                                     "two edges belong to the revision and the node stays put."),
-            "    found_by: " + q("exporting the tables into files; six months of prose never "
-                                 "surfaced it"),
+            "    found_by: " + q("exporting the tables into files; a month of prose and four "
+                                 "rounds of review never surfaced it"),
             "  unresolved_endpoints:"]
     for machine, event, side, raw, kind in unresolved:
         out += [f"    - machine: {machine}", f"      event: {q(event)}",
@@ -217,6 +217,13 @@ def lint(rev_states, node_states, events):
             if f'"{name.strip()}"' not in cat:
                 problems.append(f"event-catalog.yaml is missing event {name.strip()}")
 
+    inv_file = (HERE / "invariants.yaml").read_text(encoding="utf-8")
+    for formula in spec_invariants():
+        if formula not in inv_file:
+            problems.append(f"invariants.yaml is missing {formula}")
+
+    problems += figure_drift()
+
     if problems:
         sys.exit("NOTHING WRITTEN — the hand-maintained files have fallen behind:\n  "
                  + "\n  ".join(problems))
@@ -242,6 +249,69 @@ def cross_machine_leaks(rev_states, node_states):
                 for st in parsed["states"]:
                     if st not in own[machine] and (machine, st) not in ACCEPTED_LEAKS:
                         out.append(f"{machine} machine reaches {st}, which it does not declare")
+    return sorted(set(out))
+
+
+def spec_invariants():
+    """The temporal formulas, lifted verbatim from the specification."""
+    block = re.search(r'<div class="formula"[^>]*>(.*?)</div>',
+                      section("states.html", "s8"), re.S)
+    if not block:
+        sys.exit("FATAL: states.html §8 has no formula block")
+    out = []
+    for line in re.split(r"<br\s*/?>|\n", block.group(1)):
+        text = _text(line).split("←")[0].strip()
+        if re.search(r"\b[GFXO]\s*\(", text):
+            out.append(text)
+    return out
+
+
+# Figures that appear on more than one surface. Cross-view consistency is the
+# thing this framework is loudest about, and the numbers drifted twice before
+# this check existed: a budget was recomputed and its copies were not.
+FIGURE_SOURCES = {
+    "mean_node_s": r"mean_node_s:\s*([\d.]+)",
+    "with_headroom": r"with_headroom:\s*([\d.]+)",
+}
+
+
+def figure_drift():
+    """One file owns a number. latency-budget.yaml owns the timing figures; no
+    other file may restate them, because restating is how they drifted twice."""
+    budget = (HERE / "latency-budget.yaml").read_text(encoding="utf-8")
+    canon = {}
+    for key, pattern in FIGURE_SOURCES.items():
+        found = re.search(pattern, budget)
+        if not found:
+            return [f"latency-budget.yaml no longer states {key}"]
+        canon[key] = float(found.group(1))
+
+    out = []
+    banned = ("node_generation_s", "editors_per_model_worker", "mean_node_s", "with_headroom")
+    for name in ("system-definition.yaml", "assumptions.yaml", "invariants.yaml"):
+        text = (HERE / name).read_text(encoding="utf-8")
+        for key in banned:
+            if f"{key}:" in text:
+                out.append(f"{name} restates {key}; latency-budget.yaml owns it")
+
+    # Prose surfaces may round, but not contradict.
+    for name, path in (("README.md", HERE / "README.md"),
+                       ("modeling.html", SITE / "modeling.html")):
+        text = path.read_text(encoding="utf-8")
+        for n in re.findall(r"(?<![\d.])(\d{1,2})\s+s\b(?=[^<]{0,40}(?:produce|node))", text):
+            if abs(int(n) - canon["mean_node_s"]) > 1:
+                out.append(f"{name} says {n} s per node; the budget says {canon['mean_node_s']}")
+        # Prose must use the budget's own recommendation word, not merely a
+        # number near it — otherwise two surfaces round differently and disagree.
+        rec = re.search(r"recommendation: \"one model worker per (\w+) editors",
+                        budget)
+        if rec:
+            for word in ("six", "seven", "eight", "nine", "ten", "eleven", "twelve"):
+                if word == rec.group(1):
+                    continue
+                if re.search(rf"\b(?:about |roughly )?{word} (?:concurrent )?editors\b", text):
+                    out.append(f"{name} says {word} editors; the budget recommends "
+                               f"{rec.group(1)}")
     return sorted(set(out))
 
 
@@ -278,7 +348,7 @@ def main():
     # same two diagrams are emitted again here — generated, never hand-copied.
     files["diagrams.md"] = (
         "# State machines\n\n"
-        "Generated from `transitions.yaml` by `export-model.py` on " + STAMP + ".\n"
+        "Generated from the tables in `../transitions.html` by `export-model.py` on " + STAMP + ".\n"
         "Do not edit: change `../transitions.html` and re-run the exporter.\n\n"
         "## Revision machine\n\n```mermaid\n"
         + files["state-machine-revision.mmd"] + "```\n\n"
