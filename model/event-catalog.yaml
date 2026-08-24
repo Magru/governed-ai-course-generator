@@ -1,0 +1,87 @@
+artifact: event-catalog
+question: "What do the events mean?"
+owner: "system architect"
+updated_when: "an event is added, renamed, or changes its source or target"
+source: "states.html §6"
+generated: "2026-08-24"
+generator: "model/export-model.py"
+
+# 23 catalog entries covering 31 named events. Entries that
+# carry several names group events that behave identically in the machine.
+# No payload is specified anywhere yet — see open_questions.
+
+entry_count: 23
+event_count: 31
+events:
+  - names: ["BriefSubmitted"]
+    source: "editor"
+    target: "course"
+  - names: ["OutlineGenerated", "NodeGenerated"]
+    source: "model"
+    target: "course / node"
+  - names: ["GuardrailVerdict"]
+    source: "managed service"
+    target: "course / node"
+  - names: ["CheckFailed(layer, reason)"]
+    source: "formal layer"
+    target: "course / node"
+  - names: ["OutlineApproved", "OutlineRejected"]
+    source: "human"
+    target: "course / node"
+  - names: ["NodeApproved", "NodeRejected"]
+    source: "human"
+    target: "node"
+  - names: ["NodeEdited"]
+    source: "human"
+    target: "node, then the cascade"
+  - names: ["PolicyChanged", "CatalogChanged", "KBUpdated"]
+    source: "organization configuration"
+    target: "every stamped artifact"
+  - names: ["PublishRequested", "ApprovalGranted", "ApprovalRejected"]
+    source: "human"
+    target: "course"
+  - names: ["NodeGenerationRequested"]
+    source: "human"
+    target: "node — the editor starts one, distinct from the model finishing it"
+  - names: ["CourseChecksRequested"]
+    source: "human"
+    target: "course — the editor declares the revision done"
+  - names: ["ReviseRequested"]
+    source: "human"
+    target: "forks a new revision from a published or withdrawn one"
+  - names: ["RollbackRequested"]
+    source: "human, with a reason"
+    target: "a superseded revision → StaleReview, to earn its way back"
+  - names: ["WithdrawRequested"]
+    source: "human"
+    target: "pulls a live revision off air without waiting for the re-check"
+  - names: ["BlockedInputFixed"]
+    source: "human"
+    target: "a recoverable stop is cleared and the revision returns to the state that blocked"
+  - names: ["OutlineRevised"]
+    source: "human"
+    target: "the skeleton changes after content exists — the move behind removing a blocked node"
+  - names: ["ReturnedToWork"]
+    source: "human"
+    target: "an approved revision is sent back to ContentInProgress"
+  - names: ["DraftDiscarded"]
+    source: "human"
+    target: "a draft revision is abandoned — the transition behind “cancel” and “discard”"
+  - names: ["ServiceUnreachable"]
+    source: "infrastructure"
+    target: "a guardrail hop got no answer — an unknown, not a denial"
+  - names: ["LivePointerMoved"]
+    source: "system, on publication or rollback"
+    target: "the revision losing the pointer → Superseded"
+  - names: ["LearnersNotified"]
+    source: "system, on publication — to the learners a change lands ahead of"
+    target: "none; the revision does not move, the notice is recorded"
+  - names: ["ModelError", "Timeout"]
+    source: "infrastructure"
+    target: "the current state"
+  - names: ["ArchiveRequested"]
+    source: "human"
+    target: "course"
+
+open_questions:
+  - "No event carries a declared payload; consumers infer fields from prose."

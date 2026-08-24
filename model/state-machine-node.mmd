@@ -1,0 +1,29 @@
+---
+title: Node state machine
+---
+stateDiagram-v2
+    direction LR
+    state "any state but Removed" as XanystatebutRemoved
+    state "course → BlockedRecoverable" as XcourseBlockedRecoverable
+
+    [*] --> Planned
+
+    Planned --> ContentDrafting : NodeGenerationRequested
+    ContentDrafting --> Generated : NodeGenerated
+    ContentDrafting --> ErrorRecovery : Timeout · ModelError
+    Generated --> OutputGuardrail : auto
+    OutputGuardrail --> ErrorRecovery : Timeout · ServiceUnreachable
+    OutputGuardrail --> NodeChecks : GuardrailVerdict(allow)
+    OutputGuardrail --> NodeRepair : GuardrailVerdict(deny)
+    NodeChecks --> Validated : auto
+    NodeChecks --> BlockedFinal : CheckFailed(opa, …)
+    NodeChecks --> NodeRepair : CheckFailed(datalog · z3 · schema)
+    NodeRepair --> ContentDrafting : auto
+    NodeRepair --> XcourseBlockedRecoverable : auto
+    Validated --> NodeApproved : NodeApproved
+    Validated --> NodeRepair : NodeRejected
+    NodeApproved --> NeedsRevalidation : NodeEdited
+    NodeApproved --> NeedsRevalidation : (dependency changed)
+    NeedsRevalidation --> OutputGuardrail : auto
+    NeedsRevalidation --> NodeChecks : auto
+    XanystatebutRemoved --> Removed : OutlineApproved

@@ -113,7 +113,7 @@
       <span class="meta-chip">Answered somewhere: <b>6</b></span>
       <span class="meta-chip">Partial: <b>8</b></span>
       <span class="meta-chip">Absent: <b>6</b></span>
-      <span class="meta-chip">Kept as a file: <b>0</b></span>
+      <span class="meta-chip">Kept as a file: <b>6</b></span>
       <span class="meta-chip">Status: <b>map, not a document</b></span>
     </div>
   </header>
@@ -153,7 +153,7 @@
           <tr>
             <td class="role">Model</td>
             <td>An abstraction of the system, partial on purpose, fitted to a specific question</td>
-            <td><strong>This page</strong>, plus the artifacts it points at</td>
+            <td><strong>This page</strong> as the map, and <a href="https://github.com/Magru/governed-ai-course-generator/tree/main/model">the model package</a> as the six artifacts that exist so far</td>
           </tr>
           <tr>
             <td class="role">Simulation</td>
@@ -232,7 +232,8 @@
       <p>A complete system model is twenty artifacts in four groups. Each answers one specific question, each has an owner, and each is updated when the evidence behind it changes — a living asset, not documentation written after the design is done. Below, every one of the twenty is matched against what this project actually has.</p>
       <div class="callout">
         <div class="eyebrow">How to read the marks</div>
-        <p><b>Present</b> means the question is answered somewhere in this set, usually in prose. It does <em>not</em> mean the artifact exists as the framework means it. Fragments are written out — the block schema on <a href="layers.html#s2">Validation §2</a> is a real JSON Schema, quoted in full — but they are quoted inside a page, not <b>kept as files with an owner and an update trigger, revised when the evidence behind them changes</b>. On that reading the count is <b>nought of twenty</b>, and the useful information here is which questions already have answers ready to be moved into a file.</p>
+        <p><b>Present</b> means the question is answered somewhere in this set <em>and</em> is now kept as a file. The framework asks for artifacts, not chapters: one file per question, with an owner and an event that should make someone revise it. Six of the twenty exist that way today, in <a href="https://github.com/Magru/governed-ai-course-generator/tree/main/model">the model package</a> — four of them exported from the tables on these pages by a script that re-runs whenever a table changes, two maintained by hand. The remaining fourteen are prose or nothing.</p>
+        <p>Moving those tables into files was not a formatting exercise. It surfaced five questions the prose had been absorbing — a state name that means two different things in the two machines, seven transition endpoints that are not state names, a transition that never says where the node goes, a separator that means <em>either</em> in one row and <em>of</em> in the next, and an event catalog with no payloads. All five are written down in <a href="https://github.com/Magru/governed-ai-course-generator/tree/main/model">the package README</a> and none of them is answered yet.</p>
         <p>The framework is also inconsistent with itself about the size of the package — one slide calls it fourteen artifacts, the enumeration and the closing summary both say twenty. Twenty is followed here because it is the only figure that comes with a list.</p>
       </div>
     </div>
@@ -242,7 +243,7 @@
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
-          <tr><td class="art">system-definition</td><td>What does the system promise?</td><td><span class="cov have">present</span> As prose, in full. <a href="specification.html#s1">§1</a>, <a href="specification.html#s2">§2</a></td></tr>
+          <tr><td class="art">system-definition</td><td>What does the system promise?</td><td><span class="cov have">present</span> Promise, boundary, both authorities, constraints and fallbacks. <a href="specification.html#s1">§1</a>, <a href="specification.html#s2">§2</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/system-definition.yaml">file</a></td></tr>
           <tr><td class="art">context-diagram</td><td>Who is inside the boundary, who is outside?</td><td><span class="cov none">absent</span> The boundary is described but never drawn, so nobody can check it at a glance</td></tr>
           <tr><td class="art">quality-attribute-scenarios</td><td>What is required, in measurable terms?</td><td><span class="cov part">partial</span> Quality is defined for the <em>content</em> the system produces, never for the system itself. <a href="specification.html#s12">§12</a></td></tr>
         </tbody>
@@ -254,7 +255,7 @@
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
-          <tr><td class="art">functional-model</td><td>What does the system do?</td><td><span class="cov have">present</span> The editor's journey and the generation gateway. <a href="specification.html#s5">§5</a>, <a href="specification.html#s7">§7</a></td></tr>
+          <tr><td class="art">functional-model</td><td>What does the system do?</td><td><span class="cov have">present</span> Three phases and an eleven-stage gateway with five named refusals. <a href="specification.html#s5">§5</a>, <a href="specification.html#s7">§7</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/functional-model.yaml">file</a></td></tr>
           <tr><td class="art">component-model</td><td>Who does it?</td><td><span class="cov part">partial</span> Components are named per concern across <a href="layers.html">Validation</a> and <a href="safety.html">Safety</a>, but never assembled into one picture</td></tr>
           <tr><td class="art">information-model</td><td>Who actually owns each piece of data?</td><td><span class="cov part">partial</span> Every field a course and a node carry, listed in full — but as a flat list: no owner named per field, and no relations between entities. <a href="states.html#s9">States §9</a></td></tr>
           <tr><td class="art">deployment-model</td><td>Where does it run, and who is trusted?</td><td><span class="cov none">absent</span> Trust boundaries are worked out for secrets only. <a href="safety.html#s8">Safety §8</a></td></tr>
@@ -268,9 +269,9 @@
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
         <tbody>
           <tr><td class="art">responsibility-matrix</td><td>Who holds authority, and who owns the outcome?</td><td><span class="cov part">partial</span> A Layer column rather than a matrix: 65 of the 74 transitions name the layer that evaluates them and 9 name none — and which engine <em>checks</em> a move is a different fact from who owns its outcome. <a href="transitions.html#s2">Transitions §2</a></td></tr>
-          <tr><td class="art">state-inventory</td><td>Where is state authoritative?</td><td><span class="cov have">present</span> 21 revision states, 11 node states, each with its owner. <a href="states.html#s2">§2</a>, <a href="states.html#s3">§3</a></td></tr>
-          <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 55 + 19 transitions behind 37 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a></td></tr>
-          <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> 23 catalog entries covering 31 named events, each with source and target. No payload is specified. <a href="states.html#s6">States §6</a></td></tr>
+          <tr><td class="art">state-inventory</td><td>Where is state authoritative?</td><td><span class="cov have">present</span> 21 revision states and 11 node states, all held in one store — which is the answer to the question, and which is also why <code>BlockedFinal</code> meaning two different things is a problem. <a href="states.html#s2">§2</a>, <a href="states.html#s3">§3</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/state-inventory.yaml">file</a></td></tr>
+          <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 55 + 19 transitions behind 37 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/transitions.yaml">data</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/diagrams.md">diagram</a></td></tr>
+          <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> 23 catalog entries covering 31 named events, each with source and target. No payload is specified. <a href="states.html#s6">States §6</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/event-catalog.yaml">file</a></td></tr>
           <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov part">partial</span> One happy path in prose. No failure sequences, and none drawn. <a href="walkthrough.html">Walkthrough</a></td></tr>
         </tbody>
       </table>
@@ -283,7 +284,7 @@
         <tbody>
           <tr><td class="art">action_request.schema.json</td><td>What is a valid request?</td><td><span class="cov part">partial</span> <code>schema_valid(args)</code> is step 2 of the eight-step membrane and the ordering is settled — but the only schema actually written is for content blocks, not for action requests. <a href="layers.html#s2">Validation §2</a>, <a href="safety.html#s3">Safety §3</a></td></tr>
           <tr><td class="art">latency-budget</td><td>Can this path meet its deadline?</td><td><span class="cov none">absent</span> The single largest hole in the set</td></tr>
-          <tr><td class="art">failure-scenarios</td><td>How do we fail safely?</td><td><span class="cov have">present</span> Nine situations walked event by event — states changed, fields written, the editor's next move (<a href="states.html#s5">States §5</a>) — over a 14-mode matrix with owners (<a href="safety.html#s10">Safety §10</a>)</td></tr>
+          <tr><td class="art">failure-scenarios</td><td>How do we fail safely?</td><td><span class="cov have">present</span> Nine situations walked event by event — states changed, fields written, the editor's next move (<a href="states.html#s5">States §5</a>) — over a 14-mode matrix with owners (<a href="safety.html#s10">Safety §10</a>) <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/failure-scenarios.yaml">file</a></td></tr>
           <tr><td class="art">simulation</td><td>What happens under load, spike, delay, retry storm?</td><td><span class="cov none">absent</span></td></tr>
           <tr><td class="art">monitoring-map</td><td>How will we know the assumptions are still alive?</td><td><span class="cov none">absent</span> <a href="specification.html#s13">Seven production signals</a> are named, but they watch what the system <em>does</em> — not whether the premises it runs on still hold</td></tr>
           <tr><td class="art">assumptions</td><td>What does the model depend on?</td><td><span class="cov part">partial</span> Real, honest, and scattered across six separate “Open questions” sections instead of held in one list</td></tr>

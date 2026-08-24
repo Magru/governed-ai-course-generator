@@ -1,0 +1,106 @@
+artifact: system-definition
+question: "What does the system promise?"
+owner: "system architect"
+updated_when: "the promise, the boundary, or an authority changes"
+source: "specification.html §1, §2, §4; safety.html §9"
+authored: "2026-08-24"
+# Written by hand, not exported: the specification states these in prose and the
+# structuring below is a reading of it. Every field traces to a named section.
+
+business_outcome:
+  statement: >-
+    Course authoring drops from days to hours, with no course reaching learners
+    that bypassed a formal check or a human approval.
+  measures:
+    - metric: "authoring time per course"
+      from: "days"
+      to: "hours"
+    - metric: "courses published bypassing formal checks or human approval"
+      target: 0
+    - metric: "leaks of a restricted source into a course"
+      target: 0
+    - metric: "published courses carrying a desynchronised node"
+      target: 0
+  not_yet_measurable: >-
+    Nothing here states a generation latency or a throughput the system must
+    sustain. That is the absent latency-budget artifact, and until it exists
+    the outcome above is only half measurable.
+
+system_of_interest:
+  name: "Governed AI Course Generator"
+  is: >-
+    A standalone prototype that drafts course content for the Sylla learning
+    platform and admits it to course state only through a governed gateway.
+  is_not: >-
+    Production code. It models the same entities and the same permission rules
+    as the platform, and is designed so its architecture can graduate into it.
+
+boundary:
+  inside:
+    - "generation gateway"
+    - "five formal engines and the schema validator"
+    - "revision and node state machines"
+    - "state store, audit trace, repair loop"
+  outside:
+    - name: "Sylla platform"
+      relied_on_for: "skills catalog, knowledge base, permission model, human approvals"
+    - name: "managed guardrail service"
+      relied_on_for: "forbidden topics, harmful text, personal data, image content"
+      note: "configured and versioned outside the application; a network hop"
+    - name: "model provider"
+      relied_on_for: "generation, under a routing table the gateway owns"
+  actors:
+    - "course author"
+    - "training administrator"
+    - "compliance officer — owns guardrail policy, changes it without a deployment"
+
+authority:
+  decision:
+    - holder: "formal engines"
+      over: "structure — rights, ordering, dependencies, arithmetic, coverage, staleness"
+      basis: "deterministic versioned rules that produce a proof rather than an opinion"
+    - holder: "managed services"
+      over: "meaning and modality — a forbidden request phrased indirectly, harmful text, personal data, what is inside a generated image"
+      basis: "configuration with its own version history, not code"
+    - holder: "the editor"
+      over: "pedagogical judgment — whether this is worth teaching, in this order, to these people"
+      basis: "delegated to no model, no service and no rule"
+  boundary_rule: >-
+    A check statable about a graph, a set, an ordering or a number belongs to the
+    formal engines. A check requiring a text to be understood or an image to be
+    looked at is configured, never coded. A question of pedagogical value is a
+    person's.
+  execution:
+    holder: "the generation gateway"
+    rule: "the gateway, not the model, decides whether a write happens"
+    autonomy_level: 4
+    ceiling: 4
+    ceiling_is: "deliberate, not a stage toward level 6"
+    excluded_from_the_system: ["publication", "withdrawal", "learner notification"]
+    excluded_because: "all three are one rung higher; the generator prepares them and a person performs them"
+
+hard_constraints:
+  - "Nothing generated enters course state without crossing the gateway."
+  - "A missing verdict is never read as permission — no degraded mode turns an unavailable layer into a pass."
+  - "A published revision is immutable; an edit forks a new one."
+  - "Publication requires every node approved and none stale, then a person."
+  - "Autonomy never exceeds level 4."
+
+safe_fallbacks:
+  - trigger: "policy denies"
+    fallback: "terminal refusal carrying the rule that denied, by name"
+  - trigger: "guardrail unreachable"
+    fallback: "timeout routed to ErrorRecovery — an unknown, never a denial and never a pass"
+  - trigger: "repair budget exhausted"
+    fallback: "the revision stops at BlockedRecoverable and asks a person"
+  - trigger: "a formal engine cannot run"
+    fallback: "stop admitting work rather than admit it unchecked"
+  - trigger: "operator intervention"
+    fallback: "kill switch"
+
+assumptions:
+  status: "not consolidated"
+  where: "six 'Open questions' sections across the specification pages"
+  note: >-
+    The framework wants one list an auditor can read. Collecting them is
+    prerequisite to the monitoring map and is not done.
