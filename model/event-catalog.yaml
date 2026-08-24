@@ -47,10 +47,16 @@ envelope:
 
 commands:
   - name: "PublishRequested"
-    producer: "editor"
-    asks: "put this revision on air"
-    may_be_refused_by: "OPA, and by the whole-course checks before it is even offered"
-    answered_by: ["ApprovalGranted", "ApprovalRejected"]
+    producer: "editor, through the orchestrator"
+    asks: "put this already-approved revision on air"
+    issued_from_state: "Approved"
+    may_be_refused_by: "OPA"
+    answered_by: ["the revision reaching Published", "LivePointerMoved"]
+    note: >-
+      An earlier version of this file said ApprovalGranted answers this command.
+      It does not — the order runs the other way. ApprovalGranted moves the
+      revision from PendingApproval to Approved, and only then can publication be
+      requested. The approval is a precondition of the command, not its reply.
   - name: "NodeGenerationRequested"
     producer: "editor"
     asks: "generate content for this node"
@@ -81,8 +87,14 @@ commands:
 
 events:
   - name: "BriefSubmitted"
-    producer: "editor"
+    producer: "orchestrator, recording an act by the course editor"
     affects: "course"
+    borderline: >-
+      This one sits on the line. The editor submits and waits for a verdict, which
+      fits the definition of a command. It is kept as an event because the fact it
+      records — this brief now exists on this course — is true whether or not
+      validation ever runs, and the validation that follows is a consequence, not
+      a reply. Worth naming rather than deciding silently.
   - names: ["OutlineGenerated", "NodeGenerated"]
     producer: "model, through the generation gateway"
     affects: "course / node"
@@ -95,17 +107,17 @@ events:
     affects: "course / node"
     payload_must_carry: ["layer", "reason", "the refusal artifact — unsat core, leak path, proof tree, or named rule"]
   - names: ["OutlineApproved", "OutlineRejected"]
-    producer: "human"
+    producer: "orchestrator, recording a decision by the course editor"
     affects: "course / node"
     payload_must_carry: ["actor", "what_was_shown", "committed_outline on approval"]
   - names: ["NodeApproved", "NodeRejected"]
-    producer: "human"
+    producer: "orchestrator, recording a decision by the course editor"
     affects: "node"
     payload_must_carry: ["actor", "what_was_shown"]
   - names: ["ApprovalGranted", "ApprovalRejected"]
-    producer: "human"
-    affects: "course"
-    answers: "PublishRequested"
+    producer: "orchestrator, recording a decision by the course editor"
+    affects: "course — PendingApproval to Approved, or back to ContentInProgress"
+    answers: "the approval gate reached automatically after the whole-course checks pass; no command precedes it"
     payload_must_carry: ["actor", "what_was_shown", "the revision id being approved"]
     note: >-
       These were grouped with PublishRequested in the previous catalog. A command

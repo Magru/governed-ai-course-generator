@@ -132,6 +132,16 @@ def write_transitions(revision, node, known):
     out += ["", "open_questions:",
             "  note: " + q("The endpoints below are not state names. Each needs a resolution "
                            "rule before this file can drive a simulation."),
+            "  cross_machine_leak:",
+            "    defect: " + q("Two node transitions target ErrorRecovery — "
+                               "ContentDrafting on Timeout or ModelError, and OutputGuardrail "
+                               "on Timeout or ServiceUnreachable. ErrorRecovery is a REVISION "
+                               "state; the node machine neither declares it nor leaves it."),
+            "    consequence: " + q("A node entering it has no transition out. Either the node "
+                                    "machine needs its own recovery state with an exit, or these "
+                                    "two edges belong to the revision and the node stays put."),
+            "    found_by: " + q("exporting the tables into files; six months of prose never "
+                                 "surfaced it"),
             "  unresolved_endpoints:"]
     for machine, event, side, raw, kind in unresolved:
         out += [f"    - machine: {machine}", f"      event: {q(event)}",
@@ -195,6 +205,12 @@ def lint(rev_states, node_states, events):
         if f'"{name}"' not in inv:
             problems.append(f"state-inventory.yaml is missing state {name}")
 
+    # A machine may only name its own states. The union check this replaced was
+    # blind to a node transition targeting a revision state — which is how a node
+    # came to reach ErrorRecovery, a state the node machine does not declare and
+    # does not leave.
+    problems += cross_machine_leaks(rev_states, node_states)
+
     cat = (HERE / "event-catalog.yaml").read_text(encoding="utf-8")
     for row in events:
         for name in re.split(r"\s*/\s*", row[0]):
@@ -206,6 +222,27 @@ def lint(rev_states, node_states, events):
                  + "\n  ".join(problems))
     print(f"  · lint ok: {len(rev_states) + len(node_states)} states and "
           f"{sum(len(re.split(chr(47), r[0])) for r in events)} event names accounted for")
+
+
+# The one leak that exists today, carried explicitly so a NEW one fails the run.
+# Not a licence: it is a defect, recorded in transitions.yaml under open_questions.
+ACCEPTED_LEAKS = {
+    ("node", "ErrorRecovery"): "declared only by the revision machine; no node transition leaves it",
+}
+
+
+def cross_machine_leaks(rev_states, node_states):
+    """Every endpoint a machine names must be one of that machine's own states."""
+    own = {"revision": {r[0] for r in rev_states}, "node": {r[0] for r in node_states}}
+    out = []
+    for machine, anchor in (("revision", "s2"), ("node", "s3")):
+        for src, _, _, _, dst in table_rows(section("transitions.html", anchor)):
+            for cell in (src, dst):
+                parsed = parse_endpoint(cell, own["revision"] | own["node"])
+                for st in parsed["states"]:
+                    if st not in own[machine] and (machine, st) not in ACCEPTED_LEAKS:
+                        out.append(f"{machine} machine reaches {st}, which it does not declare")
+    return sorted(set(out))
 
 
 # ---------------------------------------------------------------------- main

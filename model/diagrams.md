@@ -134,6 +134,10 @@ flowchart LR
     COMPLIANCE["Compliance officer"]
   end
 
+  subgraph CONFIG["Configuration — owned by people, not deployed"]
+    THRESH["Thresholds and audience rules"]
+  end
+
   subgraph EXTERNAL["External systems — depended on, not controlled"]
     CATALOG["Sylla platform — skills and block catalog"]
     KB["Sylla knowledge base"]
@@ -152,6 +156,8 @@ flowchart LR
     GW["Generation gateway — sole admission authority"]
     STORE["State store"]
     AUDIT["Audit trace"]
+    MON["Runtime monitor"]
+    REPAIR["Repair loop — bounded retries"]
   end
 
   EDITOR -->|brief, edits, approvals| ORCH
@@ -174,6 +180,13 @@ flowchart LR
   GW -->|admission| STORE
   STORE --> ORCH
   GW --> AUDIT
+  GW -->|refusal| REPAIR
+  REPAIR -->|bounded retry| GW
+  AUDIT --> MON
+  STORE --> MON
+  MON -->|assumption violated| ORCH
+  ADMIN --> THRESH
+  THRESH --> GW
   ORCH -->|prepared, never performed| EDITOR
   EDITOR -->|publishes| LEARNERS
 ```

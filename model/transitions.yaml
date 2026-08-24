@@ -693,6 +693,10 @@ node:
 
 open_questions:
   note: "The endpoints below are not state names. Each needs a resolution rule before this file can drive a simulation."
+  cross_machine_leak:
+    defect: "Two node transitions target ErrorRecovery — ContentDrafting on Timeout or ModelError, and OutputGuardrail on Timeout or ServiceUnreachable. ErrorRecovery is a REVISION state; the node machine neither declares it nor leaves it."
+    consequence: "A node entering it has no transition out. Either the node machine needs its own recovery state with an exit, or these two edges belong to the revision and the node stays put."
+    found_by: "exporting the tables into files; six months of prose never surfaced it"
   unresolved_endpoints:
     - machine: revision
       event: "BlockedInputFixed"

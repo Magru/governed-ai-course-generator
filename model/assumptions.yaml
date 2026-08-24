@@ -96,8 +96,10 @@ assumptions:
     monitored: false
     note: >-
       The most important row in this file and the only one with no technical
-      remedy. It is also the assumption the absent latency budget bears on most
-      directly: a slow pipeline is what makes this assumption false.
+      remedy. latency-budget.yaml exists to protect it: the proposed thirty-second
+      node target is chosen so that waiting never becomes the reason an editor
+      stops reading. If that target is missed, this assumption fails quietly and
+      every guard keeps passing.
 
   - id: A9
     assumption: "Over-refusal is rare enough not to matter."
@@ -110,10 +112,22 @@ assumptions:
     monitored: false
     note: "stated as an open question on specification.html — 'over-refusal is invisible in a way under-refusal is not'"
 
+  - id: A10
+    assumption: "Clocks agree closely enough that event_time can be trusted for ordering."
+    relied_on_by: "the temporal invariants; causation reconstructed from the audit trace"
+    if_false: "a trace replays in an order that never happened, and a temporal check passes or fails on fiction"
+    signal: "clock skew between the components that stamp event_time"
+    threshold: "to be set — smaller than the shortest interval any invariant distinguishes"
+    response: "order by causation_id rather than event_time, and flag the trace"
+    owner: "Generation gateway"
+    monitored: false
+    note: "the event catalog declares event_time authoritative; nothing checks the clock behind it"
+
 summary:
-  count: 9
+  count: 10
   monitored: 0
   with_a_named_threshold: 3
+  note: "seven of ten have no threshold"
   open_questions:
-    - "Six of nine have no threshold. A threshold nobody has set is not a weaker control than one nobody measures — it is the same control, and both are absent."
+    - "Seven of ten have no threshold. A threshold nobody has set is not a weaker control than one nobody measures — it is the same control, and both are absent."
     - "A8 has a signal and no valid automated response. That is not a gap in the design; it is a property of putting a person in the loop, and it should be said out loud at the defence rather than discovered there."

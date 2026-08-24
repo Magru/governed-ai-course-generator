@@ -61,6 +61,12 @@ boundary:
 authority:
   # The canvas asks for ONE primary decision with one authority. This system makes
   # many judgments, but exactly one of them is the reason it exists.
+  # Approvals here do not expire on a clock. There is no approval TTL anywhere in
+  # this system, and that is deliberate: an approval goes stale when a stamped
+  # version moves under it — policy, guardrail, catalog, knowledge base — not when
+  # a timer runs out. StaleReview is the mechanism. A TTL would answer a question
+  # nobody here is asking and would let a policy change pass unnoticed inside the
+  # window.
   primary_decision:
     name: "admit_generated_content_into_a_revision"
     authority: "the formal layer stack — schema, OPA, guardrail, Datalog, Z3, Prolog, temporal logic"
@@ -90,6 +96,22 @@ authority:
     excluded_from_the_system: ["publication", "withdrawal", "learner notification"]
     excluded_because: "all three are one rung higher; the generator prepares them and a person performs them"
 
+quality_attributes:
+  # Requirements, not estimates. The latency budget is measured against these;
+  # without them it is a cost sheet. Nobody has agreed them yet — they are the
+  # architect's proposal and the organisation's decision.
+  status: "proposed"
+  node_draft_p95_seconds: 30
+  whole_course_check_p95_seconds: 60
+  audit_lag_max_seconds: 5
+  guardrail_timeout_seconds: 2
+  rationale: >-
+    A node takes roughly three minutes to review. A thirty-second wait is a
+    sixth of that and is tolerated; a two-minute wait is not, because the editor
+    switches to something else and comes back skimming. The number is chosen to
+    protect assumption A8 — that the editor reads what they approve — which is
+    the assumption the whole governance argument rests on.
+
 hard_constraints:
   - "Nothing generated enters course state without crossing the gateway."
   - "A missing verdict is never read as permission — no degraded mode turns an unavailable layer into a pass."
@@ -106,15 +128,19 @@ safe_fallbacks:
     fallback: "the revision stops at BlockedRecoverable and asks a person"
   - trigger: "a formal engine cannot run"
     fallback: "stop admitting work rather than admit it unchecked"
+  - trigger: "the audit trace is unavailable"
+    fallback: "durable outbox, and an alert — admission continues, the record is never dropped"
+    note: "an unrecorded approval did not happen; the outbox is what keeps that true under failure"
   - trigger: "operator intervention"
     fallback: "kill switch"
 
 assumptions:
-  status: "not consolidated"
-  where: "six 'Open questions' sections across the specification pages"
+  status: "consolidated"
+  where: "assumptions.yaml — nine dependencies, each with a signal, threshold, response and owner"
+  monitored: 0
   note: >-
-    The framework wants one list an auditor can read. Collecting them is
-    prerequisite to the monitoring map and is not done.
+    The list exists; nothing on it is watched. Collecting them was the
+    prerequisite to a monitoring map, and the map is the next artifact.
 
 evidence:
   # What will let us prove, later, what actually happened.

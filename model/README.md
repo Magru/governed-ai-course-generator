@@ -43,7 +43,7 @@ promise. A row added to a page and forgotten here fails the run.
 
 ## What building this found
 
-Moving the tables into files surfaced five things the prose had been absorbing.
+Moving the tables into files surfaced six things the prose had been absorbing.
 None is cosmetic; each is a question the specification does not answer.
 
 1. **`BlockedFinal` exists in both machines** with different exits. Any tool
@@ -58,7 +58,11 @@ None is cosmetic; each is a question the specification does not answer.
 4. **`·` is overloaded.** In `ContentInProgress · BlockedRecoverable` it means
    *either*; in `rev n+1 · ContentInProgress` it qualifies a different revision.
    A reader infers which. A parser cannot.
-5. **No event declares an envelope.** `event-catalog.yaml` now specifies the one
+5. **Two node transitions reach a state the node machine does not have.** A timeout while
+   drafting, or an unreachable guardrail, sends a node to `ErrorRecovery` — a *revision*
+   state. Nothing declares it for nodes and nothing leaves it. The exporter's lint now
+   fails on any new leak of this kind and carries this one explicitly as a known defect.
+6. **No event declares an envelope.** `event-catalog.yaml` now specifies the one
    every event must acquire, and says what breaks when each field is missing.
    Nothing emits it yet.
 
@@ -68,13 +72,15 @@ From `latency-budget.yaml`, all estimates and all resting on `unknowns` in
 `system-definition.yaml`:
 
 - Every check this architecture adds costs **412 ms against a twelve-second model
-  call — 3.2 % of the path**. Governance is not the bottleneck.
-- A node takes **16 s to produce and about 180 s to review**. The human is the
-  bottleneck by a factor of eleven, which is the intended outcome.
-- One model worker carries roughly **ten concurrent editors** at a safe
-  utilisation.
-- The staleness cascade **does not regenerate**: five hundred stale nodes
-  re-verify in under three minutes.
+  call — 3.2 % of the path**. Governance is not the bottleneck. The path fits a
+  proposed thirty-second target with **12.6 s left for queueing and tail**.
+- A node takes **17 s to produce and about 180 s to review**. The human is the
+  bottleneck by roughly a factor of ten, which is the intended outcome.
+- One model worker carries about **eight concurrent editors** at a safe utilisation —
+  saturation is eleven and change, and eight is that with headroom.
+- The staleness cascade **does not regenerate**: five hundred stale nodes re-verify in
+  under three minutes of compute — but every one it surfaces for a person is three
+  minutes of review, so the same five hundred are about **25 hours of editor attention**.
 
 ## Owners
 
