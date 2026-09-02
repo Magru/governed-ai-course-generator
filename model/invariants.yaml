@@ -98,4 +98,9 @@ invariants:
 open_questions:
   - "All thirteen are checked once, at review time. Several — I10 especially — could be evaluated on every event, turning a review-time audit into a runtime assertion. That is strictly better and strictly more expensive, and nothing here has measured which are worth it."
   - "I9 is the only F. On a finite trace, F is only meaningful if the trace ends after the audit lands; a run cut short by a crash satisfies nothing. The bound belongs in the audit-lag quality attribute and the two are not yet connected."
-  - "No invariant covers the node machine's own recovery. That is not an oversight in this file — the node machine reaches ErrorRecovery and never leaves it, and no property can be stated about a state with no exit. See transitions.yaml."
+  - >-
+    The node machine now has its own recovery, so a property about it can finally be
+    stated — and none is. The candidate is G(node_recovery(N) → F(¬node_recovery(N))):
+    nothing stays in recovery forever. It is not in the list above because the
+    specification does not yet claim it, and this file reproduces claims rather than
+    inventing them. Worth adding to states.html §8 before the defence.

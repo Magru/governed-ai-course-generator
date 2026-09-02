@@ -233,9 +233,7 @@ def lint(rev_states, node_states, events):
 
 # The one leak that exists today, carried explicitly so a NEW one fails the run.
 # Not a licence: it is a defect, recorded in transitions.yaml under open_questions.
-ACCEPTED_LEAKS = {
-    ("node", "ErrorRecovery"): "declared only by the revision machine; no node transition leaves it",
-}
+ACCEPTED_LEAKS = {}  # the one that existed was fixed by giving the node its own recovery
 
 
 def cross_machine_leaks(rev_states, node_states):
@@ -326,9 +324,9 @@ def main():
     node_tr = table_rows(section("transitions.html", "s3"))
     modes = table_rows(section("safety.html", "s10"))
 
-    expect = [("revision states", rev_states, 21), ("node states", node_states, 11),
+    expect = [("revision states", rev_states, 21), ("node states", node_states, 12),
               ("events", events, 23), ("situations", situations, 9),
-              ("revision transitions", rev_tr, 55), ("node transitions", node_tr, 19),
+              ("revision transitions", rev_tr, 55), ("node transitions", node_tr, 22),
               ("failure modes", modes, 14)]
     bad = [f"{n}: got {len(r)}, expected {e}" for n, r, e in expect if len(r) != e]
     if bad:

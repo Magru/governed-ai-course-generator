@@ -61,10 +61,13 @@ None is cosmetic; each is a question the specification does not answer.
 4. **`·` is overloaded.** In `ContentInProgress · BlockedRecoverable` it means
    *either*; in `rev n+1 · ContentInProgress` it qualifies a different revision.
    A reader infers which. A parser cannot.
-5. **Two node transitions reach a state the node machine does not have.** A timeout while
-   drafting, or an unreachable guardrail, sends a node to `ErrorRecovery` — a *revision*
-   state. Nothing declares it for nodes and nothing leaves it. The exporter's lint now
-   fails on any new leak of this kind and carries this one explicitly as a known defect.
+5. **Two node transitions reached a state the node machine did not have.** A timeout
+   while drafting, or an unreachable guardrail, sent a node to `ErrorRecovery` — a
+   *revision* state. Nothing declared it for nodes and nothing left it. **Fixed
+   02.09.2026:** the node machine now has its own `NodeRecovery`, `recovery_from`
+   records which stage failed, and three exits return it — to generation, to the
+   guardrail, or to a person once the retry budget is spent. The linter fails on any
+   new leak of this kind.
 6. **No event declares an envelope.** `event-catalog.yaml` now specifies the one
    every event must acquire, and says what breaks when each field is missing.
    Nothing emits it yet.

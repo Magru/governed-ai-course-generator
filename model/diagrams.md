@@ -1,6 +1,6 @@
 # State machines
 
-Generated from the tables in `../transitions.html` by `export-model.py` on 2026-08-25.
+Generated from the tables in `../transitions.html` by `export-model.py` on 2026-09-02.
 Do not edit: change `../transitions.html` and re-run the exporter.
 
 ## Revision machine
@@ -96,9 +96,12 @@ stateDiagram-v2
 
     Planned --> ContentDrafting : NodeGenerationRequested
     ContentDrafting --> Generated : NodeGenerated
-    ContentDrafting --> ErrorRecovery : Timeout · ModelError
+    ContentDrafting --> NodeRecovery : Timeout · ModelError
     Generated --> OutputGuardrail : auto
-    OutputGuardrail --> ErrorRecovery : Timeout · ServiceUnreachable
+    OutputGuardrail --> NodeRecovery : Timeout · ServiceUnreachable
+    NodeRecovery --> ContentDrafting : auto
+    NodeRecovery --> OutputGuardrail : auto
+    NodeRecovery --> ContentDrafting : BlockedInputFixed
     OutputGuardrail --> NodeChecks : GuardrailVerdict(allow)
     OutputGuardrail --> NodeRepair : GuardrailVerdict(deny)
     NodeChecks --> Validated : auto
