@@ -264,6 +264,46 @@ def cross_machine_leaks(rev_states, node_states):
     return sorted(set(out))
 
 
+KNOWN_NON_STATES = {"GuardrailVerdict", "NodeGenerated", "NodeEdited", "NodeApproved",
+                    "NodeRejected", "OutlineGenerated", "LivePointerMoved",
+                    "LearnersNotified", "CheckFailed"}
+
+
+def trace_schema_lint(known, events):
+    """trace-schema.yaml names states and events; both belong to other files.
+
+    The schema is authored, not generated — it says what a run must carry so a
+    property can be decided about it. Authored means it can drift, and the way
+    it drifts is by naming a state that has since been renamed. Two greps stop
+    that: every capitalised state name it mentions must exist in the inventory,
+    and every event it calls side-effecting must exist in the catalog.
+    """
+    path = HERE / "trace-schema.yaml"
+    if not path.exists():
+        sys.exit("FATAL: trace-schema.yaml is missing — the invariant checks have no declared shape")
+    text = path.read_text(encoding="utf-8")
+    body = "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
+
+    # State names appear inside prose; take every CamelCase token and keep the
+    # ones that look like state names rather than ordinary capitalised words.
+    tokens = set(re.findall(r"\b[A-Z][a-z]+(?:[A-Z][a-z]+)+\b", body))
+    unknown = sorted(t for t in tokens if t not in known and t not in KNOWN_NON_STATES)
+    if unknown:
+        sys.exit("trace-schema.yaml names " + ", ".join(unknown) +
+                 " — not a state in states.html. Rename it there or fix the schema.")
+
+    declared_events = set(re.findall(r'"([A-Z][A-Za-z]+)"', body))
+    catalog = {n.split("(")[0].strip()
+               for r in events for n in re.split(r"\s*[·/]\s*", _text(r[0]))}
+    side = re.search(r"events: \[(.*?)\]", body, re.S)
+    side_names = set(re.findall(r'"([^"]+)"', side.group(1))) if side else set()
+    stray = sorted(side_names - catalog)
+    if stray:
+        sys.exit("trace-schema.yaml calls " + ", ".join(stray) +
+                 " side-effecting, and states.html §6 has no such event")
+    return len(side_names)
+
+
 def spec_invariants():
     """The temporal formulas, lifted verbatim from the specification."""
     block = re.search(r'<div class="formula"[^>]*>(.*?)</div>',
@@ -449,6 +489,7 @@ def main():
     known = {r[0] for r in rev_states} | {r[0] for r in node_states}
     transitions, unresolved = write_transitions(rev_tr, node_tr, known)
     lint(rev_states, node_states, events, rev_tr, node_tr)
+    trace_schema_lint(known, events)
 
     files = {
         "transitions.yaml": transitions,
