@@ -389,6 +389,44 @@ def prose_counts(counts):
     return out
 
 
+def write_guards():
+    """The glossary is the only place a guard is attributed to an owner.
+
+    The transition table's Layer column lists everything that runs at that
+    transition, which is a different fact and was briefly mistaken for this one.
+    Without this file a reader — or a test — has no machine-readable answer to
+    "who refuses this", and phase-03's guard registry has nothing to build on.
+    """
+    block = section("transitions.html", "s4")
+    out = []
+    header("guards", "Which layer owns each guard, and what does it hand back when it refuses?",
+           "a guard is added, renamed, or changes owner",
+           "transitions.html §4 — the guard glossary, one entry per name", out)
+    out += ["# The transition tables' Layer column lists everything that runs at a",
+            "# transition. This file answers the different question of who owns a",
+            "# particular guard — the two were briefly mistaken for each other.", ""]
+    body_lines = []
+    count = 0
+    for dt, dd in re.findall(r"<dt[^>]*>(.*?)</dt>\s*<dd>(.*?)</dd>", block, re.S):
+        owner = re.search(r'<span class="owner">(.*?)</span>', dd)
+        body = _text(re.sub(r'<span class="owner">.*?</span>', "", dd, flags=re.S))
+        refusal = ""
+        for marker in ("Refuses with", "Refuses by", "Refuse with", "refuses with"):
+            if marker in body:
+                refusal = body.split(marker, 1)[1].strip().rstrip(".")
+                break
+        for name in re.split(r"\s*·\s*", _text(dt)):
+            count += 1
+            body_lines.append(f"  - name: {q(name)}")
+            body_lines.append(f"    owner: {q(_text(owner.group(1)) if owner else 'unstated')}")
+            if refusal:
+                body_lines.append(f"    refuses_with: {q(refusal[:200])}")
+    out.append(f"count: {count}")
+    out.append("guards:")
+    out += body_lines
+    return "\n".join(out) + "\n"
+
+
 # ---------------------------------------------------------------------- main
 
 def main():
@@ -414,6 +452,7 @@ def main():
 
     files = {
         "transitions.yaml": transitions,
+        "guards.yaml": write_guards(),
         "failure-scenarios.yaml": write_failures(situations, modes),
         "state-machine-revision.mmd": write_mermaid(rev_tr, known, "Revision state machine", "AwaitingBrief"),
         "state-machine-node.mmd": write_mermaid(node_tr, known, "Node state machine", "Planned"),
