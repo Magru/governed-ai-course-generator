@@ -19,6 +19,11 @@ authored: "2026-09-02"
 # promised to record.
 
 shape:
+  events: >-
+    Every event name is the catalog's. A transition the tables mark "(auto)"
+    carries the reserved name "(auto)": a guard firing is not an event, and
+    inventing a name to stand for one puts a claim in the record that no
+    producer is authorised to make.
   step: >-
     A step is one event and the state it produced. Step 0 is the initial state
     and carries the reserved event "(initial)"; every later step carries a real
@@ -27,6 +32,11 @@ shape:
     The state an event arrived in is the previous step's state. Nothing is
     written twice, and "before" and "after" stop being ambiguous — which they
     were while a step carried one course_state and the reader had to guess.
+  initial_state: >-
+    Step 0 is the premise of the run, not a step of it. An obligation discharged
+    by a transition — a guardrail verdict before admission, an outline committed
+    before a removal — cannot attach to a state that arrived without one, so the
+    walks that compare a step against the one before it start at step 1.
   finiteness: >-
     A trace ends. G is decided over the steps that exist; F can only mean
     "before the end", so an F that never comes true is reported as unfulfilled
@@ -95,11 +105,6 @@ state_fields:
     means: "nodes approved as of this state — the set shrinks when an approval is withdrawn"
     note: "derived from node_states in a real store; carried explicitly so a trace can state it"
     read_by: ["I2"]
-
-  - name: "guardrail_checked"
-    type: "list of artifact"
-    means: "artifacts a GuardrailVerdict has been recorded for, allow or deny alike"
-    read_by: ["I6"]
 
   - name: "permission_checked"
     type: "list of node"
@@ -172,7 +177,12 @@ payload_fields:
   - name: "artifact"
     type: "node or the literal \"outline\""
     on_events: ["GuardrailVerdict"]
-    read_by: []
+    means: "what was screened"
+    note: >-
+      The verdict events *are* the record of what was screened. An earlier
+      schema also carried a running guardrail_checked list beside them, which is
+      the same fact written twice and therefore the same fact free to drift.
+    read_by: ["I6"]
   - name: "node_type"
     type: "str — \"exam\" marks the one this model reasons about"
     on_events: ["NodeGenerated"]
