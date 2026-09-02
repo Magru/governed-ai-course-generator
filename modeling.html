@@ -82,7 +82,7 @@
   <a href="#s2"><span class="tick"></span><span class="lbl">The journey</span></a>
   <a href="#s3"><span class="tick"></span><span class="lbl">The package</span></a>
   <a href="#s4"><span class="tick"></span><span class="lbl">Minimum viable</span></a>
-  <a href="#s5"><span class="tick"></span><span class="lbl">Build next</span></a>
+  <a href="#s5"><span class="tick"></span><span class="lbl">What matters most</span></a>
   <a href="#s6"><span class="tick"></span><span class="lbl">Open questions</span></a>
 </nav>
 
@@ -146,7 +146,7 @@
       <li><a href="#s2">The journey, in six parts</a></li>
       <li><a href="#s3">The model package — twenty artifacts</a></li>
       <li><a href="#s4">Minimum viable model</a></li>
-      <li><a href="#s5">The three that get built next</a></li>
+      <li><a href="#s5">The three that matter most</a></li>
       <li><a href="#s6">Open questions</a></li>
     </ol>
   </nav>
@@ -367,12 +367,12 @@
 
   <section id="s5">
     <div class="eyebrow">Section 5</div>
-    <h2>The three that get built next</h2>
-    <p>Eleven artifacts are absent or partial and they will not all be written. Three are worth building before the defence. The latency budget used to head this list and now exists; what replaced it at the top is the defect that building it uncovered.</p>
+    <h2>The three that matter most</h2>
+    <p>Eleven artifacts are absent or partial and not all of them are worth writing. Three are, and each answers a question this project could not otherwise answer at all.</p>
 
-    <h3>1 · A node machine that cannot get stuck <span class="status reviewed">done</span></h3>
+    <h3>1 · A node machine that cannot get stuck</h3>
     <p>Exporting the transition table into a file found a node state with no way out: two node transitions sent work to <code>ErrorRecovery</code> — a timeout while drafting, an unreachable guardrail — and <code>ErrorRecovery</code> is a <em>revision</em> state the node machine neither declared nor left. On a site whose entire thesis is that a system should not slide into a state it cannot get out of, that was the finding that mattered most, and a month of prose across four rounds of review never surfaced it.</p>
-    <p><strong>Fixed on 2 September.</strong> The node machine has its own <code>NodeRecovery</code>; <code>recovery_from</code> records which stage failed so recovery returns the node there instead of regenerating work that was already sound; and three exits cover every branch — back to generation, back to the guardrail, or held for a person once the retry budget is spent. The node machine is now 12 states and 22 transitions. Seven endpoints in the same table are still expressions rather than state names, and each needs a resolution rule before anything can simulate this machine.</p>
+    <p>The node machine now has its own <code>NodeRecovery</code>; <code>recovery_from</code> records which stage failed so recovery returns the node there instead of regenerating work that was already sound; and three exits cover every branch — back to generation, back to the guardrail, or held for a person once the retry budget is spent. The node machine is now 12 states and 22 transitions. Seven endpoints in the same table are still expressions rather than state names, and each needs a resolution rule before anything can simulate this machine.</p>
 
     <h3>2 · The assumption list, and the monitoring map over it</h3>
     <p>Because every guard on this site rests on an assumption, and the assumptions are currently spread across six pages instead of held in one place where they can be counted. That the catalog version stamped on a block is the one the platform still serves. That the policy bundle in force is the one the revision was verified against. That the model routing table is honoured by the gateway rather than quietly overridden. Each is checked at the moment of the transition and never again. The framework's chain is assumption → runtime signal → observation → decision → model update, and this project has neither end of it: the list now exists and not one row on it is watched. The seven production signals the specification already names are the right raw material, and they measure activity rather than whether a premise still holds. Wiring them is design work and does not wait on a deployment.</p>
