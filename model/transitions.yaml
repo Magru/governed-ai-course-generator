@@ -6,7 +6,7 @@ source: "transitions.html §2 (revision) and §3 (node)"
 generated: "2026-09-02"
 generator: "model/export-model.py"
 
-# 55 revision transitions + 22 node transitions.
+# 56 revision transitions + 24 node transitions.
 # Every endpoint is kept verbatim as *_raw; *_kind says how far it parsed.
 #   state         a single named state
 #   alternatives  several named states, any of which matches
@@ -260,6 +260,16 @@ revision:
     to_raw: "BlockedRecoverable"
     to_kind: state
     to: ["BlockedRecoverable"]
+  - event: "(node → NodeRecovery)"
+    from_raw: "ContentInProgress"
+    from_kind: state
+    from: ["ContentInProgress"]
+    guard: "∃ node: NodeRecovery ∧ ¬retry_budget_left(node)"
+    layer: "State store"
+    to_raw: "BlockedRecoverable (blocked_at = node)"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+    to_note: "blocked_at = node"
   - event: "(node state changed)"
     from_raw: "ContentInProgress"
     from_kind: state
@@ -361,7 +371,7 @@ revision:
     to: ["ContentInProgress"]
     to_qualifier: "rev n+1"
     to_note: "spawn; this revision does not move"
-  - event: "PolicyChanged · CatalogChanged · KBUpdated"
+  - event: "PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated"
     from_raw: "Published"
     from_kind: state
     from: ["Published"]
@@ -444,7 +454,7 @@ revision:
     to_raw: "StaleReview"
     to_kind: state
     to: ["StaleReview"]
-  - event: "PolicyChanged · CatalogChanged · KBUpdated"
+  - event: "PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated"
     from_raw: "Superseded"
     from_kind: state
     from: ["Superseded"]
@@ -541,11 +551,12 @@ node:
     from_raw: "ContentDrafting"
     from_kind: state
     from: ["ContentDrafting"]
-    guard: "writes recovery_from(node) = generation"
+    guard: "—"
     layer: "State store"
-    to_raw: "NodeRecovery"
+    to_raw: "NodeRecovery (recovery_from = generation; repair_count +1)"
     to_kind: state
     to: ["NodeRecovery"]
+    to_note: "recovery_from = generation; repair_count +1"
   - event: "(auto)"
     from_raw: "Generated"
     from_kind: state
@@ -559,16 +570,26 @@ node:
     from_raw: "OutputGuardrail"
     from_kind: state
     from: ["OutputGuardrail"]
-    guard: "writes recovery_from(node) = guardrail"
+    guard: "—"
     layer: "State store"
-    to_raw: "NodeRecovery"
+    to_raw: "NodeRecovery (recovery_from = guardrail; repair_count +1)"
     to_kind: state
     to: ["NodeRecovery"]
+    to_note: "recovery_from = guardrail; repair_count +1"
   - event: "(auto)"
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "retry_budget_left(node) ∧ recovery_from(node) = generation"
+    guard: "recovery_from(node) = generation ∧ ¬idempotency_key_unused(op) — the write landed"
+    layer: "State store"
+    to_raw: "Generated"
+    to_kind: state
+    to: ["Generated"]
+  - event: "(auto)"
+    from_raw: "NodeRecovery"
+    from_kind: state
+    from: ["NodeRecovery"]
+    guard: "recovery_from(node) = generation ∧ idempotency_key_unused(op) ∧ retry_budget_left(node)"
     layer: "State store"
     to_raw: "ContentDrafting"
     to_kind: state
@@ -577,7 +598,7 @@ node:
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "retry_budget_left(node) ∧ recovery_from(node) = guardrail"
+    guard: "recovery_from(node) = guardrail ∧ retry_budget_left(node) — a screening leaves nothing to reconcile"
     layer: "State store"
     to_raw: "OutputGuardrail"
     to_kind: state
@@ -586,11 +607,22 @@ node:
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "¬retry_budget_left(node) — a person cleared the cause and the budget resets"
+    guard: "¬retry_budget_left(node) ∧ recovery_from(node) = generation"
     layer: "Human · State store"
-    to_raw: "ContentDrafting"
+    to_raw: "ContentDrafting (repair_count = 0)"
     to_kind: state
     to: ["ContentDrafting"]
+    to_note: "repair_count = 0"
+  - event: "BlockedInputFixed"
+    from_raw: "NodeRecovery"
+    from_kind: state
+    from: ["NodeRecovery"]
+    guard: "¬retry_budget_left(node) ∧ recovery_from(node) = guardrail"
+    layer: "Human · State store"
+    to_raw: "OutputGuardrail (repair_count = 0)"
+    to_kind: state
+    to: ["OutputGuardrail"]
+    to_note: "repair_count = 0"
   - event: "GuardrailVerdict(allow)"
     from_raw: "OutputGuardrail"
     from_kind: state
@@ -721,8 +753,9 @@ node:
 open_questions:
   note: "The endpoints below are not state names. Each needs a resolution rule before this file can drive a simulation."
   cross_machine_leak:
-    defect: "Two node transitions target ErrorRecovery — ContentDrafting on Timeout or ModelError, and OutputGuardrail on Timeout or ServiceUnreachable. ErrorRecovery is a REVISION state; the node machine neither declares it nor leaves it."
-    consequence: "A node entering it has no transition out. Either the node machine needs its own recovery state with an exit, or these two edges belong to the revision and the node stays put."
+    status: resolved
+    was: "Two node transitions targeted ErrorRecovery, a revision state the node machine neither declared nor left, so a node that timed out had no exit at all."
+    now: "The node machine declares NodeRecovery and leaves it three ways: the write landed, a retry inside budget, or a person clearing the cause once the budget is spent."
     found_by: "exporting the tables into files; a month of prose and four rounds of review never surfaced it"
   unresolved_endpoints:
     - machine: revision

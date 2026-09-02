@@ -133,13 +133,13 @@ def write_transitions(revision, node, known):
             "  note: " + q("The endpoints below are not state names. Each needs a resolution "
                            "rule before this file can drive a simulation."),
             "  cross_machine_leak:",
-            "    defect: " + q("Two node transitions target ErrorRecovery — "
-                               "ContentDrafting on Timeout or ModelError, and OutputGuardrail "
-                               "on Timeout or ServiceUnreachable. ErrorRecovery is a REVISION "
-                               "state; the node machine neither declares it nor leaves it."),
-            "    consequence: " + q("A node entering it has no transition out. Either the node "
-                                    "machine needs its own recovery state with an exit, or these "
-                                    "two edges belong to the revision and the node stays put."),
+            "    status: resolved",
+            "    was: " + q("Two node transitions targeted ErrorRecovery, a revision state the "
+                            "node machine neither declared nor left, so a node that timed out "
+                            "had no exit at all."),
+            "    now: " + q("The node machine declares NodeRecovery and leaves it three ways: "
+                            "the write landed, a retry inside budget, or a person clearing the "
+                            "cause once the budget is spent."),
             "    found_by: " + q("exporting the tables into files; a month of prose and four "
                                  "rounds of review never surfaced it"),
             "  unresolved_endpoints:"]
@@ -325,8 +325,8 @@ def main():
     modes = table_rows(section("safety.html", "s10"))
 
     expect = [("revision states", rev_states, 21), ("node states", node_states, 12),
-              ("events", events, 23), ("situations", situations, 9),
-              ("revision transitions", rev_tr, 55), ("node transitions", node_tr, 22),
+              ("events", events, 24), ("situations", situations, 9),
+              ("revision transitions", rev_tr, 56), ("node transitions", node_tr, 24),
               ("failure modes", modes, 14)]
     bad = [f"{n}: got {len(r)}, expected {e}" for n, r, e in expect if len(r) != e]
     if bad:

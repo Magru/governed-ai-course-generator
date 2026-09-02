@@ -126,6 +126,12 @@
     </div>
   </header>
 
+  <div class="callout">
+      <div class="eyebrow">Amended after approval · 2 September 2026</div>
+      <p>Step&nbsp;16 routed the timed-out node to the revision's <code>ErrorRecovery</code>. It now enters <code>NodeRecovery</code>, which is the node machine's own. Nothing else in the run changed.</p>
+    </div>
+
+
   <nav class="toc">
     <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
     <ol>
@@ -283,7 +289,7 @@ appended: approvals[] — who, when, and what they were shown</div>
       <li>
         <h4>T3 times out <span class="actor auto">automatic</span></h4>
         <p>The provider does not answer. This is not a failure — it is an <em>unknown</em>, and the two are handled differently.</p>
-        <div class="mv">T3: ContentDrafting → <b>ErrorRecovery</b>
+        <div class="mv">T3: ContentDrafting → <b>NodeRecovery</b>
 first action: check idempotency_key
   the write landed     → move on, do not regenerate
   it did not           → one bounded retry
@@ -435,7 +441,7 @@ re-judged against v8 — <b>no content is regenerated</b>
 14  NodeApproved           T1: → NodeApproved             ← EDITOR  + visual review
                                                           stamps written
 15  …                      T2: → NodeApproved             model call #4  ← EDITOR
-16  Timeout                T3: → ErrorRecovery            idempotency_key checked first
+16  Timeout                T3: → NodeRecovery             idempotency_key checked first
 17  …                      T3: → NodeApproved             model call #5  ← EDITOR
 18  (guard holds)          E1: generation unfenced        topics approved
 19  NodeGenerationRequested E1: → ContentDrafting        ← EDITOR · model call #6
@@ -469,7 +475,7 @@ re-judged against v8 — <b>no content is regenerated</b>
     </div>
   </section>
 
-  <p class="footer-note">Walkthrough · reviewed v0.1 · 2 August 2026 · companion to the <a href="specification.html">spec v2</a> and the <a href="states.html">state model</a></p>
+  <p class="footer-note">Walkthrough · reviewed v0.2 · 2 September 2026 · companion to the <a href="specification.html">spec v2</a> and the <a href="states.html">state model</a></p>
 </div>
 
 <script src="spec.js?v=3" defer></script>

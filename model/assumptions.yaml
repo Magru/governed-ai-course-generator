@@ -123,11 +123,24 @@ assumptions:
     monitored: false
     note: "the event catalog declares event_time authoritative; nothing checks the clock behind it"
 
+  - id: A11
+    assumption: "The guardrail version stamped on a revision is the one the service still enforces."
+    relied_on_by: "I15; the affected() sweep; every guardrail_clean verdict recorded as authoritative"
+    if_false: "a course serves under a rule the compliance officer has already replaced, and nothing marks it"
+    signal: "guardrail_version drift between live revisions and the active guardrail"
+    threshold: "any drift at all"
+    response: "run the affected() sweep; the StaleReview path exists for exactly this"
+    owner: "Compliance officer"
+    monitored: false
+    note: >-
+      A4 asks whether the service answers. This asks whether it is answering under
+      the rule we think it is. Two different failures of the same dependency.
+
 summary:
-  count: 10
+  count: 11
   monitored: 0
   with_a_named_threshold: 3
-  note: "seven of ten have no threshold"
+  note: "seven of eleven have no threshold"
   open_questions:
-    - "Seven of ten have no threshold. A threshold nobody has set is not a weaker control than one nobody measures — it is the same control, and both are absent."
+    - "Seven of eleven have no threshold. A threshold nobody has set is not a weaker control than one nobody measures — it is the same control, and both are absent."
     - "A8 has a signal and no valid automated response. That is not a gap in the design; it is a property of putting a person in the loop, and it should be said out loud at the defence rather than discovered there."

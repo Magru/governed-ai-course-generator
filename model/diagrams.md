@@ -49,6 +49,7 @@ stateDiagram-v2
     OutlineReview --> ContentInProgress : OutlineRejected
     OutlineReview --> ContentInProgress : OutlineApproved
     ContentInProgress --> BlockedRecoverable : (node → BlockedFinal)
+    ContentInProgress --> BlockedRecoverable : (node → NodeRecovery)
     ContentInProgress --> ReadyForReview : (node state changed)
     ReadyForReview --> ContentInProgress : NodeEdited(any)
     WholeCourseChecks --> ContentInProgress : NodeEdited(any)
@@ -62,7 +63,7 @@ stateDiagram-v2
     Approved --> ContentInProgress : ReturnedToWork
     Approved --> Published : PublishRequested
     Published --> Xrevn1ContentInProgressspawnt : ReviseRequested
-    Published --> StaleReview : PolicyChanged · CatalogChanged · KBUpdated
+    Published --> StaleReview : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
     Xanystateinthelivelineage --> Withdrawn : WithdrawRequested
     Published --> Superseded : LivePointerMoved
     Published --> Published : LearnersNotified
@@ -71,7 +72,7 @@ stateDiagram-v2
     StaleReview --> ErrorRecovery : Timeout · ServiceUnreachable
     StaleReview --> Withdrawn : WithdrawRequested
     Superseded --> StaleReview : RollbackRequested
-    Superseded --> StaleReview : PolicyChanged · CatalogChanged · KBUpdated
+    Superseded --> StaleReview : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
     Superseded --> Archived : ArchiveRequested
     Withdrawn --> Archived : ArchiveRequested
     Withdrawn --> Xrevn1ContentInProgressspawn : ReviseRequested
@@ -99,9 +100,11 @@ stateDiagram-v2
     ContentDrafting --> NodeRecovery : Timeout · ModelError
     Generated --> OutputGuardrail : auto
     OutputGuardrail --> NodeRecovery : Timeout · ServiceUnreachable
+    NodeRecovery --> Generated : auto
     NodeRecovery --> ContentDrafting : auto
     NodeRecovery --> OutputGuardrail : auto
     NodeRecovery --> ContentDrafting : BlockedInputFixed
+    NodeRecovery --> OutputGuardrail : BlockedInputFixed
     OutputGuardrail --> NodeChecks : GuardrailVerdict(allow)
     OutputGuardrail --> NodeRepair : GuardrailVerdict(deny)
     NodeChecks --> Validated : auto

@@ -18,7 +18,7 @@ authored: "2026-08-24"
 # Evaluated by replaying the audit trace. Today that happens once per revision,
 # at WholeCourseChecks — see open_questions.
 
-count: 13
+count: 15
 evaluated_at: "WholeCourseChecks, by replaying the trace for the revision"
 evaluated_by: "temporal logic layer — no model checker; a finite trace is walked"
 refusal_artifact: "the violated formula and the event that broke it"
@@ -94,6 +94,29 @@ invariants:
     formula: "G(rolled_back_to(R) → O re_verified(R))"
     means: "a revision can only be rolled back to after it re-earned verification"
     forbids: "restoring an old revision as-is — rollback is re-entry through the checks, not a restore"
+
+  - id: I14
+    formula: "G(node_recovery(N) ∧ ¬retry_budget_left(N) → course_state = BlockedRecoverable)"
+    means: "a node that has spent its recovery budget stops the revision it belongs to"
+    forbids: "a node waiting for a person while the revision it blocks reports itself as working"
+    note: >-
+      Safety, not liveness. Nothing here promises the node ever leaves recovery —
+      that waits on a human, and the specification claims no bound on human
+      response, exactly as it claims none for BlockedRecoverable. What it does
+      claim is that the wait is visible one level up.
+
+  - id: I15
+    formula: "G(published(C) → guardrail_version(C) = current ∨ stale(C) ∨ ¬affected(C))"
+    means: >-
+      a live course was screened under the guardrail policy in force, or is marked
+      stale, or the change does not reach what it says
+    forbids: "a course serving under a forbidden-topic rule that was never applied to it"
+    note: >-
+      The twin of I7 for the other configuration source. They are separate because
+      their owners are: the policy bundle belongs to whoever writes OPA rules, the
+      guardrail to the compliance officer, and each moves without the other. An
+      earlier draft had only I7 and demonstrated the cascade by firing PolicyChanged
+      for a change to a forbidden topic — which is this invariant's event, not that one.
 
 open_questions:
   - "All thirteen are checked once, at review time. Several — I10 especially — could be evaluated on every event, turning a review-time audit into a runtime assertion. That is strictly better and strictly more expensive, and nothing here has measured which are worth it."

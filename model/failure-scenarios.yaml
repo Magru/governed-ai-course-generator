@@ -34,7 +34,7 @@ situations:  # 9, each walked event by event
     editor_next: "Narrow the audience, or accept the node without that source"
   - situation: "Generation times out"
     course: "stays ContentInProgress"
-    node: "ContentDrafting → ErrorRecovery"
+    node: "ContentDrafting → NodeRecovery"
     also_changes: "The idempotency_key is checked before anything else: if the write landed, the node moves on; if it did not, one bounded retry follows"
     editor_next: "Nothing — a timeout is an unknown, and the machine resolves it without asking"
   - situation: "An approved topic is edited, before publication"

@@ -9,7 +9,7 @@ authored: "2026-08-24"
 # and its producer waits for an answer. An event states that something happened;
 # it is a historical fact and its producer waits for nothing.
 #
-# 7 commands + 24 events across 23 rows of the source table.
+# 7 commands + 25 events across 24 rows of the source table.
 
 envelope:
   note: >-
@@ -128,7 +128,18 @@ events:
   - names: ["PolicyChanged", "CatalogChanged", "KBUpdated"]
     producer: "organization configuration"
     affects: "every stamped artifact"
-    note: "the only events produced outside this system; they are what make an approved revision stale"
+    note: "produced outside this system; they are what make an approved revision stale"
+  - name: "GuardrailChanged"
+    producer: "compliance officer, through the managed guardrail service"
+    affects: "every stamped artifact — carries guardrail_version"
+    payload_must_carry: ["from_version", "to_version"]
+    note: >-
+      Held apart from the three above because its owner and its console are
+      different: the policy bundle belongs to whoever writes OPA rules, the
+      guardrail to compliance, and each moves without the other. An earlier
+      draft had no such event and demonstrated the cascade by firing
+      PolicyChanged for a change to a forbidden topic — a guardrail change
+      wearing the policy bundle's name.
   - name: "BlockedInputFixed"
     producer: "orchestrator, recording an act by the course editor"
     affects: "a recoverable stop is cleared; the revision returns to the state named by blocked_at"

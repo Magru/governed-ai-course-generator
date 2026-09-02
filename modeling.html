@@ -219,7 +219,7 @@
           <tr>
             <td class="role">III · State, events, interaction</td>
             <td>What is permitted in each state, what the events mean, how traces behave</td>
-            <td><span class="cov have">present</span> The strongest part by a distance: <b>21 + 12</b> states, <b>55 + 22</b> transitions, <b>37</b> guards, <b>31</b> named events. <a href="states.html">States</a>, <a href="transitions.html">Transitions</a></td>
+            <td><span class="cov have">present</span> The strongest part by a distance: <b>21 + 12</b> states, <b>55 + 22</b> transitions, <b>37</b> guards, <b>32</b> named events. <a href="states.html">States</a>, <a href="transitions.html">Transitions</a></td>
           </tr>
           <tr>
             <td class="role">IV · Time, capacity, failure</td>
@@ -291,8 +291,8 @@
         <tbody>
           <tr><td class="art">responsibility-matrix</td><td>Who holds authority, and who owns the outcome?</td><td><span class="cov part">partial</span> A Layer column rather than a matrix: 70 of the 77 transitions name the layer that evaluates them and 7 name none — and which engine <em>checks</em> a move is a different fact from who owns its outcome. <a href="transitions.html#s2">Transitions §2</a></td></tr>
           <tr><td class="art">state-inventory</td><td>Where is state authoritative?</td><td><span class="cov have">present</span> 21 revision states and 12 node states, all held in one store — which is the answer to the question, and which is also why <code>BlockedFinal</code> meaning two different things is a problem. <a href="states.html#s2">§2</a>, <a href="states.html#s3">§3</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/state-inventory.yaml">file</a></td></tr>
-          <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 55 + 22 transitions behind 37 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/transitions.yaml">data</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/diagrams.md">diagram</a></td></tr>
-          <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> Seven commands separated from twenty-four events, and the envelope each one must carry — with the failure every missing field causes. Nothing emits it yet. <a href="states.html#s6">States §6</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/event-catalog.yaml">file</a></td></tr>
+          <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 56 + 24 transitions behind 38 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/transitions.yaml">data</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/diagrams.md">diagram</a></td></tr>
+          <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> Seven commands separated from twenty-five events, and the envelope each one must carry — with the failure every missing field causes. Nothing emits it yet. <a href="states.html#s6">States §6</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/event-catalog.yaml">file</a></td></tr>
           <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov part">partial</span> One happy path in prose. No failure sequences, and none drawn. <a href="walkthrough.html">Walkthrough</a></td></tr>
         </tbody>
       </table>

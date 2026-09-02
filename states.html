@@ -83,6 +83,12 @@
     </div>
   </header>
 
+  <div class="callout">
+      <div class="eyebrow">Amended after approval · 2 September 2026</div>
+      <p>Two changes since the approved version. The node machine gained its own recovery state — two node transitions pointed at the revision's <code>ErrorRecovery</code>, which the node machine neither declared nor left, so a node that timed out had no exit. And <code>GuardrailChanged</code> became an event of its own: the scene in Section&nbsp;5 opens with a compliance officer adding a forbidden topic, which is a guardrail change, and it was firing <code>PolicyChanged</code> — a different source with a different owner.</p>
+    </div>
+
+
   <nav class="toc">
     <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
     <ol>
@@ -377,7 +383,7 @@ flowchart TD
           <tr>
             <td class="role">Generation times out</td>
             <td>stays <code>ContentInProgress</code></td>
-            <td><code>ContentDrafting</code> → <code>ErrorRecovery</code></td>
+            <td><code>ContentDrafting</code> → <code>NodeRecovery</code></td>
             <td>The <code>idempotency_key</code> is checked before anything else: if the write landed, the node moves on; if it did not, one bounded retry follows</td>
             <td>Nothing — a timeout is an unknown, and the machine resolves it without asking</td>
           </tr>
@@ -440,14 +446,14 @@ after   the course is un-publishable until T, E and I pass NodeChecks again</div
 
       <h3>A rule changes under a live course</h3>
       <p>A compliance officer adds a forbidden topic. Nothing is deployed, nothing stops, and — because published revisions are immutable — nothing is rewritten.</p>
-      <div class="formula">t0  PolicyChanged(v7 → v8)      no revision changes state yet
-t1  (dependency graph)         revisions stamped policy_version=v7
+      <div class="formula">t0  GuardrailChanged(g3 → g4)   no revision changes state yet
+t1  (dependency graph)         revisions stamped guardrail_version=g3
                                  AND touching the new topic
                                  → StaleReview
                                every other revision: untouched, still Published
 t2  re-check through the gateway — no content is regenerated,
-    the existing revision is re-judged against v8
-      passes  → back to Published, re-stamped v8
+    the existing revision is re-judged against g4
+      passes  → back to Published, re-stamped g4
       fails   → Withdrawn, with the diff explained and the
                 revision pulled from its audience
 t3  (only if it failed)        ReviseRequested → rev n+1 forks
@@ -489,6 +495,7 @@ rollback   move the pointer back to rev 1. No regeneration, no restore.</div>
           <tr><td class="ev">NodeApproved / NodeRejected</td><td>human</td><td>node</td></tr>
           <tr><td class="ev">NodeEdited</td><td>human</td><td>node, then the cascade</td></tr>
           <tr><td class="ev">PolicyChanged / CatalogChanged / KBUpdated</td><td>organization configuration</td><td>every stamped artifact</td></tr>
+          <tr><td class="ev">GuardrailChanged</td><td>compliance officer, through the managed guardrail service</td><td>every stamped artifact — carries its own version, its own audit, and no deployment</td></tr>
           <tr><td class="ev">PublishRequested / ApprovalGranted / ApprovalRejected</td><td>human</td><td>course</td></tr>
           <tr><td class="ev">NodeGenerationRequested</td><td>human</td><td>node — the editor starts one, distinct from the model finishing it</td></tr>
           <tr><td class="ev">CourseChecksRequested</td><td>human</td><td>course — the editor declares the revision done</td></tr>
@@ -525,7 +532,7 @@ idempotency_key_unused(operation)
 objectives_covered(course)
 is_draft_revision(course)       — nothing published may be edited
 differs_from_live(revision)     — an unchanged fork is not publishable</div>
-    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty-seven, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
+    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty-eight, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
   </section>
 
   <section id="s8">
@@ -540,13 +547,16 @@ G(node_edited(N)      → X needs_revalidation(N))
 G(removed(N)          → O outline_committed_without(N))            ← new
 G(generated(A)        → O guardrail_checked(A))                  ← new in v2
 G(published(C)        → policy_version(C) = current ∨ stale(C) ∨ ¬affected(C))
+G(published(C)        → guardrail_version(C) = current ∨ stale(C) ∨ ¬affected(C))  ← new
 G(restricted_chunk_used(N) → O permission_checked(N))
 G(action              → F audit(action))
 
 G(published(R)        → G ¬node_edited(R))                       ← immutability
 G(live(C) = R         → published(R))
 G(superseded(R)       → O ∃R' (successor(R', R) ∧ published(R')))
-G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass</div>
+G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
+G(node_recovery(N) ∧ ¬retry_budget_left(N)
+                      → course_state = BlockedRecoverable)      ← new</div>
     <p>The first of the four new lines is the immutability decision written formally, and it is the strongest statement on this page: <em>once a revision is published, no node in it is ever edited again — at any point in the future</em>. The nested <code>G</code> is what carries that “ever”. It is also cheap to check, because a single <code>NodeEdited</code> event against a published revision falsifies it. The last line closes the one door through which unre-approved content could otherwise reach an audience: you may return to an old revision, but never without re-verifying it first.</p>
   </section>
 
@@ -584,7 +594,7 @@ G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
     <p><strong><a href="transitions.html">Transitions &amp; guards</a></strong> — the full table these states move through: every legal transition with its guard and layer, four legal event chains, twelve forbidden ones, and the moves that deliberately do not exist.</p>
   </div>
 
-  <p class="footer-note">State inventory · draft v0.2 · 28 July 2026 · companion to the <a href="specification.html">spec v2</a>, the <a href="walkthrough.html">walkthrough</a> and the <a href="configuration.html">configuration</a></p>
+  <p class="footer-note">State inventory · draft v0.3 · 2 September 2026 · companion to the <a href="specification.html">spec v2</a>, the <a href="walkthrough.html">walkthrough</a> and the <a href="configuration.html">configuration</a></p>
 </div>
 
 <script type="module">

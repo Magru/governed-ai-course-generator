@@ -126,12 +126,18 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>55</b></span>
-      <span class="meta-chip">Node transitions: <b>22</b></span>
-      <span class="meta-chip">Guards: <b>37</b></span>
+      <span class="meta-chip">Revision transitions: <b>56</b></span>
+      <span class="meta-chip">Node transitions: <b>24</b></span>
+      <span class="meta-chip">Guards: <b>38</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
+
+  <div class="callout">
+      <div class="eyebrow">Amended after approval · 2 September 2026</div>
+      <p>The node machine gained <code>NodeRecovery</code> with three exits, and the revision gained the row that stops a course whose node has spent its recovery budget — an effect that until now existed only in prose. <code>GuardrailChanged</code> joins the events that send a live revision to <code>StaleReview</code>.</p>
+    </div>
+
 
   <nav class="toc">
     <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
@@ -205,6 +211,7 @@
 
           <tr class="phase"><td colspan="5">Content, and the guard that ends it</td></tr>
           <tr><td class="st">ContentInProgress</td><td class="evt">(node → BlockedFinal)</td><td class="grd">∃ node: BlockedFinal</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
+          <tr><td class="st">ContentInProgress</td><td class="evt">(node → NodeRecovery)</td><td class="grd">∃ node: NodeRecovery ∧ ¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable (blocked_at = node)</td></tr>
           <tr><td class="st">ContentInProgress</td><td class="evt">(node state changed)</td><td class="grd">all_nodes_approved ∧ no_stale_nodes ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">ReadyForReview</td></tr>
           <tr><td class="st">ReadyForReview</td><td class="evt">NodeEdited(any)</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st">WholeCourseChecks · PendingApproval · Approved</td><td class="evt">NodeEdited(any)</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
@@ -218,7 +225,7 @@
 
           <tr class="phase"><td colspan="5">Live — where nothing is edited</td></tr>
           <tr><td class="st">Published</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn; this revision does not move)</small></td></tr>
-          <tr><td class="st">Published</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision)</td><td class="lyr">Datalog · Guardrail</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st">Published</td><td class="evt">PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision)</td><td class="lyr">Datalog · Guardrail</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">any state in the live lineage</td><td class="evt">WithdrawRequested</td><td class="grd">in_live_lineage(revision) ∧ reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">lost_live_pointer(revision)</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
           <tr><td class="st">Published</td><td class="evt">LearnersNotified</td><td class="grd">notice_approved(recipient_set)</td><td class="lyr">Human · State store</td><td class="st">Published <small>(no move; the notice is recorded)</small></td></tr>
@@ -227,7 +234,7 @@
           <tr><td class="st stop">StaleReview</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">RollbackRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">StaleReview</td></tr>
-          <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog · Guardrail</td><td class="st stop">StaleReview</td></tr>
+          <tr><td class="st">Superseded</td><td class="evt">PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated</td><td class="grd">affected(revision) ∧ has_active_readers</td><td class="lyr">Datalog · Guardrail</td><td class="st stop">StaleReview</td></tr>
           <tr><td class="st">Superseded</td><td class="evt">ArchiveRequested</td><td class="grd">¬has_active_readers</td><td class="lyr">State store · Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ArchiveRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">Archived</td></tr>
           <tr><td class="st stop">Withdrawn</td><td class="evt">ReviseRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">rev n+1 · ContentInProgress <small>(spawn)</small></td></tr>
@@ -266,18 +273,24 @@
         <tbody>
           <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">course_state = ContentInProgress ∧ is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))</td><td class="lyr">State store · OPA · Datalog</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">course_state = ContentInProgress</td><td class="lyr">State store</td><td class="st">Generated</td></tr>
-          <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">writes recovery_from(node) = generation</td><td class="lyr">State store</td><td class="st stop">NodeRecovery</td></tr>
+          <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = generation; repair_count +1)</td></tr>
           <tr><td class="st">Generated</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutputGuardrail</td></tr>
-          <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">writes recovery_from(node) = guardrail</td><td class="lyr">State store</td><td class="st stop">NodeRecovery</td></tr>
-          <tr><td class="st">NodeRecovery</td><td class="evt">(auto)</td>
-<td class="grd">retry_budget_left(node) ∧ recovery_from(node) = generation</td>
+          <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = guardrail; repair_count +1)</td></tr>
+          <tr><td class="st stop">NodeRecovery</td><td class="evt">(auto)</td>
+<td class="grd">recovery_from(node) = generation ∧ ¬idempotency_key_unused(op) — the write landed</td>
+<td class="lyr">State store</td><td class="st">Generated</td></tr>
+          <tr><td class="st stop">NodeRecovery</td><td class="evt">(auto)</td>
+<td class="grd">recovery_from(node) = generation ∧ idempotency_key_unused(op) ∧ retry_budget_left(node)</td>
 <td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
-          <tr><td class="st">NodeRecovery</td><td class="evt">(auto)</td>
-<td class="grd">retry_budget_left(node) ∧ recovery_from(node) = guardrail</td>
+          <tr><td class="st stop">NodeRecovery</td><td class="evt">(auto)</td>
+<td class="grd">recovery_from(node) = guardrail ∧ retry_budget_left(node) — a screening leaves nothing to reconcile</td>
 <td class="lyr">State store</td><td class="st">OutputGuardrail</td></tr>
-          <tr><td class="st">NodeRecovery</td><td class="evt">BlockedInputFixed</td>
-<td class="grd">¬retry_budget_left(node) — a person cleared the cause and the budget resets</td>
-<td class="lyr">Human · State store</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st stop">NodeRecovery</td><td class="evt">BlockedInputFixed</td>
+<td class="grd">¬retry_budget_left(node) ∧ recovery_from(node) = generation</td>
+<td class="lyr">Human · State store</td><td class="st">ContentDrafting (repair_count = 0)</td></tr>
+          <tr><td class="st stop">NodeRecovery</td><td class="evt">BlockedInputFixed</td>
+<td class="grd">¬retry_budget_left(node) ∧ recovery_from(node) = guardrail</td>
+<td class="lyr">Human · State store</td><td class="st">OutputGuardrail (repair_count = 0)</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st">NodeChecks</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ references_live ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Z3 · Prolog</td><td class="st">Validated</td></tr>
@@ -313,7 +326,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need twenty-four more to be complete. All thirty-seven, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need twenty-five more to be complete. All thirty-eight, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -323,7 +336,7 @@
       <dd><span class="owner">OPA</span> — may this actor take this action, over this audience, in this state? Refuses with the rule that denied and a human-readable reason. <strong>One of two guards whose refusal is terminal</strong> — the other is <code>guardrail_clean</code> on the brief, where a denied topic ends the revision rather than sending it back.</dd>
 
       <dt>guardrail_clean(artifact)</dt>
-      <dd><span class="owner">Managed guardrail</span> — text and images carry nothing forbidden. Refuses with a category, never with a matched string. An <em>explicit</em> deny is a refusal; an <em>unreachable</em> service is a timeout, which is an unknown and routes to <code>ErrorRecovery</code> — the run stalls either way, but the two are not the same event and must not be recorded as one.</dd>
+      <dd><span class="owner">Managed guardrail</span> — text and images carry nothing forbidden. Refuses with a category, never with a matched string. An <em>explicit</em> deny is a refusal; an <em>unreachable</em> service is a timeout, which is an unknown and routes to recovery — <code>ErrorRecovery</code> when the artifact is a brief, <code>NodeRecovery</code> when it is a node. The run stalls either way, but a refusal and an unknown are not the same event and must not be recorded as one.</dd>
 
       <dt>feasible(brief)</dt>
       <dd><span class="owner">Z3</span> — the brief's requirements are mutually satisfiable, and satisfiable against the organization's thresholds. Refuses with an unsat core: the smallest set of requirements that cannot hold together.</dd>
@@ -388,8 +401,11 @@
       <dt>all_nodes_approved(revision) · no_stale_nodes(revision)</dt>
       <dd><span class="owner">State store</span> — the two quantified conditions that lift a revision out of <code>ContentInProgress</code>. Both quantify over the nodes in the committed outline, so a <code>Removed</code> node falls outside the quantifier instead of standing as a counter-example forever. Refuse with the offending nodes.</dd>
 
+      <dt>recovery_from(node)</dt>
+      <dd><span class="owner">State store</span> — which stage a node fell out of, <code>generation</code> or <code>guardrail</code>. Written on the way into <code>NodeRecovery</code>, read by every way out of it. The node-machine twin of <code>blocked_at</code>, and the reason a screening failure resumes at screening instead of paying for the model again.</dd>
+
       <dt>retry_budget_left(scope)</dt>
-      <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. Refusing is what turns a repair loop into a stop.</dd>
+      <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. The counter rises on a failed check <em>and</em> on every entry into recovery, so a provider that is down does not loop forever on a budget nothing spends. Refusing is what turns a repair loop into a stop.</dd>
 
       <dt>idempotency_key_unused(operation)</dt>
       <dd><span class="owner">State store</span> — has this side-effecting operation already landed? Asked <em>before</em> any retry, which is what makes a timeout an unknown rather than a failure.</dd>
@@ -571,8 +587,8 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     <div class="eyebrow">Section 8</div>
     <h2>Totality, determinism, concurrency</h2>
 
-    <h3>One recovery state, shared by two machines</h3>
-    <p><code>ErrorRecovery</code> appears in both tables and is <strong>one state, parameterized by the scope of the operation that failed</strong>, not two states with the same name. The exit rule is a single sentence in both cases — check <code>idempotency_key</code>, then decide about a retry — and splitting it would duplicate the only interesting logic in the model, which is how such rules drift apart. The cost is that a state belongs to two machines at once, which is unusual enough to say out loud rather than leave for a reader to notice: it is counted once, among the revision states, and referenced — not duplicated — by the node machine.</p>
+    <h3>Two recovery states, one rule</h3>
+    <p>Each machine has its own: <code>ErrorRecovery</code> for the revision, <code>NodeRecovery</code> for the node. An earlier draft shared one state between them, arguing that duplicating the exit rule invites the two copies to drift. <strong>That argument was right about drift and wrong about the cost.</strong> A state referenced by a machine that does not declare it is a state that machine cannot leave — and the node had no exit at all. What is shared is the <em>rule</em>, not the state: check <code>idempotency_key</code> first, decide about a retry second, and each machine states it over its own scope. The node adds one term the revision does not need — <code>recovery_from</code> — because a screening that fell over should resume at screening rather than pay for the model a second time.</p>
     <h3>The transition function is partial, and that is explicit</h3>
     <p>Most (state, event) pairs have no row. An event arriving where no row matches is <strong>recorded and discarded</strong> — it does not error, does not queue, and above all does not fall through to a default. A stale <code>GuardrailVerdict</code> arriving after the editor cancelled a run is the ordinary case for this, and the trace keeps it so that “why did nothing happen?” has an answer.</p>
 
@@ -606,7 +622,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
     </div>
   </section>
 
-  <p class="footer-note">Transitions &amp; guards · draft v0.1 · 28 July 2026 · companion to the <a href="specification.html">spec v2</a> and the <a href="states.html">state model</a></p>
+  <p class="footer-note">Transitions &amp; guards · draft v0.2 · 2 September 2026 · companion to the <a href="specification.html">spec v2</a> and the <a href="states.html">state model</a></p>
 </div>
 
 <script src="spec.js?v=3" defer></script>

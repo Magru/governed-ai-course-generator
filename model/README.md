@@ -23,7 +23,7 @@ someone revise it. That is the whole convention.
 
 **Nine of the framework's twenty artifacts**, and all ten items of its Minimum Viable
 System Model — plus `invariants.yaml`, which the framework's list does not contain and
-without which this system cannot be modelled: it carries the thirteen temporal properties
+without which this system cannot be modelled: it carries the fifteen temporal properties
 the architecture exists to guarantee. The eleven that remain are the production-ready half — a
 deployment model, an executable simulation, a wired monitoring map, a traceability
 linter — and the [system model page](../modeling.html) grades every one.

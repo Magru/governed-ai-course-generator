@@ -107,6 +107,12 @@
     </div>
   </header>
 
+  <div class="callout">
+      <div class="eyebrow">Amended after approval · 2 September 2026</div>
+      <p>One row added to Section&nbsp;10: what happens when the guardrail policy version moves under a live course, which is a different failure from the service being unreachable.</p>
+    </div>
+
+
   <nav class="toc">
     <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
     <ol>
@@ -373,6 +379,11 @@ metadata, titles   → light</div>
         </thead>
         <tbody>
           <tr>
+            <td class="role">The guardrail policy changes under a live course</td>
+            <td>Nothing stops. Revisions stamped with the superseded <code>guardrail_version</code> and touching what changed go to <code>StaleReview</code> and are re-judged; the rest keep serving</td>
+            <td>A version that moved is not a service that died — the first is routine and the second is an outage</td>
+          </tr>
+          <tr>
             <td class="role">The guardrail service is unreachable</td>
             <td>The gateway fails closed. The run stalls in <code>ErrorRecovery</code>; nothing reaches an editor and nothing is published</td>
             <td>The absence of a verdict is not a permissive verdict</td>
@@ -471,7 +482,7 @@ metadata, titles   → light</div>
     </div>
   </section>
 
-  <p class="footer-note">Configuration · reviewed v0.1 · 2 August 2026 · companion to the <a href="specification.html">spec v2</a></p>
+  <p class="footer-note">Configuration · reviewed v0.2 · 2 September 2026 · companion to the <a href="specification.html">spec v2</a></p>
 </div>
 
 <script src="spec.js?v=3" defer></script>

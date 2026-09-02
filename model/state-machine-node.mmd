@@ -13,9 +13,11 @@ stateDiagram-v2
     ContentDrafting --> NodeRecovery : Timeout · ModelError
     Generated --> OutputGuardrail : auto
     OutputGuardrail --> NodeRecovery : Timeout · ServiceUnreachable
+    NodeRecovery --> Generated : auto
     NodeRecovery --> ContentDrafting : auto
     NodeRecovery --> OutputGuardrail : auto
     NodeRecovery --> ContentDrafting : BlockedInputFixed
+    NodeRecovery --> OutputGuardrail : BlockedInputFixed
     OutputGuardrail --> NodeChecks : GuardrailVerdict(allow)
     OutputGuardrail --> NodeRepair : GuardrailVerdict(deny)
     NodeChecks --> Validated : auto
