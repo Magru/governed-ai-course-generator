@@ -135,7 +135,7 @@
 
   <div class="callout">
       <div class="eyebrow">Amended after approval · 2 September 2026</div>
-      <p>The node machine gained <code>NodeRecovery</code> with three exits, and the revision gained the row that stops a course whose node has spent its recovery budget — an effect that until now existed only in prose. <code>GuardrailChanged</code> joins the events that send a live revision to <code>StaleReview</code>.</p>
+      <p>The node machine gained <code>NodeRecovery</code> with three exits, and the revision gained the row that stops a course whose node has spent its recovery budget — an effect that until now existed only in prose. <code>GuardrailChanged</code> joins the events that send a live revision to <code>StaleReview</code>. One semantic change goes with them: the retry budget now counts retries actually taken out of recovery, not only failed checks — without that a provider outage could loop on a bound nothing spent.</p>
     </div>
 
 
@@ -273,23 +273,23 @@
         <tbody>
           <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">course_state = ContentInProgress ∧ is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))</td><td class="lyr">State store · OPA · Datalog</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">course_state = ContentInProgress</td><td class="lyr">State store</td><td class="st">Generated</td></tr>
-          <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = generation; repair_count +1)</td></tr>
+          <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = generation)</td></tr>
           <tr><td class="st">Generated</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutputGuardrail</td></tr>
-          <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = guardrail; repair_count +1)</td></tr>
+          <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = guardrail)</td></tr>
           <tr><td class="st stop">NodeRecovery</td><td class="evt">(auto)</td>
 <td class="grd">recovery_from(node) = generation ∧ ¬idempotency_key_unused(op) — the write landed</td>
 <td class="lyr">State store</td><td class="st">Generated</td></tr>
           <tr><td class="st stop">NodeRecovery</td><td class="evt">(auto)</td>
-<td class="grd">recovery_from(node) = generation ∧ idempotency_key_unused(op) ∧ retry_budget_left(node)</td>
-<td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
+<td class="grd">course_state = ContentInProgress ∧ recovery_from(node) = generation ∧ idempotency_key_unused(op) ∧ retry_budget_left(node)</td>
+<td class="lyr">State store</td><td class="st">ContentDrafting (repair_count +1)</td></tr>
           <tr><td class="st stop">NodeRecovery</td><td class="evt">(auto)</td>
-<td class="grd">recovery_from(node) = guardrail ∧ retry_budget_left(node) — a screening leaves nothing to reconcile</td>
-<td class="lyr">State store</td><td class="st">OutputGuardrail</td></tr>
+<td class="grd">course_state = ContentInProgress ∧ recovery_from(node) = guardrail ∧ retry_budget_left(node) — a screening writes no course state, so there is nothing to reconcile; it does cost a paid call, so it costs a retry</td>
+<td class="lyr">State store</td><td class="st">OutputGuardrail (repair_count +1)</td></tr>
           <tr><td class="st stop">NodeRecovery</td><td class="evt">BlockedInputFixed</td>
-<td class="grd">¬retry_budget_left(node) ∧ recovery_from(node) = generation</td>
+<td class="grd">course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = generation</td>
 <td class="lyr">Human · State store</td><td class="st">ContentDrafting (repair_count = 0)</td></tr>
           <tr><td class="st stop">NodeRecovery</td><td class="evt">BlockedInputFixed</td>
-<td class="grd">¬retry_budget_left(node) ∧ recovery_from(node) = guardrail</td>
+<td class="grd">course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = guardrail</td>
 <td class="lyr">Human · State store</td><td class="st">OutputGuardrail (repair_count = 0)</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(allow)</td><td class="grd">guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st">NodeChecks</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st stop">NodeRepair</td></tr>
@@ -405,7 +405,7 @@
       <dd><span class="owner">State store</span> — which stage a node fell out of, <code>generation</code> or <code>guardrail</code>. Written on the way into <code>NodeRecovery</code>, read by every way out of it. The node-machine twin of <code>blocked_at</code>, and the reason a screening failure resumes at screening instead of paying for the model again.</dd>
 
       <dt>retry_budget_left(scope)</dt>
-      <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. The counter rises on a failed check <em>and</em> on every entry into recovery, so a provider that is down does not loop forever on a budget nothing spends. Refusing is what turns a repair loop into a stop.</dd>
+      <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. The counter rises on a failed check <em>and</em> on every retry taken out of recovery, so a provider that is down does not loop forever on a budget nothing spends. It is read before it is raised, and arriving in recovery costs nothing on its own — an operation whose write turned out to have landed was never a retry. Refusing is what turns a repair loop into a stop.</dd>
 
       <dt>idempotency_key_unused(operation)</dt>
       <dd><span class="owner">State store</span> — has this side-effecting operation already landed? Asked <em>before</em> any retry, which is what makes a timeout an unknown rather than a failure.</dd>
@@ -558,7 +558,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over</div>
           <tr>
             <td class="role">12 · Proceed while the guardrail is unreachable<br><small class="muted">NodeGenerated → <b>NodeChecks</b></small></td>
             <td>No <code>GuardrailVerdict</code> arrives, and no transition leaves <code>OutputGuardrail</code> without one</td>
-            <td>The run stalls in <code>ErrorRecovery</code>. Absence of a verdict is never a permissive verdict</td>
+            <td>The run stalls — <code>ErrorRecovery</code> for a brief, <code>NodeRecovery</code> for a node. Absence of a verdict is never a permissive verdict</td>
           </tr>
         </tbody>
       </table>

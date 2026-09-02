@@ -193,7 +193,14 @@ def write_mermaid(rows, known, title, terminal_hint):
 
 # ----------------------------------------------------------------------- lint
 
-def lint(rev_states, node_states, events):
+def guard_count():
+    """Names in the guard glossary, counting ·-paired entries separately."""
+    block = section("transitions.html", "s4")
+    return sum(len(re.split(r'\s*·\s*', _text(d)))
+               for d in re.findall(r'<dt[^>]*>(.*?)</dt>', block, re.S))
+
+
+def lint(rev_states, node_states, events, rev_tr, node_tr):
     """state-inventory.yaml and event-catalog.yaml are maintained by hand, because
     the facts they carry — variable types, owners, recovery, command-vs-event — are
     nowhere in the HTML. They are checked against the tables instead of generated,
@@ -223,6 +230,13 @@ def lint(rev_states, node_states, events):
             problems.append(f"invariants.yaml is missing {formula}")
 
     problems += figure_drift()
+    problems += prose_counts({
+        "rev_states": len(rev_states), "node_states": len(node_states),
+        "rev_tr": len(rev_tr), "node_tr": len(node_tr),
+        "event_rows": len(events),
+        "event_names": sum(len(re.split(r'\s*/\s*', r[0])) for r in events),
+        "guards": guard_count(),
+    })
 
     if problems:
         sys.exit("NOTHING WRITTEN — the hand-maintained files have fallen behind:\n  "
@@ -313,6 +327,68 @@ def figure_drift():
     return sorted(set(out))
 
 
+# Prose carries counts that no table check reads, and three audit rounds in a row
+# found a figure corrected in one place and left standing in another. Each claim
+# below names where a number appears in prose and which real count it must equal.
+# A claim whose pattern stops matching is itself a failure: the sentence moved and
+# nobody re-pointed the check at it.
+WORDS = {9: "nine", 10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen",
+         14: "fourteen", 15: "fifteen", 19: "nineteen", 21: "twenty-one",
+         22: "twenty-two", 23: "twenty-three", 24: "twenty-four", 25: "twenty-five",
+         32: "thirty-two", 37: "thirty-seven", 38: "thirty-eight",
+         55: "fifty-five", 56: "fifty-six"}
+
+PROSE_CLAIMS = [
+    ("transitions.html", r"Guards: <b>(\d+)</b>", "guards"),
+    ("transitions.html", r"Revision transitions: <b>(\d+)</b>", "rev_tr"),
+    ("transitions.html", r"Node transitions: <b>(\d+)</b>", "node_tr"),
+    ("transitions.html", r"the tables above need ([a-z-]+) more to be complete", "guards_minus_13"),
+    ("transitions.html", r"All ([a-z-]+), with their owner", "guards"),
+    ("states.html", r"lists all ([a-z-]+), each with what it produces", "guards"),
+    ("states.html", r"The same ([a-z-]+) states", "node_states"),
+    ("index.html", r"with all ([a-z-]+) guards written out", "guards"),
+    ("specification.html", r"with all ([a-z-]+) guards written out", "guards"),
+    ("index.html", r"<b>(\d+) \+ (\d+)</b>", "states_pair"),
+    ("modeling.html", r"<b>(\d+) \+ (\d+)</b> states", "states_pair"),
+    ("modeling.html", r"<b>(\d+) \+ (\d+)</b> transitions", "tr_pair"),
+    ("modeling.html", r"transitions behind (\d+) guards", "guards"),
+    ("modeling.html", r"<b>(\d+)</b> named events", "event_names"),
+    ("modeling.html", r"Seven commands separated from ([a-z-]+) events", "event_names_minus_7"),
+    ("README.md", r"(\d+) revision states, (\d+) node states", "states_pair"),
+    ("README.md", r"with all (\d+) guards", "guards"),
+]
+
+
+def prose_counts(counts):
+    """Every number written in prose must equal the number in the tables."""
+    out = []
+    want = dict(counts)
+    want["guards_minus_13"] = counts["guards"] - 13
+    want["event_names_minus_7"] = counts["event_names"] - 7
+
+    for name, pattern, key in PROSE_CLAIMS:
+        text = (SITE / name).read_text(encoding="utf-8")
+        found = re.search(pattern, text)
+        if not found:
+            out.append(f"{name}: the sentence behind claim <{key}> is gone — "
+                       f"re-point the check at where it moved")
+            continue
+        got = [g for g in found.groups() if g]
+        if key == "states_pair":
+            exp = [counts["rev_states"], counts["node_states"]]
+        elif key == "tr_pair":
+            exp = [counts["rev_tr"], counts["node_tr"]]
+        elif key == "events_pair":
+            exp = [counts["event_rows"], counts["event_names"]]
+        else:
+            exp = [want[key]]
+        for g, e in zip(got, exp):
+            n = int(g) if g.isdigit() else {v: k for k, v in WORDS.items()}.get(g)
+            if n != e:
+                out.append(f"{name}: prose says {g!r} where the tables say {e} ({key})")
+    return out
+
+
 # ---------------------------------------------------------------------- main
 
 def main():
@@ -334,7 +410,7 @@ def main():
 
     known = {r[0] for r in rev_states} | {r[0] for r in node_states}
     transitions, unresolved = write_transitions(rev_tr, node_tr, known)
-    lint(rev_states, node_states, events)
+    lint(rev_states, node_states, events, rev_tr, node_tr)
 
     files = {
         "transitions.yaml": transitions,

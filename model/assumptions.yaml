@@ -139,7 +139,7 @@ assumptions:
 summary:
   count: 11
   monitored: 0
-  with_a_named_threshold: 3
+  with_a_named_threshold: 4
   note: "seven of eleven have no threshold"
   open_questions:
     - "Seven of eleven have no threshold. A threshold nobody has set is not a weaker control than one nobody measures — it is the same control, and both are absent."

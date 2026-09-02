@@ -139,7 +139,7 @@ safe_fallbacks:
 
 assumptions:
   status: "consolidated"
-  where: "assumptions.yaml — ten dependencies, each with a signal, threshold, response and owner"
+  where: "assumptions.yaml — eleven dependencies, each with a signal, threshold, response and owner"
   monitored: 0
   note: >-
     The list exists; nothing on it is watched. Collecting them was the

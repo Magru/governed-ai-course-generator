@@ -13,10 +13,10 @@ Published at **https://magru.github.io/governed-ai-course-generator/**
 |---|---|
 | `index.html` | the cover — title, the system in one animated diagram, and the menu |
 | `specification.html` | the specification itself, sixteen sections |
-| `states.html` | state inventory — 21 revision states, 10 node states, invariants |
+| `states.html` | state inventory — 21 revision states, 12 node states, invariants |
 | `walkthrough.html` | one course from empty brief to publication in 24 steps |
 | `configuration.html` | the seven configuration sources read at runtime |
-| `transitions.html` | every legal move in both machines, with all 32 guards |
+| `transitions.html` | every legal move in both machines, with all 38 guards |
 | `layers.html` | which engine owns which question, with runnable rules |
 | `safety.html` | the action registry, prompt architecture, autonomy ladder |
 | `spec.css` | the shared stylesheet — every page links it, nothing is duplicated |

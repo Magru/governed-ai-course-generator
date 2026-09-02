@@ -76,7 +76,7 @@ variables:
     type: "Operational"
     owner: "State store"
     valid_values: "integer >= 0, per revision and per node"
-    recovery: "count CheckFailed events since the last approval"
+    recovery: "count CheckFailed events and retries taken out of NodeRecovery, since the last approval"
     note: "read by retry_budget_left; exhausting it is what sends work to a person"
 
   - variable: "blocked_at"

@@ -553,10 +553,10 @@ node:
     from: ["ContentDrafting"]
     guard: "—"
     layer: "State store"
-    to_raw: "NodeRecovery (recovery_from = generation; repair_count +1)"
+    to_raw: "NodeRecovery (recovery_from = generation)"
     to_kind: state
     to: ["NodeRecovery"]
-    to_note: "recovery_from = generation; repair_count +1"
+    to_note: "recovery_from = generation"
   - event: "(auto)"
     from_raw: "Generated"
     from_kind: state
@@ -572,10 +572,10 @@ node:
     from: ["OutputGuardrail"]
     guard: "—"
     layer: "State store"
-    to_raw: "NodeRecovery (recovery_from = guardrail; repair_count +1)"
+    to_raw: "NodeRecovery (recovery_from = guardrail)"
     to_kind: state
     to: ["NodeRecovery"]
-    to_note: "recovery_from = guardrail; repair_count +1"
+    to_note: "recovery_from = guardrail"
   - event: "(auto)"
     from_raw: "NodeRecovery"
     from_kind: state
@@ -589,25 +589,27 @@ node:
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "recovery_from(node) = generation ∧ idempotency_key_unused(op) ∧ retry_budget_left(node)"
+    guard: "course_state = ContentInProgress ∧ recovery_from(node) = generation ∧ idempotency_key_unused(op) ∧ retry_budget_left(node)"
     layer: "State store"
-    to_raw: "ContentDrafting"
+    to_raw: "ContentDrafting (repair_count +1)"
     to_kind: state
     to: ["ContentDrafting"]
+    to_note: "repair_count +1"
   - event: "(auto)"
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "recovery_from(node) = guardrail ∧ retry_budget_left(node) — a screening leaves nothing to reconcile"
+    guard: "course_state = ContentInProgress ∧ recovery_from(node) = guardrail ∧ retry_budget_left(node) — a screening writes no course state, so there is nothing to reconcile; it does cost a paid call, so it costs a retry"
     layer: "State store"
-    to_raw: "OutputGuardrail"
+    to_raw: "OutputGuardrail (repair_count +1)"
     to_kind: state
     to: ["OutputGuardrail"]
+    to_note: "repair_count +1"
   - event: "BlockedInputFixed"
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "¬retry_budget_left(node) ∧ recovery_from(node) = generation"
+    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = generation"
     layer: "Human · State store"
     to_raw: "ContentDrafting (repair_count = 0)"
     to_kind: state
@@ -617,7 +619,7 @@ node:
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "¬retry_budget_left(node) ∧ recovery_from(node) = guardrail"
+    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = guardrail"
     layer: "Human · State store"
     to_raw: "OutputGuardrail (repair_count = 0)"
     to_kind: state

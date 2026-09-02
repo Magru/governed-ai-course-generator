@@ -135,8 +135,9 @@ events:
     payload_must_carry: ["from_version", "to_version"]
     note: >-
       Held apart from the three above because its owner and its console are
-      different: the policy bundle belongs to whoever writes OPA rules, the
-      guardrail to compliance, and each moves without the other. An earlier
+      different. Compliance owns both, but the bundle is deployed OPA source
+      and the guardrail is a definition in a managed console, each with its own
+      version and its own audit trail. An earlier
       draft had no such event and demonstrated the cascade by firing
       PolicyChanged for a change to a forbidden topic — a guardrail change
       wearing the policy bundle's name.

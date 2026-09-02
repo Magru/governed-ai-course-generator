@@ -85,7 +85,7 @@
 
   <div class="callout">
       <div class="eyebrow">Amended after approval · 2 September 2026</div>
-      <p>Two changes since the approved version. The node machine gained its own recovery state — two node transitions pointed at the revision's <code>ErrorRecovery</code>, which the node machine neither declared nor left, so a node that timed out had no exit. And <code>GuardrailChanged</code> became an event of its own: the scene in Section&nbsp;5 opens with a compliance officer adding a forbidden topic, which is a guardrail change, and it was firing <code>PolicyChanged</code> — a different source with a different owner.</p>
+      <p>Two changes since the approved version. The node machine gained its own recovery state — two node transitions pointed at the revision's <code>ErrorRecovery</code>, which the node machine neither declared nor left, so a node that timed out had no exit. And <code>GuardrailChanged</code> became an event of its own: the scene in Section&nbsp;5 opens with a compliance officer adding a forbidden topic, which is a guardrail change, and it was firing <code>PolicyChanged</code> — a different source. Compliance owns both, but they are different mechanisms with different version stamps: the bundle is deployed OPA source, the guardrail a definition in a managed console.</p>
     </div>
 
 
@@ -232,7 +232,7 @@ modified and still carries the stamps it was cleared under.</div>
       <p>A draft revision is also the answer to “where does an editor experiment?” — it is invisible to learners, it can be abandoned, and <code>differs_from_live</code> stops an untouched one from being published. No separate sandbox state is needed, and one would sit badly beside the rule that every action is audited.</p>
       <p>Three consequences, and none of them cost a new mechanism:</p>
       <ul class="plain">
-        <li><strong>The node FSM does not change at all.</strong> The same eleven states, the same cascade — they simply never run against live content any more. That is the strongest argument for the decision: it removes a class of problem rather than adding machinery.</li>
+        <li><strong>The node FSM does not change at all.</strong> The same twelve states, the same cascade — they simply never run against live content any more. That is the strongest argument for the decision: it removes a class of problem rather than adding machinery.</li>
         <li><strong>Node approvals are inherited; the publication signature never is.</strong> The fork copies node approvals so unchanged work is not re-reviewed — but every revision passes <code>PendingApproval</code> on its own. “Was this node reviewed?” and “am I willing to sign what goes live today, under today's rules?” are different questions, and only the first is about the content.</li>
         <li><strong>Rollback becomes expressible at all</strong>, which is what the brief asks for under production readiness. It is a pointer move to a revision that still exists, still holds its approvals, and still carries the versions it was cleared under — not a regeneration and not a restore from backup. It is not a free move, though: the returning revision is re-verified first, for the reason given below.</li>
         <li><strong>One guard has to be added:</strong> <code>differs_from_live(revision)</code>. A fork that has not been edited is byte-identical to what is already serving, and publishing it would be a no-op that nonetheless moves the pointer and rewrites history. The guard keeps such a revision out of <code>ReadyForReview</code>.</li>
@@ -276,6 +276,12 @@ flowchart TD
   NR -- "budget left" --> CD
   NR -- "budget spent" --> BR["BlockedRecoverable"]
   NC -- "policy violation" --> BF["BlockedFinal"]
+  CD -- "timeout, model error" --> NRC["NodeRecovery — recovery_from records the stage"]
+  OMD -- "guardrail unreachable" --> NRC
+  NRC -- "the write landed" --> GEN
+  NRC -- "budget left, from generation" --> CD
+  NRC -- "budget left, from guardrail" --> OMD
+  NRC -- "budget spent — waits for a person" --> BR
   NA -- "editor edits the node" --> NRV["NeedsRevalidation"]
   NRV -. "Datalog marks dependents" .-> NRV2["Dependents — exam questions, illustrations"]
   NRV -- "hand-edited" --> OMD
@@ -288,7 +294,7 @@ flowchart TD
   classDef blocked fill:#F4E7DD,stroke:#A6512B,color:#5C2D16;
   classDef terminal fill:#E3EFEA,stroke:#0E6E5C,color:#0B4438;
   class NA hitl;
-  class NR,BR,BF,NRV,NRV2 blocked;
+  class NR,NRC,BR,BF,NRV,NRV2 blocked;
   class VAL,RM terminal;
       </pre>
     </div>
@@ -555,8 +561,8 @@ G(published(R)        → G ¬node_edited(R))                       ← immutabi
 G(live(C) = R         → published(R))
 G(superseded(R)       → O ∃R' (successor(R', R) ∧ published(R')))
 G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
-G(node_recovery(N) ∧ ¬retry_budget_left(N)
-                      → course_state = BlockedRecoverable)      ← new</div>
+G(node_held(N)        → course_state(rev N) ≠ ContentInProgress) ← new
+     where node_held(N) ≡ N in NodeRecovery ∧ ¬retry_budget_left(N)</div>
     <p>The first of the four new lines is the immutability decision written formally, and it is the strongest statement on this page: <em>once a revision is published, no node in it is ever edited again — at any point in the future</em>. The nested <code>G</code> is what carries that “ever”. It is also cheap to check, because a single <code>NodeEdited</code> event against a published revision falsifies it. The last line closes the one door through which unre-approved content could otherwise reach an audience: you may return to an old revision, but never without re-verifying it first.</p>
   </section>
 
