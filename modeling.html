@@ -285,7 +285,7 @@
       </table>
     </div>
 
-    <div class="grp"><h3>State, events and behaviour</h3><span class="tally">5 artifacts · 4 present · 1 partial</span></div>
+    <div class="grp"><h3>State, events and behaviour</h3><span class="tally">5 artifacts · 3 present · 2 partial</span></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
@@ -294,7 +294,7 @@
           <tr><td class="art">state-inventory</td><td>Where is state authoritative?</td><td><span class="cov have">present</span> 21 revision states and 12 node states, all held in one store — which is the answer to the question, and which is also why <code>BlockedFinal</code> meaning two different things is a problem. <a href="states.html#s2">§2</a>, <a href="states.html#s3">§3</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/state-inventory.yaml">file</a></td></tr>
           <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 56 + 24 transitions behind 38 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/transitions.yaml">data</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/diagrams.md">diagram</a></td></tr>
           <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> Seven commands separated from twenty-five events, and the envelope each one must carry — with the failure every missing field causes. Nothing emits it yet. <a href="states.html#s6">States §6</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/event-catalog.yaml">file</a></td></tr>
-          <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov have">present</span> Five runs, executable and checked against all fifteen invariants: publication, a node removed through a re-committed outline, a rollback, a restricted source, and a node that has spent its retries. The shape they must have is declared in <code>trace-schema.yaml</code> rather than assumed. None of them is drawn. <a href="walkthrough.html">Walkthrough</a></td></tr>
+          <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov part">partial</span> Five runs, executable and checked against all fifteen invariants: publication, a node removed through a re-committed outline, a rollback, a restricted source, and a node that has spent its retries. The shape they must have is declared in <code>trace-schema.yaml</code> rather than assumed. Still partial for the reason the artifact is named for: not one of them is drawn as a sequence. <a href="walkthrough.html">Walkthrough</a></td></tr>
         </tbody>
       </table>
     </div>
@@ -318,7 +318,7 @@
 
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <div class="thesis">
-        <p><strong>Eleven present, seven partial, two absent — and every one of the eleven is a file.</strong> What remains absent is a deployment view for a system with no deployment, and a simulation under load. The traceability linter was the third, and it is the one this round built: the views are now held together by a program that refuses to run when they drift, rather than by an audit that has to be remembered. The earlier version of this page said the project had been reasoned about carefully and measured not at all. The second half of that is no longer true, and the measuring changed the argument rather than decorating it — see part IV above.</p>
+        <p><strong>Ten present, eight partial, two absent — and every one of the ten is a file.</strong> What remains absent is a deployment view for a system with no deployment, and a simulation under load. The traceability linter was the third, and it is the one this round built: the views are now held together by a program that refuses to run when they drift, rather than by an audit that has to be remembered. The earlier version of this page said the project had been reasoned about carefully and measured not at all. The second half of that is no longer true, and the measuring changed the argument rather than decorating it — see part IV above.</p>
       </div>
     </div>
   </section>
