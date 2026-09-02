@@ -372,7 +372,8 @@ def figure_drift():
 # below names where a number appears in prose and which real count it must equal.
 # A claim whose pattern stops matching is itself a failure: the sentence moved and
 # nobody re-pointed the check at it.
-WORDS = {9: "nine", 10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen",
+WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+         7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen",
          14: "fourteen", 15: "fifteen", 19: "nineteen", 21: "twenty-one",
          22: "twenty-two", 23: "twenty-three", 24: "twenty-four", 25: "twenty-five",
          32: "thirty-two", 37: "thirty-seven", 38: "thirty-eight",
@@ -426,6 +427,58 @@ def prose_counts(counts):
             n = int(g) if g.isdigit() else {v: k for k, v in WORDS.items()}.get(g)
             if n != e:
                 out.append(f"{name}: prose says {g!r} where the tables say {e} ({key})")
+    return out
+
+
+def package_tally():
+    """modeling.html grades itself in three places; all three must agree.
+
+    Each artifact row carries a present/partial/absent mark, each group header
+    restates the totals, and the closing paragraph restates them again. The
+    marks are the fact; the other two are copies, and this round the copies were
+    wrong the moment two artifacts changed grade. Counting them here is cheaper
+    than remembering to.
+    """
+    text = (SITE / "modeling.html").read_text(encoding="utf-8")
+    marks = {"have": "present", "part": "partial", "none": "absent"}
+    out = []
+
+    groups = re.split(r'<div class="grp">', text)[1:]
+    total = {"present": 0, "partial": 0, "absent": 0}
+    for chunk in groups:
+        tally = re.search(r'<span class="tally">(.*?)</span>', chunk)
+        if not tally:
+            continue
+        got = {"present": 0, "partial": 0, "absent": 0}
+        # Only the artifact rows count. The same marks appear elsewhere on the
+        # page, against the framework's six parts, and those are a different
+        # tally that this one was briefly conflated with.
+        for row in re.findall(r"<tr>(?:(?!</tr>).)*?</tr>", chunk, re.S):
+            if 'class="art"' not in row:
+                continue
+            cls = re.search(r'<span class="cov (have|part|none)">', row)
+            if cls:
+                got[marks[cls.group(1)]] += 1
+        for k in got:
+            total[k] += got[k]
+        name = re.search(r"<h3>(.*?)</h3>", chunk)
+        said = dict((m[1], int(m[0])) for m in
+                    re.findall(r"(\d+) (present|partial|absent)", tally.group(1)))
+        for grade, n in got.items():
+            if said.get(grade, 0) != n:
+                out.append(f"modeling.html: {_text(name.group(1))} counts {n} "
+                           f"{grade} and its header says {said.get(grade, 0)}")
+
+    closing = re.search(r"(\w+) present, (\w+) partial, (\w+) absent", text)
+    if not closing:
+        out.append("modeling.html: the sentence stating the package tally is gone")
+    else:
+        for word, grade in zip(closing.groups(), ("present", "partial", "absent")):
+            n = (int(word) if word.isdigit()
+                 else {v: k for k, v in WORDS.items()}.get(word.lower()))
+            if n != total[grade]:
+                out.append(f"modeling.html: the tally sentence says {word} "
+                           f"{grade} where the rows count {total[grade]}")
     return out
 
 
@@ -490,6 +543,9 @@ def main():
     transitions, unresolved = write_transitions(rev_tr, node_tr, known)
     lint(rev_states, node_states, events, rev_tr, node_tr)
     trace_schema_lint(known, events)
+    if drift := package_tally():
+        sys.exit('NOTHING WRITTEN — modeling.html grades itself three ways:\n  '
+                 + '\n  '.join(drift))
 
     files = {
         "transitions.yaml": transitions,

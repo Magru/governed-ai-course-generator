@@ -230,7 +230,7 @@
           <tr>
             <td class="role">V · Simulation and verification</td>
             <td>What happens under stress, and does the model match the system</td>
-            <td><span class="cov part">partial</span> One happy path traced by hand over 24 steps. Nothing executable, nothing stressed. <a href="walkthrough.html">Walkthrough</a></td>
+            <td><span class="cov part">partial</span> Verification is executable: fifteen invariants walked over five runs, each property also shown refusing a run that breaks it. Nothing is stressed — there is still no load, spike or retry-storm simulation. <a href="walkthrough.html">Walkthrough</a></td>
           </tr>
           <tr>
             <td class="role">VI · From model to production</td>
@@ -285,7 +285,7 @@
       </table>
     </div>
 
-    <div class="grp"><h3>State, events and behaviour</h3><span class="tally">5 artifacts · 3 present · 2 partial</span></div>
+    <div class="grp"><h3>State, events and behaviour</h3><span class="tally">5 artifacts · 4 present · 1 partial</span></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
@@ -294,12 +294,12 @@
           <tr><td class="art">state-inventory</td><td>Where is state authoritative?</td><td><span class="cov have">present</span> 21 revision states and 12 node states, all held in one store — which is the answer to the question, and which is also why <code>BlockedFinal</code> meaning two different things is a problem. <a href="states.html#s2">§2</a>, <a href="states.html#s3">§3</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/state-inventory.yaml">file</a></td></tr>
           <tr><td class="art">state-machines</td><td>What is permitted in each state?</td><td><span class="cov have">present</span> 56 + 24 transitions behind 38 guards, plus the moves that deliberately do not exist. <a href="transitions.html">Transitions</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/transitions.yaml">data</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/diagrams.md">diagram</a></td></tr>
           <tr><td class="art">event-catalog</td><td>What do the events mean?</td><td><span class="cov have">present</span> Seven commands separated from twenty-five events, and the envelope each one must carry — with the failure every missing field causes. Nothing emits it yet. <a href="states.html#s6">States §6</a> <b>·</b> <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/event-catalog.yaml">file</a></td></tr>
-          <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov part">partial</span> One happy path in prose. No failure sequences, and none drawn. <a href="walkthrough.html">Walkthrough</a></td></tr>
+          <tr><td class="art">interaction-sequences</td><td>How do traces actually behave?</td><td><span class="cov have">present</span> Five runs, executable and checked against all fifteen invariants: publication, a node removed through a re-committed outline, a rollback, a restricted source, and a node that has spent its retries. The shape they must have is declared in <code>trace-schema.yaml</code> rather than assumed. None of them is drawn. <a href="walkthrough.html">Walkthrough</a></td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="grp"><h3>Quality, verification and monitoring</h3><span class="tally">8 artifacts · 3 present · 3 partial · 2 absent</span></div>
+    <div class="grp"><h3>Quality, verification and monitoring</h3><span class="tally">8 artifacts · 4 present · 3 partial · 1 absent</span></div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Artifact</th><th>The question it answers</th><th>Here</th></tr></thead>
@@ -311,14 +311,14 @@
           <tr><td class="art">monitoring-map</td><td>How will we know the assumptions are still alive?</td><td><span class="cov part">partial</span> Every assumption now names its signal, threshold, response and owner (<a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/assumptions.yaml">assumptions.yaml</a>), but none is wired to anything. <a href="specification.html#s13">Seven production signals</a> exist and watch what the system <em>does</em>, not whether its premises hold</td></tr>
           <tr><td class="art">assumptions</td><td>What does the model depend on?</td><td><span class="cov have">present</span> Eleven dependencies in one register, each with the signal, threshold, response and owner the framework asks for — and each marked <code>monitored: false</code>, which is the truth. <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/assumptions.yaml">file</a></td></tr>
           <tr><td class="art">architecture-decisions</td><td>Why did we decide it this way?</td><td><span class="cov part">partial</span> The reasoning exists inline on every page and was never collected into decision records</td></tr>
-          <tr><td class="art">traceability + model-lint</td><td>Are the views still consistent with each other?</td><td><span class="cov none">absent</span> Consistency across the seven documents is maintained by hand and by audit</td></tr>
+          <tr><td class="art">traceability + model-lint</td><td>Are the views still consistent with each other?</td><td><span class="cov have">present</span> The exporter refuses to write anything when the views disagree: state and event names, the formulas against §8, figures that appear twice, eighteen counted claims in the prose, and the trace schema against the inventory. The prototype pins the model by hash and fails its build on drift.</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="wrap" style="padding:0; max-width:var(--measure);">
       <div class="thesis">
-        <p><strong>Nine present, eight partial, three absent — and every one of the nine is a file.</strong> What remains absent is the production-ready half and nothing else: a deployment view for a system with no deployment, an executable simulation, and a traceability linter. The earlier version of this page said the project had been reasoned about carefully and measured not at all. The second half of that is no longer true, and the measuring changed the argument rather than decorating it — see part IV above.</p>
+        <p><strong>Eleven present, seven partial, two absent — and every one of the eleven is a file.</strong> What remains absent is a deployment view for a system with no deployment, and a simulation under load. The traceability linter was the third, and it is the one this round built: the views are now held together by a program that refuses to run when they drift, rather than by an audit that has to be remembered. The earlier version of this page said the project had been reasoned about carefully and measured not at all. The second half of that is no longer true, and the measuring changed the argument rather than decorating it — see part IV above.</p>
       </div>
     </div>
   </section>
@@ -392,7 +392,7 @@
     <h2>Open questions</h2>
     <ol class="questions">
       <li><strong>Is this page a view, or a document?</strong> It currently claims to be a map: everything on it points somewhere else, and nothing is stated here that is not stated in full elsewhere. The moment the latency budget lands, that stops being true — a summary of numbers that exist nowhere else makes this the authority on those numbers, and two places will drift. Either the budget lands on Evaluation and this page links it, or this page absorbs it and stops being a map. It cannot be both.</li>
-      <li><strong>Which of the three absent artifacts are honestly out of scope?</strong> A deployment model is the right thing for a system with a deployment, and this one has none. A traceability linter has no such excuse — an earlier draft of this page claimed there was no repository, which was simply false: these pages are a git repository, and a working <code>model_lint.py</code> already exists from a course assignment. That artifact is debt, not scope.</li>
+      <li><strong>Which of the three absent artifacts are honestly out of scope?</strong> A deployment model is the right thing for a system with a deployment, and this one has none. A traceability linter had no such excuse, and it is no longer absent — that debt was paid rather than rescoped. A simulation under load is the one honest gap left: it is real work this project has not done, not work it was right to skip.</li>
       <li><strong>Now that the assumptions are in one list, which copy is authoritative?</strong> They were distributed across six “Open questions” sections, each beside the decision it qualifies — where a reader wants them and an auditor does not. They are now also in <a href="https://github.com/Magru/governed-ai-course-generator/blob/main/model/assumptions.yaml">assumptions.yaml</a>, which is where the signals and thresholds live. Two copies of a risk picture disagree within a month unless one of them is declared the source; that declaration has not been made.</li>
     </ol>
 
