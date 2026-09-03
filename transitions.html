@@ -351,7 +351,7 @@
       <dd><span class="owner">Datalog</span> — every node this one points at is still in the committed outline: the topics an exam tests, and the prerequisites a lesson declares. Removing a node from the skeleton is the move that breaks this, and it breaks it in two directions — an exam left testing material the course no longer teaches, and a lesson whose prerequisite points at nothing. Neither is a cycle, so <code>ordering_acyclic</code> cannot see either. Refuses by naming the reference and the outline version that dropped its target.</dd>
 
       <dt>no_permission_leak(scope)</dt>
-      <dd><span class="owner">Datalog</span> — no source used anywhere in the scope is invisible to any member of the intended audience. Refuses with the path: node → source → the audience that lacks rights.</dd>
+      <dd><span class="owner">Datalog</span> — no source used anywhere in the scope is invisible to any member of the intended audience. Refuses with the path: node → chunk → article → the audience that lacks rights. Four hops, because permissions attach to the article and the chunk is the fragment that was retrieved — an author who is only told the chunk cannot tell whether to drop the citation or widen the audience.</dd>
 
       <dt>ordering_acyclic(course)</dt>
       <dd><span class="owner">Datalog</span> — the prerequisite graph has no cycles and agrees with lesson order. Refuses with the cycle.</dd>
