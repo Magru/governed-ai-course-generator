@@ -149,6 +149,11 @@
     </div>
   </header>
 
+  <div class="callout">
+      <div class="eyebrow">Amended after approval · 16 September 2026</div>
+      <p>Section&nbsp;3: the idempotency check moved ahead of the legality check, and the key is now issued before a call and marked landed after its effect. Both were found by building the membrane: in the approved order a repeat was refused as illegal, and a key recorded before the call made a crash look like a write that landed.</p>
+    </div>
+
   <nav class="toc">
     <div class="toc-title"><svg class="ico" aria-hidden="true"><use href="#i-toc"></use></svg> Contents</div>
     <ol>
@@ -254,18 +259,20 @@
   ├─ 2  schema_valid(args)            wrong shape, or extra fields → refuse
   ├─ 3  policy_allows(actor, action)  OPA: role, audience, limits
   ├─ 4  resource_allowed(actor, course)   this course, this tenant, this audience
-  ├─ 5  legal_in_state(action, course.state)   the transition table decides
-  ├─ 6  approval_present(action)      wherever the registry names a person
-  ├─ 7  idempotency_key_unused(op)    a repeat is a no-op, not a second effect
+  ├─ 5  idempotency_key_unused(op)    a repeat is a no-op, not a second effect
+  ├─ 6  legal_in_state(action, course.state)   the transition table decides
+  ├─ 7  approval_present(action)      wherever the registry names a person
   └─ 8  within_rate_limit(actor)      cost and abuse ceiling
         │
-        └─ all pass → execute, with the key recorded before the call</div>
+        └─ all pass → execute: the key is issued before the call,
+                      and marked landed when the effect is recorded</div>
 
     <p>Two of these deserve more than a line.</p>
     <p><strong>Check 2 rejects extra fields, not just wrong ones.</strong> A structurally valid payload carrying a field nobody expected is the classic way a downstream component gets handed something it will interpret generously. The schema closes the boundary rather than merely describing it.</p>
-    <p><strong>Check 5 asks the transition table, it does not re-implement it.</strong> Whether an action is legal right now is a question the <a href="transitions.html">state machine</a> already answers, and answering it twice is how two answers start to differ. This is the one place where the safety layer and the state layer meet, and the safety layer defers.</p>
+    <p><strong>Check 5 comes before legality, and the key is two facts.</strong> A repeat of something that already happened has, by then, moved the course on — asked in the other order, the repeat is refused as illegal and the person is told to take a move they have already taken. A key lookup is also cheaper than asking the machine, which is this section's own rule. And the key is <em>issued</em> before the call but <em>landed</em> only once the effect is recorded: written as landed before the call, a crash between the two reads as a write that happened, and recovery moves on from content that does not exist.</p>
+    <p><strong>Check 6 asks the transition table, it does not re-implement it.</strong> Whether an action is legal right now is a question the <a href="transitions.html">state machine</a> already answers, and answering it twice is how two answers start to differ. This is the one place where the safety layer and the state layer meet, and the safety layer defers.</p>
 
-    <p><strong>Check 6 reads the registry, not the risk level.</strong> Keying approval to <em>high</em> and <em>critical</em> looks equivalent and is not. <code>move_live_pointer</code> is critical and is performed by the system on the back of a human publication; <code>archive_revision</code> is high and takes a person of its own. The registry's <em>Requires</em> column is the authority and the membrane asks it directly — because a stated control and an enforced one drifting apart is the single failure the registry exists to prevent.</p>
+    <p><strong>Check 7 reads the registry, not the risk level.</strong> Keying approval to <em>high</em> and <em>critical</em> looks equivalent and is not. <code>move_live_pointer</code> is critical and is performed by the system on the back of a human publication; <code>archive_revision</code> is high and takes a person of its own. The registry's <em>Requires</em> column is the authority and the membrane asks it directly — because a stated control and an enforced one drifting apart is the single failure the registry exists to prevent.</p>
     <p>Two entries are enforced downstream rather than at the gate, and the registry now says where: the rights filter on retrieval is re-checked by <code>no_permission_leak</code> at <code>NodeChecks</code>, and visual review is a condition of <em>approving</em> a node rather than of generating its image. An entry in that column is a pointer to a check, not a promise.</p>
 
     <div class="thesis">

@@ -486,7 +486,7 @@ teaches(t1, sk_severity).
 
     <div class="code-label">Checked over the trace at WholeCourseChecks · see the <a href="states.html#s8">full list</a></div>
     <div class="code">G(content_generated(N)  → course_state = ContentInProgress)
-G(exam_generated(E)     → O content_approved(topics(E)))
+G(exam_generated(E)     → Y content_approved(topics(E)))
 G(generated(A)          → O guardrail_checked(A))
 G(published(R)          → G ¬node_edited(R))
 G(rolled_back_to(R)     → O re_verified(R))

@@ -375,9 +375,9 @@ def figure_drift():
 WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
          7: "seven", 8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen",
          14: "fourteen", 15: "fifteen", 19: "nineteen", 21: "twenty-one",
-         22: "twenty-two", 23: "twenty-three", 24: "twenty-four", 25: "twenty-five",
-         32: "thirty-two", 37: "thirty-seven", 38: "thirty-eight",
-         55: "fifty-five", 56: "fifty-six"}
+         22: "twenty-two", 23: "twenty-three", 24: "twenty-four", 25: "twenty-five", 26: "twenty-six",
+         32: "thirty-two", 37: "thirty-seven", 38: "thirty-eight", 39: "thirty-nine",
+         55: "fifty-five", 56: "fifty-six", 59: "fifty-nine"}
 
 PROSE_CLAIMS = [
     ("transitions.html", r"Guards: <b>(\d+)</b>", "guards"),
@@ -533,7 +533,7 @@ def main():
 
     expect = [("revision states", rev_states, 21), ("node states", node_states, 12),
               ("events", events, 24), ("situations", situations, 9),
-              ("revision transitions", rev_tr, 56), ("node transitions", node_tr, 24),
+              ("revision transitions", rev_tr, 59), ("node transitions", node_tr, 25),
               ("failure modes", modes, 14)]
     bad = [f"{n}: got {len(r)}, expected {e}" for n, r, e in expect if len(r) != e]
     if bad:

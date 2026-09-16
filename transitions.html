@@ -126,14 +126,16 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>56</b></span>
-      <span class="meta-chip">Node transitions: <b>24</b></span>
-      <span class="meta-chip">Guards: <b>38</b></span>
+      <span class="meta-chip">Revision transitions: <b>59</b></span>
+      <span class="meta-chip">Node transitions: <b>25</b></span>
+      <span class="meta-chip">Guards: <b>39</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
 
   <div class="callout">
+      <div class="eyebrow">Amended after approval · 16 September 2026</div>
+      <p><strong>16 September 2026 — found by running the tables as a machine.</strong> Four rows were added and one refusal re-routed. A skeleton edited at review goes back through <code>OutlineChecks</code> instead of being committed unchecked. A node that has spent its repair budget can be released by a person, as a node in recovery already could — without it, clearing the block re-blocked the revision at once. A Prolog refusal at <code>NodeChecks</code> is repairable; it had no row, so an uncovered objective could not be recorded at all. And re-verification now returns a revision to where it stood: <code>Published</code> if it holds the pointer or is returning by rollback, <code>Superseded</code> if it is only still being read — it had been made <code>Published</code> without the pointer. One guard joins the glossary for that: <code>rollback_requested</code>.</p>
       <div class="eyebrow">Amended after approval · 2 September 2026</div>
       <p>The node machine gained <code>NodeRecovery</code> with three exits, and the revision gained the row that stops a course whose node has spent its recovery budget — an effect that until now existed only in prose. <code>GuardrailChanged</code> joins the events that send a live revision to <code>StaleReview</code>. One semantic change goes with them: the retry budget now counts retries actually taken out of recovery, not only failed checks — without that a provider outage could loop on a bound nothing spent.</p>
     </div>
@@ -207,6 +209,7 @@
           <tr><td class="st stop">OutlineRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(revision) ∧ ¬has_nodes(revision)</td><td class="lyr">State store</td><td class="st stop">BlockedRecoverable</td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">reason_given ∧ ¬has_nodes(revision)</td><td class="lyr">Human</td><td class="st">OutlineDrafting</td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRejected</td><td class="grd">reason_given ∧ has_nodes(revision)</td><td class="lyr">Human</td><td class="st">ContentInProgress <small>(proposal discarded; outline_version unchanged)</small></td></tr>
+          <tr><td class="st human">OutlineReview</td><td class="evt">OutlineRevised</td><td class="grd">is_draft_revision ∧ has_outline(revision)</td><td class="lyr">Human</td><td class="st">OutlineChecks</td></tr>
           <tr><td class="st human">OutlineReview</td><td class="evt">OutlineApproved</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">ContentInProgress <small>(outline_version +1)</small></td></tr>
 
           <tr class="phase"><td colspan="5">Content, and the guard that ends it</td></tr>
@@ -229,7 +232,9 @@
           <tr><td class="st">any state in the live lineage</td><td class="evt">WithdrawRequested</td><td class="grd">in_live_lineage(revision) ∧ reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st">Published</td><td class="evt">LivePointerMoved</td><td class="grd">lost_live_pointer(revision)</td><td class="lyr">System</td><td class="st">Superseded</td></tr>
           <tr><td class="st">Published</td><td class="evt">LearnersNotified</td><td class="grd">notice_approved(recipient_set)</td><td class="lyr">Human · State store</td><td class="st">Published <small>(no move; the notice is recorded)</small></td></tr>
-                    <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ ¬lost_live_pointer(revision)</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ rollback_requested(revision)</td><td class="lyr">All layers</td><td class="st">Published <small>(re-stamped)</small></td></tr>
+          <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ ¬rollback_requested(revision)</td><td class="lyr">All layers</td><td class="st">Superseded <small>(re-stamped)</small></td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">(auto)</td><td class="grd">any of the above fails</td><td class="lyr">All layers</td><td class="st stop">Withdrawn</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">—</td><td class="st stop">ErrorRecovery</td></tr>
           <tr><td class="st stop">StaleReview</td><td class="evt">WithdrawRequested</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">Withdrawn</td></tr>
@@ -295,9 +300,10 @@
           <tr><td class="st">OutputGuardrail</td><td class="evt">GuardrailVerdict(deny)</td><td class="grd">¬guardrail_clean(text ∧ images)</td><td class="lyr">Guardrail</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ references_live ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Z3 · Prolog</td><td class="st">Validated</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(content)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
-          <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3</td><td class="st stop">NodeRepair</td></tr>
+          <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema · prolog)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3 · Prolog</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">course_state = ContentInProgress ∧ retry_budget_left(node)</td><td class="lyr">State store</td><td class="st">ContentDrafting</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">course → BlockedRecoverable</td></tr>
+          <tr><td class="st stop">NodeRepair</td><td class="evt">BlockedInputFixed</td><td class="grd">course_state = ContentInProgress ∧ ¬retry_budget_left(node)</td><td class="lyr">Human · State store</td><td class="st">ContentDrafting (repair_count = 0)</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node)</td><td class="lyr">Catalog flag · Human</td><td class="st human">NodeApproved</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeRejected</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">NodeEdited</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
@@ -326,7 +332,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need twenty-five more to be complete. All thirty-eight, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need twenty-six more to be complete. All thirty-nine, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -393,7 +399,7 @@
       <dd><span class="owner">Human</span> — the person who approved the publication was shown how many learners the notice will reach and which changed nodes lie ahead of them. The notice cannot be unsent, so the consent that authorises it has to be consent to <em>this notice</em> rather than to the publication that implies it. Without this guard the approval given for one action is spent on a different, irreversible one. The set is re-derived at publication and compared with the one the approver saw: an unbounded gap can sit between <code>Approved</code> and the publish click, and learners enrol and finish inside it. If the two differ the notice waits for a fresh approval — the same rule the publication signature already follows, applied to the other irreversible action.</dd>
 
       <dt>lost_live_pointer(revision) · blocked_at(revision)</dt>
-      <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: whether some other revision now holds the live pointer, and which <em>phase</em> a recoverable block was entered from — brief, outline, or content, each a named set of states — so the fix returns there instead of to the beginning. The first was called <code>successor_published</code> until it was noticed that a rollback is the case where the revision taking the pointer is the <em>predecessor</em>: under the old name the rollback chain below could not execute. What matters is that the pointer moved away, not which direction it moved.</dd>
+      <dd><span class="owner">State store</span> — bookkeeping the pointer and the stop need: whether some other revision now holds the live pointer, and which <em>phase</em> a recoverable block was entered from — brief, outline, or node, each a named set of states — so the fix returns there instead of to the beginning. The first was called <code>successor_published</code> until it was noticed that a rollback is the case where the revision taking the pointer is the <em>predecessor</em>: under the old name the rollback chain below could not execute. What matters is that the pointer moved away, not which direction it moved.</dd>
 
       <dt>in_outline(node, committed_outline)</dt>
       <dd><span class="owner">State store</span> — whether the skeleton just committed still contains this node. It is evaluated against the proposal being committed, never against <code>outline_version</code>, which the very same transition is about to advance. Refusing is what drops a node, so it refuses with the outline version that dropped it.</dd>
@@ -425,6 +431,8 @@
       <dt>affected(revision) · has_active_readers(revision)</dt>
       <dd><span class="owner">Datalog · Guardrail · State store</span> — which revisions a configuration change reaches, and whether anyone is still reading a superseded one. Together they scope the staleness sweep. <code>affected</code> is deliberately answered by two owners, because it is two questions wearing one name. “Is this revision stamped under a version the change supersedes?” is structural, and Datalog owns it. “Does the change actually reach what this revision says?” is a question about meaning, and no relation can answer it — a rule about a forbidden topic is evaded by a paraphrase, not by a missing edge. So the structural filter runs first and the guardrail judges what survives it, <em>before</em> the sweep commits a revision to re-verification. Putting the guardrail only inside <code>StaleReview</code> would have made it unreachable for exactly the revisions it was needed to catch.</dd>
 
+      <dt>rollback_requested(revision)</dt>
+      <dd><span class="owner">State store</span> — this revision entered <code>StaleReview</code> because a person asked to return to it, not because a rule changed under it. It is what separates the two ways a revision that no longer holds the pointer can pass re-verification: one returning by rollback earns the pointer back, one that is only still being read by learners mid-course goes back to <code>Superseded</code>. Without it both became <code>Published</code>, and a course had two published revisions with one pointer between them.</dd>
       <dt>approval_chain_satisfied(revision)</dt>
       <dd><span class="owner">OPA</span> — the signatures this organization requires for publication are present. Configuration decides how many and whose; the guard only checks.</dd>
     </dl>
@@ -483,7 +491,8 @@ RollbackRequested(rev 1) → rev 1 → StaleReview
   affected(rev C) ✓ ∧ has_active_readers ✓ → rev C: Superseded → StaleReview
 
 rev A: (re-check passes) → Published, re-stamped v8
-rev C: (re-check fails)  → Withdrawn, readers cut over</div>
+rev C: (re-check fails)  → Withdrawn, readers cut over
+       (had it passed    → Superseded, re-stamped; the pointer stays where it is)</div>
       <p>Three revisions, one event, three different outcomes, no deployment and no downtime. This chain is the practical answer to “what happens when compliance changes its mind”, and it is legal precisely because none of it edits anything.</p>
     </div>
   </section>

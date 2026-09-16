@@ -84,6 +84,8 @@
   </header>
 
   <div class="callout">
+      <div class="eyebrow">Amended after approval · 16 September 2026</div>
+      <p>Three invariants in Section&nbsp;8 were rewritten after the tables were run as a machine and the machine's own trace was checked against them. Two contradicted transitions this page's decisions require. <code>I12</code> said a revision is superseded only because a successor was published — but a rollback supersedes the <em>successor</em>, and the pointer goes back to its parent. <code>I11</code> said learners are only ever served a <code>Published</code> revision — but a live revision re-verified after a rule change keeps the pointer while it is judged, which is what “no downtime” means. Both now say what the tables do. The third, <code>I2</code>, was weaker than it meant: “all topics were approved at some moment in the past” stays true after an approval is withdrawn, so it now reads the state the generation arrived in. Withdrawing the revision learners are served now also clears the pointer — access is cut, as Section&nbsp;5 always said.</p>
       <div class="eyebrow">Amended after approval · 2 September 2026</div>
       <p>Two changes since the approved version. The node machine gained its own recovery state — two node transitions pointed at the revision's <code>ErrorRecovery</code>, which the node machine neither declared nor left, so a node that timed out had no exit. And <code>GuardrailChanged</code> became an event of its own: the scene in Section&nbsp;5 opens with a compliance officer adding a forbidden topic, which is a guardrail change, and it was firing <code>PolicyChanged</code> — a different source. Compliance owns both, but they are different mechanisms with different version stamps: the bundle is deployed OPA source, the guardrail a definition in a managed console.</p>
     </div>
@@ -538,7 +540,7 @@ idempotency_key_unused(operation)
 objectives_covered(course)
 is_draft_revision(course)       — nothing published may be edited
 differs_from_live(revision)     — an unchanged fork is not publishable</div>
-    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty-eight, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
+    <p>These are the core thirteen; the <a href="transitions.html#s4">transitions page</a> lists all thirty-nine, each with what it produces when it refuses. Each guard belongs to exactly one owner — OPA for permission and policy, Z3 for arithmetic and satisfiability, Datalog for grounding, dependencies, and leaks, Prolog for coverage and explanation, and <strong>the state store itself</strong> for the bookkeeping guards: retry budgets, idempotency keys, version currency, and which revision is a draft. No guard is evaluated twice by two different tools.</p>
   </section>
 
   <section id="s8">
@@ -547,7 +549,7 @@ differs_from_live(revision)     — an unchanged fork is not publishable</div>
     <p>These hold across the whole life of a course — including sessions separated by days.</p>
     <p>The first line used to read <code>G(content_generated(N) → O outline_approved)</code>, and the change is worth explaining rather than hiding. <code>O</code> means “happened at some point in the past”, so once a skeleton had been approved <em>once</em>, the premise stayed true forever. That was harmless while a skeleton could only be approved once — and became toothless the moment <code>OutlineRevised</code> allowed a second approval cycle, since a node could then be generated against a skeleton that was mid-revision and the formula would still hold. Naming the state instead of the history says what was always meant.</p>
     <div class="formula">G(content_generated(N) → course_state = ContentInProgress)
-G(exam_generated(E)   → O content_approved(topics(E)))
+G(exam_generated(E)   → Y content_approved(topics(E)))            ← amended
 G(published(C)        → all_nodes_approved(C) ∧ ¬∃ stale(C))
 G(node_edited(N)      → X needs_revalidation(N))
 G(removed(N)          → O outline_committed_without(N))            ← new
@@ -558,12 +560,14 @@ G(restricted_chunk_used(N) → O permission_checked(N))
 G(action              → F audit(action))
 
 G(published(R)        → G ¬node_edited(R))                       ← immutability
-G(live(C) = R         → published(R))
-G(superseded(R)       → O ∃R' (successor(R', R) ∧ published(R')))
+G(live(C) = R         → in_live_lineage(R) ∧ ¬superseded(R))     ← amended
+G(superseded(R)       → O(live(C) = R) ∧ live(C) ≠ R)            ← amended
 G(rolled_back_to(R)   → O re_verified(R))                        ← no bypass
 G(node_held(N)        → course_state(rev N) ≠ ContentInProgress) ← new
-     where node_held(N) ≡ N in NodeRecovery ∧ ¬retry_budget_left(N)</div>
+     where node_held(N) ≡ N in NodeRecovery ∧ ¬retry_budget_left(N)
+     and   Y φ ≡ φ held in the state the event arrived in</div>
     <p>The first of the four new lines is the immutability decision written formally, and it is the strongest statement on this page: <em>once a revision is published, no node in it is ever edited again — at any point in the future</em>. The nested <code>G</code> is what carries that “ever”. It is also cheap to check, because a single <code>NodeEdited</code> event against a published revision falsifies it. The last line closes the one door through which unre-approved content could otherwise reach an audience: you may return to an old revision, but never without re-verifying it first.</p>
+    <p>The two pointer lines are about the pointer, not about who took it. A revision is superseded because learners were once served it and no longer are — whichever direction the pointer moved, forward to a successor or back by rollback. And the revision learners are served is always one from the live lineage that has not been superseded: <code>Published</code>, or being re-verified under a rule that changed while it was on air. A course taken off air while it is judged would make every compliance change an outage.</p>
   </section>
 
   <section id="s9">

@@ -127,6 +127,8 @@
   </header>
 
   <div class="callout">
+      <div class="eyebrow">Amended after approval · 16 September 2026</div>
+      <p>Step&nbsp;8: the editor's edits to the skeleton go back through <code>OutlineChecks</code> before the approval, instead of being committed as edited. Step&nbsp;18: the exam's invariant reads the state its generation arrived in, not any moment in the past.</p>
       <div class="eyebrow">Amended after approval · 2 September 2026</div>
       <p>Step&nbsp;16 routed the timed-out node to the revision's <code>ErrorRecovery</code>. It now enters <code>NodeRecovery</code>, which is the node machine's own. Nothing else in the run changed.</p>
     </div>
@@ -230,7 +232,7 @@ the prompt now carries the explanation, not just "try again"</div>
       </li>
       <li>
         <h4>The editor reviews the skeleton <span class="actor human">editor</span></h4>
-        <p><strong>First kind of stop.</strong> The screen shows three topics and an exam, plus what was repaired and why. The editor renames two topics, deletes a fourth, and approves.</p>
+        <p><strong>First kind of stop.</strong> The screen shows three topics and an exam, plus what was repaired and why. The editor renames two topics and deletes a fourth — the edited skeleton goes back through the four formal layers, because an approval signs what was checked — and approves.</p>
         <div class="mv">course: OutlineChecks → <b>OutlineReview</b></div>
       </li>
       <li>
@@ -312,7 +314,7 @@ the editor is not told anything yet</div>
         <h4>The exam waits on its topics <span class="actor auto">automatic</span></h4>
         <p>E1 has been <code>Planned</code> since step 9, but its generation is fenced: an exam may not be written before the topics it examines are approved. The button is not merely greyed out — the transition does not exist.</p>
         <div class="mv">guard: content_approved(topics(E1))
-invariant: G(exam_generated(E) → O content_approved(topics(E)))</div>
+invariant: G(exam_generated(E) → Y content_approved(topics(E)))</div>
       </li>
       <li>
         <h4>The editor starts the exam, and it is drafted and checked <span class="actor human">editor</span> <span class="actor model">model</span> <span class="actor auto">automatic</span></h4>
