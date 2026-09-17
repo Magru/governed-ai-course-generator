@@ -126,9 +126,9 @@
       <p><strong>A state list is an inventory; a transition table is a contract.</strong> The <a href="states.html">state model</a> says what can exist. This page says what may happen — and, more usefully for a governed system, what may not. Half of it is written in the negative on purpose.</p>
     </div>
     <div class="meta-row">
-      <span class="meta-chip">Revision transitions: <b>59</b></span>
-      <span class="meta-chip">Node transitions: <b>27</b></span>
-      <span class="meta-chip">Guards: <b>39</b></span>
+      <span class="meta-chip">Revision transitions: <b>60</b></span>
+      <span class="meta-chip">Node transitions: <b>30</b></span>
+      <span class="meta-chip">Guards: <b>40</b></span>
       <span class="meta-chip">Status: <b>draft for discussion</b></span>
     </div>
   </header>
@@ -139,6 +139,7 @@
       <p><strong>Later the same day — found by probing the machine.</strong> An exam could be approved while the topic it tests was in repair, and the repaired topic then landed without sending the exam back: the cascade fired on a person's edit only. <code>depends_on(node, edited)</code> now reads <em>edited</em> as any replacement of a node's content, a regeneration included. No row and no guard changed; the glossary says what the guard already had to mean.</p>
       <p><strong>And once more — an exam repaired while its topics were.</strong> Leaving <code>NodeRepair</code> did not ask what the first generation asks, so an exam could be rewritten over a topic still in repair, and I2 failed on a trace that cannot be unwritten. Both exits from <code>NodeRepair</code> into <code>ContentDrafting</code> now carry <code>content_approved(topics(node))</code>; the exam waits until its material is approved. No guard was added.</p>
       <p><strong>17 September 2026 — the fence had two gaps.</strong> Guarding the way <em>out</em> of <code>NodeRepair</code> left the exam unguarded where it already was: a topic edited while its exam was being drafted, or while the exam waited in recovery, let the exam land over a topic nobody had approved, and I2 failed with no way back but discarding the draft. A dependency change now sends an exam still in <code>ContentDrafting</code> or <code>NodeRecovery</code> to <code>NodeRepair</code> to wait; the answer that was on its way does not land, and waiting costs the exam no retry — it failed nothing. The retry out of recovery asks the same question. And an exam with no budget left whose topic was still in repair could not be released: the release demanded approved topics, so clearing the block re-blocked the course at once. The release now also runs the other way — the counter restarts and the exam goes on waiting.</p>
+      <p><strong>Later — guard the landing, not only the doors.</strong> Fencing each way into drafting left others open: an outline revision that gave an exam a new topic sent nothing back, and an exam already written could be approved while its topic waited. <code>content_approved(topics(node))</code> is now also asked when an exam's answer lands and when it is approved, and an outline that adds a dependency counts as a change to it. A node's stamp names the versions its checks ran under, so a guardrail changed between screening and approval leaves the node stale instead of passing it. <code>notice_approved</code> compares the recipient count sent with the one the publication's approvers were shown. An exam sent back to wait leaves <code>NodeRepair</code> by a row of its own, which needs no retry and does not block the course: its last attempt may have been in flight when the topic was edited. One guard joins the glossary for that, <code>waiting_for_topics</code>. Stamping what the checks ran under exposed a draft the tables never re-verified: a configuration change reached only live and superseded revisions. A draft's checked nodes now go back through the guardrail and the checks when a version they were checked under is replaced, and a draft already in review returns to work.</p>
       <p><strong>The same day — two answers the record could not vouch for.</strong> A node screened during a guardrail rollout was stamped with the version in force rather than the version that screened it, so it was never screened again; the stamp is now the version that gave the verdict, and a verdict from any other version is no answer. And the notice to learners — irreversible, and written by a person — reached them unscreened; <code>notice_approved</code> now requires that the guardrail read it.</p>
       <div class="eyebrow">Amended after approval · 2 September 2026</div>
       <p>The node machine gained <code>NodeRecovery</code> with three exits, and the revision gained the row that stops a course whose node has spent its recovery budget — an effect that until now existed only in prose. <code>GuardrailChanged</code> joins the events that send a live revision to <code>StaleReview</code>. One semantic change goes with them: the retry budget now counts retries actually taken out of recovery, not only failed checks — without that a provider outage could loop on a bound nothing spent.</p>
@@ -222,6 +223,7 @@
           <tr><td class="st">ContentInProgress</td><td class="evt">(node state changed)</td><td class="grd">all_nodes_approved ∧ no_stale_nodes ∧ differs_from_live</td><td class="lyr">State store</td><td class="st">ReadyForReview</td></tr>
           <tr><td class="st">ReadyForReview</td><td class="evt">NodeEdited(any)</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st">WholeCourseChecks · PendingApproval · Approved</td><td class="evt">NodeEdited(any)</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
+          <tr><td class="st">ReadyForReview · WholeCourseChecks · PendingApproval · Approved</td><td class="evt">PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated</td><td class="grd">is_draft_revision ∧ ¬versions_current(revision)</td><td class="lyr">State store</td><td class="st">ContentInProgress</td></tr>
           <tr><td class="st">ReadyForReview</td><td class="evt">CourseChecksRequested</td><td class="grd">—</td><td class="lyr">Human</td><td class="st">WholeCourseChecks</td></tr>
           <tr><td class="st">WholeCourseChecks</td><td class="evt">(auto)</td><td class="grd">objectives_covered ∧ ordering_acyclic ∧ no_permission_leak ∧ trace_satisfies_ltl</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st human">PendingApproval</td></tr>
           <tr><td class="st">WholeCourseChecks</td><td class="evt">CheckFailed(layer, nodes)</td><td class="grd">any of the above fails</td><td class="lyr">Prolog · Datalog · LTL</td><td class="st">ContentInProgress</td></tr>
@@ -272,7 +274,7 @@
     <div class="eyebrow">Section 3</div>
     <h2>Node transitions</h2>
     <div class="wrap" style="padding:0; max-width:var(--measure);">
-      <p>Nineteen rows, and every one of them runs inside a draft revision. There is no node transition that can fire against a published one — which is the immutability decision expressed as an absence rather than as a rule.</p>
+      <p>Thirty rows, and every one of them runs inside a draft revision. There is no node transition that can fire against a published one — which is the immutability decision expressed as an absence rather than as a rule.</p>
     </div>
     <div class="table-scroll">
       <table class="trans">
@@ -281,7 +283,7 @@
         </thead>
         <tbody>
           <tr><td class="st">Planned</td><td class="evt">NodeGenerationRequested</td><td class="grd">course_state = ContentInProgress ∧ is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))</td><td class="lyr">State store · OPA · Datalog</td><td class="st">ContentDrafting</td></tr>
-          <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">course_state = ContentInProgress</td><td class="lyr">State store</td><td class="st">Generated</td></tr>
+          <tr><td class="st">ContentDrafting</td><td class="evt">NodeGenerated</td><td class="grd">course_state = ContentInProgress ∧ content_approved(topics(node))</td><td class="lyr">State store · Datalog</td><td class="st">Generated</td></tr>
           <tr><td class="st">ContentDrafting</td><td class="evt">Timeout · ModelError</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = generation)</td></tr>
           <tr><td class="st">Generated</td><td class="evt">(auto)</td><td class="grd">—</td><td class="lyr">—</td><td class="st">OutputGuardrail</td></tr>
           <tr><td class="st">OutputGuardrail</td><td class="evt">Timeout · ServiceUnreachable</td><td class="grd">—</td><td class="lyr">State store</td><td class="st stop">NodeRecovery (recovery_from = guardrail)</td></tr>
@@ -305,17 +307,20 @@
           <tr><td class="st">NodeChecks</td><td class="evt">(auto)</td><td class="grd">block_schemas_valid ∧ grounded ∧ references_live ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered</td><td class="lyr">Schema · Datalog · Z3 · Prolog</td><td class="st">Validated</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(opa, …)</td><td class="grd">¬policy_allows(content)</td><td class="lyr">OPA</td><td class="st stop">BlockedFinal</td></tr>
           <tr><td class="st">NodeChecks</td><td class="evt">CheckFailed(datalog · z3 · schema · prolog)</td><td class="grd">policy_allows ∧ constraint violated</td><td class="lyr">Datalog · Z3 · Prolog</td><td class="st stop">NodeRepair</td></tr>
-          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">course_state = ContentInProgress ∧ retry_budget_left(node) ∧ content_approved(topics(node))</td><td class="lyr">State store · Datalog</td><td class="st">ContentDrafting</td></tr>
-          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">course → BlockedRecoverable</td></tr>
+          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">course_state = ContentInProgress ∧ ¬waiting_for_topics(node) ∧ retry_budget_left(node) ∧ content_approved(topics(node))</td><td class="lyr">State store · Datalog</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">course_state = ContentInProgress ∧ waiting_for_topics(node) ∧ content_approved(topics(node))</td><td class="lyr">State store · Datalog</td><td class="st">ContentDrafting</td></tr>
+          <tr><td class="st stop">NodeRepair</td><td class="evt">(auto)</td><td class="grd">¬waiting_for_topics(node) ∧ ¬retry_budget_left(node)</td><td class="lyr">State store</td><td class="st stop">course → BlockedRecoverable</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">BlockedInputFixed</td><td class="grd">course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ content_approved(topics(node))</td><td class="lyr">Human · State store · Datalog</td><td class="st">ContentDrafting (repair_count = 0)</td></tr>
           <tr><td class="st stop">NodeRepair</td><td class="evt">BlockedInputFixed</td><td class="grd">course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ ¬content_approved(topics(node))</td><td class="lyr">Human · State store · Datalog</td><td class="st stop">NodeRepair (repair_count = 0)</td></tr>
-          <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node)</td><td class="lyr">Catalog flag · Human</td><td class="st human">NodeApproved</td></tr>
+          <tr><td class="st">Validated</td><td class="evt">NodeApproved</td><td class="grd">all_visuals_reviewed(node) ∧ content_approved(topics(node))</td><td class="lyr">Catalog flag · Human · Datalog</td><td class="st human">NodeApproved</td></tr>
           <tr><td class="st">Validated</td><td class="evt">NodeRejected</td><td class="grd">reason_given</td><td class="lyr">Human</td><td class="st stop">NodeRepair</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">NodeEdited</td><td class="grd">is_draft_revision</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
+          <tr><td class="st">NodeApproved · Validated</td><td class="evt">PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated</td><td class="grd">is_draft_revision ∧ ¬versions_current(node)</td><td class="lyr">State store</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st human">NodeApproved</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited ∨ removed)</td><td class="lyr">Datalog</td><td class="st">NeedsRevalidation</td></tr>
           <tr><td class="st">ContentDrafting · NodeRecovery</td><td class="evt">(dependency changed)</td><td class="grd">depends_on(node, edited ∨ removed) ∧ ¬content_approved(topics(node))</td><td class="lyr">Datalog</td><td class="st stop">NodeRepair (waiting_for_topics)</td></tr>
           <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">hand_edited(node)</td><td class="lyr">State store</td><td class="st">OutputGuardrail</td></tr>
-            <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">¬hand_edited(node)</td><td class="lyr">State store</td><td class="st">NodeChecks</td></tr>
+            <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">¬hand_edited(node) ∧ versions_current(node)</td><td class="lyr">State store</td><td class="st">NodeChecks</td></tr>
+            <tr><td class="st">NeedsRevalidation</td><td class="evt">(auto)</td><td class="grd">¬hand_edited(node) ∧ ¬versions_current(node)</td><td class="lyr">State store</td><td class="st">OutputGuardrail</td></tr>
             <tr><td class="st">any state but Removed</td><td class="evt">OutlineApproved</td><td class="grd">is_draft_revision ∧ ¬in_outline(node, committed_outline) ∧ reason_given</td><td class="lyr">Human · State store</td><td class="st">Removed</td></tr>
         </tbody>
       </table>
@@ -338,7 +343,7 @@
   <section id="s4">
     <div class="eyebrow">Section 4</div>
     <h2>Every guard, in full</h2>
-    <p>The state model named thirteen core guards; the tables above need twenty-six more to be complete. All thirty-nine, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
+    <p>The state model named thirteen core guards; the tables above need twenty-seven more to be complete. All forty, with their owner and what they produce when they refuse — because a guard that returns only <em>false</em> is useless to the person who has to act next.</p>
 
     <dl class="guard-def">
       <dt>schema_valid(artifact)</dt>
@@ -372,10 +377,10 @@
       <dd><span class="owner">Prolog</span> — every learning objective is closed by some node. Refuses with the uncovered objectives, which is also what drives the editor's next-best-action.</dd>
 
       <dt>content_approved(topics(exam))</dt>
-      <dd><span class="owner">Datalog</span> — an exam may not be generated before the topics it tests are approved. <code>topics()</code> ranges over the topics in the <em>committed outline</em>: a topic dropped from the skeleton stops being a precondition rather than becoming one that can never be met. Without that scope a removed topic would strand its exam in <code>Planned</code> while the exam still counted toward <code>all_nodes_approved</code> — a revision with no move left. Refuses by naming the topics still outstanding.</dd>
+      <dd><span class="owner">Datalog</span> — an exam may not be generated before the topics it tests are approved. <code>topics()</code> ranges over the topics in the <em>committed outline</em>: a topic dropped from the skeleton stops being a precondition rather than becoming one that can never be met. Without that scope a removed topic would strand its exam in <code>Planned</code> while the exam still counted toward <code>all_nodes_approved</code> — a revision with no move left. Refuses by naming the topics still outstanding. It is asked three times, not once: when an exam is requested, when its answer lands, and when a person approves it — a topic can lose its approval between any two of them.</dd>
 
       <dt>depends_on(node, edited)</dt>
-      <dd><span class="owner">Datalog</span> — the staleness cascade, evaluated as a guard rather than run as a procedure. Returns the dependency path, which becomes the reason recorded on each withdrawn approval. <em>Edited</em> means the node's content was replaced — by a person's <code>NodeEdited</code> or by a <code>NodeGenerated</code> that lands a repair. Any replacement counts, a first generation included: a node approved while what it refers to was still unwritten was approved against nothing.</dd>
+      <dd><span class="owner">Datalog</span> — the staleness cascade, evaluated as a guard rather than run as a procedure. Returns the dependency path, which becomes the reason recorded on each withdrawn approval. <em>Edited</em> means the node's content was replaced — by a person's <code>NodeEdited</code> or by a <code>NodeGenerated</code> that lands a repair. Any replacement counts, a first generation included: a node approved while what it refers to was still unwritten was approved against nothing. So does an approved outline that gives a node a dependency it did not have: nothing was edited, but what the node rests on changed.</dd>
 
       <dt>trace_satisfies_ltl(course)</dt>
       <dd><span class="owner">Temporal logic</span> — the recorded history obeys every invariant. The only guard that reads the past rather than the present. Refuses with the violated formula and the event that broke it.</dd>
@@ -417,13 +422,16 @@
       <dd><span class="owner">State store</span> — which stage a node fell out of, <code>generation</code> or <code>guardrail</code>. Written on the way into <code>NodeRecovery</code>, read by every way out of it. The node-machine twin of <code>blocked_at</code>, and the reason a screening failure resumes at screening instead of paying for the model again.</dd>
 
       <dt>retry_budget_left(scope)</dt>
-      <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. The counter rises on a failed check <em>and</em> on every retry taken out of recovery, so a provider that is down does not loop forever on a budget nothing spends. It is read before it is raised, and arriving in recovery costs nothing on its own — an operation whose write turned out to have landed was never a retry. Nor does being sent back: a node a dependency change moved to <code>NodeRepair</code> (<code>waiting_for_topics</code>) leaves it without spending a retry. Refusing is what turns a repair loop into a stop.</dd>
+      <dd><span class="owner">State store</span> — <code>repair_count &lt; repair_budget</code>, where the budget is organizational configuration, not a constant. The counter rises on a failed check <em>and</em> on every retry taken out of recovery, so a provider that is down does not loop forever on a budget nothing spends. It is read before it is raised, and arriving in recovery costs nothing on its own — an operation whose write turned out to have landed was never a retry. Nor does being sent back: a node a dependency change moved to <code>NodeRepair</code> leaves it without spending a retry (<code>waiting_for_topics</code>). Refusing is what turns a repair loop into a stop.</dd>
+
+      <dt>waiting_for_topics(node)</dt>
+      <dd><span class="owner">State store</span> — the node is in <code>NodeRepair</code> because a dependency change sent it there, not because something it produced failed. Its way out asks only that its topics stand approved: it failed nothing, so it needs no retry to leave and costs none, and it does not stop the course while it waits. An exam whose last permitted attempt was in flight when its topic was edited would otherwise have been blocked for an edit.</dd>
 
       <dt>idempotency_key_unused(operation)</dt>
       <dd><span class="owner">State store</span> — has this side-effecting operation already landed? Asked <em>before</em> any retry, which is what makes a timeout an unknown rather than a failure.</dd>
 
       <dt>versions_current(artifact)</dt>
-      <dd><span class="owner">State store</span> — the stamps on the artifact match the current policy, guardrail, catalog and KB versions. Refusing sends a live revision to <code>StaleReview</code> rather than blocking it.</dd>
+      <dd><span class="owner">State store</span> — the stamps on the artifact match the current policy, guardrail, catalog and KB versions. For a node that is the versions its last checks ran under; for a revision, its own stamp — the versions its whole-course checks ran under once they have — and every node's. A node is stamped with the versions its checks ran under, the guardrail's taken from its verdict — not with those in force when a person approved it, which may have changed in between and were never checked against. Refusing sends a live revision to <code>StaleReview</code> rather than blocking it, and sends a draft's checked nodes back to be checked again: a draft is not re-verified as a whole, it is simply not finished under the old rules. A node checked under a replaced version goes back through the guardrail too, since which version screened it is part of what went stale.</dd>
 
       <dt>in_live_lineage(revision)</dt>
       <dd><span class="owner">State store</span> — this revision is serving, or was serving and has not been retired: <code>Published</code>, <code>Superseded</code>, <code>StaleReview</code>, and the <code>ErrorRecovery</code> or <code>BlockedRecoverable</code> a re-verification can fall into. It exists so that withdrawal does not depend on which phase an outage happened to interrupt. A guardrail that cannot be reached takes a live revision through <code>ErrorRecovery</code> into <code>BlockedRecoverable</code> — and that is precisely the moment someone needs to pull a course off air, so an emergency lever wired only to <code>Published</code> would come away in their hand.</dd>
@@ -592,7 +600,7 @@ rev C: (re-check fails)  → Withdrawn, readers cut over
       <li><strong><code>Superseded → Published</code></strong> — rollback goes through re-verification or not at all.</li>
       <li><strong><code>BlockedFinal → *</code></strong> — no admin override. A terminal state an administrator can undo is terminal in name only.</li>
       <li><strong><code>Validated → Published</code></strong> — nodes are never published; revisions are. A node reaching <code>Validated</code> means the formal layers are satisfied, which is not the same as anyone having agreed to it.</li>
-      <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in nineteen rows.</li>
+      <li><strong>Any node transition against a published revision</strong> — <code>is_draft_revision</code> guards all of them, so immutability is one predicate rather than a rule repeated in every row.</li>
       <li><strong>Cloning an archived course</strong> — the state model offers it, and it is deliberately not a transition: a clone creates a <em>new course identity</em> with its own first revision in <code>AwaitingBrief</code>. Nothing about the archived revision changes, so it belongs to the layer above this machine.</li>
       <li><strong>A skip from <code>Generated</code> to <code>NodeChecks</code></strong> — there is no path that avoids the guardrail hop, which is what makes <code>G(generated(A) → O guardrail_checked(A))</code> checkable over the trace rather than merely intended.</li>
     </ul>
