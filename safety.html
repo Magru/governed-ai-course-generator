@@ -350,6 +350,10 @@ test_output_cannot_request_an_action    model output naming an action
 test_pii_redacted_before_admission      redaction precedes context entry
 test_secret_never_enters_prompt         credential never assembled in</div>
     <p>Each of these is a guardrail turned into a test that runs in CI, and a failing one stops a deploy. A guardrail that is not a test is an intention.</p>
+    <div class="callout">
+      <div class="eyebrow">What the prototype keeps · 2 October 2026</div>
+      <p>By that measure, two of the eight are still intentions. The prototype's <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/docs/test-matrix.md">test matrix</a> maps each name above to the tests that discharge it. Five are kept. <code>test_catalog_metadata_is_not_prompt</code> is partial: the catalog is a reviewed, versioned fixture with closed block schemas, but there is no import path to refuse. <code>test_source_instruction_is_recorded</code> has no test, because none of the five evaluation points reads a retrieved source. The passage is inert by position, but the attempt is not recorded, and a system that knows it was tried would need a sixth point. <code>test_pii_redacted_before_admission</code> has no test either: the invented organisation's sources carry no personal data, and no redaction step was built.</p>
+    </div>
   </section>
 
   <section id="s6">
