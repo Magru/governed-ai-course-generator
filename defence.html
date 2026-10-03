@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Defence — Governed AI Course Generator</title>
-<meta name="description" content="The final-project defence of the Governed AI Course Generator: thirteen slides, from the problem to the question every governed agent has to answer.">
+<meta name="description" content="The final-project defence of the Governed AI Course Generator: fourteen slides, from the problem to the question every governed agent has to answer.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
 <style>
 :root {
@@ -362,7 +362,7 @@ make live-run   # Gemini + Bedrock</pre>
         <ul class="points">
           <li>The machine runs from the published specification, and the build fails if the two drift apart.</li>
           <li>Six engines, a gateway with eleven stages, and idempotency keys.</li>
-          <li><b>Live:</b> Gemini writes, Bedrock Guardrails screens, and one node was written, screened and checked.</li>
+          <li><b>Live:</b> Gemini writes, Bedrock Guardrails screens; one course was written, screened, checked and published from the course builder.</li>
           <li><b>Rollback:</b> re-verify, then move the pointer. <b>Versioning:</b> every node is stamped with the policy, guardrail, catalog and knowledge-base versions it was checked under.</li>
         </ul>
       </div>
@@ -370,7 +370,7 @@ make live-run   # Gemini + Bedrock</pre>
         <h3 style="margin:0 0 0.5em">Still a demo</h3>
         <ul class="points">
           <li class="no">The evidence rests on a recording. One live course has reached publication, once; a model answers differently every run.</li>
-          <li class="no">There is no image provider and no Bedrock generator.</li>
+          <li class="no">There is no image model and no Bedrock generator. Images are designed end to end — next slide — and not generated.</li>
           <li class="no">There is no monitoring: of eleven assumptions, none has a signal yet.</li>
         </ul>
         <h3 style="margin:1em 0 0.5em">Next</h3>
@@ -385,7 +385,38 @@ make live-run   # Gemini + Bedrock</pre>
   </div>
 </section>
 
-<!-- 12 · specification against a product -->
+<!-- 12 · images: designed, not built -->
+<section class="slide" id="s-images">
+  <div class="frame">
+    <p class="kicker">Images · designed, not built</p>
+    <h2>An illustration is governed before it exists</h2>
+    <div class="flow" aria-label="How an illustration would be made">
+      <div class="lane">
+        <span class="st done">checked lesson text</span><span class="ar">→</span><span class="st no">image prompt</span><span class="ar">→</span><span class="st no">guardrail · image-prompt-out</span><span class="ar">→</span><span class="st">membrane · generate_image</span>
+      </div>
+      <div class="lane">
+        <span class="ar">↳</span><span class="st no">image model</span><span class="ar">→</span><span class="st done">guardrail · image-out</span><span class="ar">→</span><span class="st done">block schema</span><span class="ar">→</span><span class="st person">a person looks</span><span class="ar">→</span><span class="st done">approve_node</span>
+      </div>
+      <div class="lane off">
+        <span class="lbl">in the prototype</span><span class="st done">built</span><span class="st">registered, never called</span><span class="st no">not built</span><span class="st person">a person</span>
+      </div>
+    </div>
+    <div class="cols" style="margin-top:1.1em">
+      <ul class="points">
+        <li><b>The prompt leaves the tenant.</b> A lesson's text becomes the prompt for its illustration and goes to an outside provider, so the guardrail screens it on the way out: the fifth evaluation point.</li>
+        <li><b>A registered action.</b> <code>generate_image</code> is medium risk — it spends money at an external provider — and runs under an idempotency key. Its compensation is discarding the draft: the prompt has already left.</li>
+        <li><b>The picture is screened, then checked.</b> The same guardrail reads the returned image; the block must carry a source, alt text, a caption and the knowledge-base chunk it illustrates.</li>
+      </ul>
+      <ul class="points">
+        <li class="person"><b>No check can say a picture is right.</b> The catalog marks image blocks <code>requires_visual_review</code>, so a lesson cannot be approved until a person has looked at every image in it.</li>
+        <li><b>Built already:</b> the image block, image screening at <code>image-out</code> (the guardrail's filters read images), fail-closed when there is no image to screen, and the visual-review gate.</li>
+        <li class="no"><b>Not built:</b> the image model, and the call that screens its prompt. It is one more adapter behind the generator port Gemini already sits behind.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 13 · specification against a product -->
 <section class="slide" id="s12">
   <div class="frame">
     <p class="kicker">Specification against a product</p>
@@ -406,7 +437,7 @@ make live-run   # Gemini + Bedrock</pre>
   </div>
 </section>
 
-<!-- 13 · the question -->
+<!-- 14 · the question -->
 <section class="slide" id="s13">
   <div class="frame">
     <p class="kicker">The question</p>
