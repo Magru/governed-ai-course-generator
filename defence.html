@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Defence — Governed AI Course Generator</title>
-<meta name="description" content="The final-project defence of the Governed AI Course Generator: fourteen slides, from the problem to the question every governed agent has to answer.">
+<meta name="description" content="The final-project defence of the Governed AI Course Generator: fourteen slides, from the problem to the question every governed agent has to answer, and the code behind them.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
 <style>
 :root {
@@ -79,6 +79,11 @@ td code { white-space: normal; }
 .lbl { color: var(--muted); font-size: 0.9em; margin: 0 0.2em 0 0.6em; }
 .lbl:first-child { margin-left: 0; }
 video { width: 100%; border-radius: 12px; border: 1px solid var(--hairline); background: #1e1e1e; }
+pre.code { white-space: pre; overflow-x: auto; font-family: var(--mono); background: var(--ink); color: #E9EDE6; border-radius: 10px; padding: 0.9em 1.1em; margin: 0 0 1em; font-size: clamp(0.62rem, 0.2rem + min(0.95vw, 1.55vh), 1.02rem); line-height: 1.45; }
+pre.code .c { color: #9FB0A6; }
+pre.code.half { font-size: clamp(0.58rem, 0.15rem + min(0.85vw, 1.45vh), 0.95rem); margin: 0; }
+.codefoot { font-size: var(--small); color: var(--muted); margin-top: 0.6em; }
+.codefoot a { color: var(--accent); }
 pre.cmd { white-space: pre-wrap; font-family: var(--mono); background: var(--ink); color: #E9EDE6; border-radius: 10px; padding: 0.9em 1.1em; font-size: var(--small); margin: 0 0 1em; overflow-x: auto; }
 .question { font-family: var(--serif); font-size: clamp(1.6rem, 0.7rem + 2.6vw, 3.2rem); line-height: 1.2; margin: 0 0 0.9em; max-width: 26em; }
 ol.answer { margin: 0; padding-left: 1.3em; display: grid; gap: 0.5em; max-width: 52em; }
@@ -452,6 +457,182 @@ make live-run   # live models</pre>
       <li><b>Change:</b> a new policy, guardrail, catalog or knowledge base re-verifies what it reaches. An approval does not outlive the rules it was given under.</li>
       <li><b>People:</b> the model proposes, and only a person approves.</li>
     </ol>
+  </div>
+</section>
+
+<!-- appendix · the code behind the slides -->
+<section class="slide" id="a1">
+  <div class="frame">
+    <p class="kicker">Appendix · code · State machine</p>
+    <h2>A transition is a row of the specification, not a branch in the code</h2>
+    <pre class="code">- event: &quot;NodeGenerationRequested&quot;
+  from: [&quot;Planned&quot;]
+  guard: &quot;course_state = ContentInProgress ∧ is_draft_revision
+          ∧ policy_allows(generate, node) ∧ content_approved(topics(node))&quot;
+  layer: &quot;State store · OPA · Datalog&quot;
+  to: [&quot;ContentDrafting&quot;]</pre>
+    <div class="cols">
+      <ul class="points"><li><b>Where it runs:</b> the machine loads <code>model/transitions.yaml</code> from the published specification; <code>make model-verify</code> fails the build if the two drift apart.</li></ul>
+      <ul class="points"><li class="no"><b>A refusal:</b> an event with no row whose guard holds moves nothing, and is recorded with its reason.</li></ul>
+    </div>
+    <p class="codefoot">Abridged from <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/model/transitions.yaml#L600">model/transitions.yaml:600</a></p>
+  </div>
+</section>
+
+<section class="slide" id="a2">
+  <div class="frame">
+    <p class="kicker">Appendix · code · OPA</p>
+    <h2>Who may do what, as policy the organisation owns</h2>
+    <div class="cols" style="margin-bottom:1em"><pre class="code half"><span class="c"># policy.rego</span>
+allow if {
+    input.action in AUTHORING
+    input.actor.role in {&quot;course-author&quot;,
+                         &quot;training-administrator&quot;}
+    audience_permitted
+}
+audience_permitted if {
+    every team in input.brief.audience {
+        team in data.org.grants[input.actor.id]
+                   .may_author_for
+    }
+}</pre><pre class="code half"><span class="c"># approval.rego</span>
+approval_chain_satisfied if {
+    every role in data.org.approval.required_roles {
+        some s in valid_signatures
+        s.role == role
+    }
+    count(signers) &gt;=
+        data.org.approval.minimum_signatures
+    count(false_signatures) == 0
+}</pre></div>
+    <div class="cols">
+      <ul class="points"><li><b>Where it runs:</b> at the gate of every action (stage 1, schema · policy), and on <code>ApprovalGranted</code>. A signature is checked against the person, not the role written on it.</li></ul>
+      <ul class="points"><li class="no"><b>A refusal:</b> <code>audience_permitted: author-1 may not author for ["supervisors"]</code></li></ul>
+    </div>
+    <p class="codefoot">Abridged from <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/engines/opa/policy.rego#L76">engines/opa/policy.rego:76</a></p>
+  </div>
+</section>
+
+<section class="slide" id="a3">
+  <div class="frame">
+    <p class="kicker">Appendix · code · Z3</p>
+    <h2>Can this brief hold at all — before the first token</h2>
+    <pre class="code">nodes, minutes, breadth = Int(&quot;requested_nodes&quot;), Int(&quot;minutes_per_lesson&quot;), Int(&quot;audience_breadth&quot;)
+groups = {
+  &quot;nodes&quot;:    {&quot;requested_nodes&quot;:        nodes == brief[&quot;requested_nodes&quot;],
+               &quot;max_nodes_per_course&quot;:   nodes &lt;= thresholds[&quot;max_nodes_per_course&quot;]},
+  &quot;minutes&quot;:  {&quot;minutes_per_lesson&quot;:     minutes == brief[&quot;minutes_per_lesson&quot;],
+               &quot;max_minutes_per_lesson&quot;: minutes &lt;= thresholds[&quot;max_minutes_per_lesson&quot;]},
+  &quot;audience&quot;: {&quot;audience_breadth&quot;:       breadth == len(brief[&quot;audience&quot;]),
+               &quot;max_audience_breadth&quot;:   breadth &lt;= thresholds[&quot;max_audience_breadth&quot;]},
+}
+for group, tracked in groups.items():
+    solver = Solver(); solver.set(unsat_core=True)
+    for name, claim in tracked.items():
+        solver.assert_and_track(claim, Bool(name))   <span class="c"># tracked, so a conflict has names</span>
+    if solver.check() == unsat:
+        conflicts.append(sorted(str(c) for c in solver.unsat_core()))</pre>
+    <div class="cols">
+      <ul class="points"><li><b>Where it runs:</b> <code>BriefFeasibility</code>: sat moves the brief on to drafting; unsat blocks it at the brief. A count the brief leaves out is refused, never guessed.</li></ul>
+      <ul class="points"><li class="no"><b>A refusal:</b> <code>cannot hold together: max_nodes_per_course, requested_nodes; max_minutes_per_lesson, minutes_per_lesson</code></li></ul>
+    </div>
+    <p class="codefoot">Abridged from <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/engines/z3/engine.py#L37">engines/z3/engine.py:37</a></p>
+  </div>
+</section>
+
+<section class="slide" id="a4">
+  <div class="frame">
+    <p class="kicker">Appendix · code · Datalog</p>
+    <h2>Structure and provenance, one rule each</h2>
+    <pre class="code">invented_skill(N, S)  &lt;= node_teaches(N, S) &amp; ~catalog_skill(S)
+dead_reference(N, T)  &lt;= refers_to(N, T) &amp; ~in_outline(T)
+reaches(A, B)         &lt;= reaches(A, X) &amp; prerequisite(X, B)
+cycle(A)              &lt;= reaches(A, A)
+outstanding(E, T)     &lt;= exam_topic(E, T) &amp; in_outline(T) &amp; ~approved(T)
+depends(A, B)         &lt;= depends(A, X) &amp; edge(X, B)
+
+<span class="c"># engine.py — a leak is a path: node → chunk → article → an audience without rights</span>
+leak(N, C, R, A)      &lt;= cites(N, C) &amp; in_article(C, R) &amp; in_audience(A) &amp; ~visible(R, A)
+ungrounded(N, C)      &lt;= cites(N, C) &amp; ~in_kb(C)</pre>
+    <div class="cols">
+      <ul class="points"><li><b>Where it runs:</b> outline checks (invented skills), node checks (grounding, leaks, references), the exam’s generation (outstanding topics), and the staleness cascade (<code>depends</code>).</li></ul>
+      <ul class="points"><li class="no"><b>A refusal:</b> <code>mt-node-202 cites mt-kb-008 from mt-art-incident-records, which apprentices cannot see</code></li></ul>
+    </div>
+    <p class="codefoot">Abridged from <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/engines/datalog/structure.py#L20">engines/datalog/structure.py:20</a></p>
+  </div>
+</section>
+
+<section class="slide" id="a5">
+  <div class="frame">
+    <p class="kicker">Appendix · code · Prolog</p>
+    <h2>Is the promise kept — and if not, why</h2>
+    <pre class="code">covers(Node, Objective) :-
+    approved(Node), teaches(Node, Skill), develops(Skill, Objective).
+
+uncovered(Course, Objective) :-
+    requires(Course, Objective),
+    \+ ( contains(Course, Node), covers(Node, Objective) ).
+
+<span class="c">% the same search, keeping what it passed over on the way</span>
+why_uncovered(Course, Objective, explanation(Objective, Skills, Partial, Reason)) :-
+    uncovered(Course, Objective),
+    findall(S, develops(S, Objective), Skills),
+    findall(N-S, ( contains(Course, N), teaches(N, S), member(S, Skills) ), Partial),
+    reason(Partial, Reason).
+
+reason([], no_node_teaches_it).
+reason([_|_], taught_but_not_approved).</pre>
+    <div class="cols">
+      <ul class="points"><li><b>Where it runs:</b> SWI-Prolog, run as its own process — there is no fallback that could answer for it. At node checks and at the whole-course checks.</li></ul>
+      <ul class="points"><li class="no"><b>A refusal:</b> <code>tool-inspection is not covered: a node teaches it, and nobody has approved that node</code></li></ul>
+    </div>
+    <p class="codefoot">Abridged from <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/engines/prolog/coverage.pl">engines/prolog/coverage.pl</a></p>
+  </div>
+</section>
+
+<section class="slide" id="a6">
+  <div class="frame">
+    <p class="kicker">Appendix · code · Temporal logic</p>
+    <h2>An invariant reads the whole trace</h2>
+    <pre class="code">@invariant(&quot;I2&quot;, &quot;G(exam_generated(E) → Y content_approved(topics(E)))&quot;)
+def i2(trace):
+    bad = []
+    for i, s in enumerate(trace):
+        if i == 0 or s.event != &quot;NodeGenerated&quot; or s.maybe(&quot;node_type&quot;) != &quot;exam&quot;:
+            continue
+        needed   = set(s.state(&quot;topics&quot;, &quot;I2&quot;))
+        approved = set(trace.before(i).state(&quot;approved_nodes&quot;, &quot;I2&quot;))   <span class="c"># Y: the step before</span>
+        if not needed &lt;= approved:
+            bad.append(_v(i2, s, f&quot;exam generated while {sorted(needed - approved)} &quot;
+                                 f&quot;did not stand approved&quot;))
+    return bad</pre>
+    <div class="cols">
+      <ul class="points"><li><b>Where it runs:</b> after every step, and as the guard <code>trace_satisfies_ltl</code> on <code>WholeCourseChecks → PendingApproval</code>. Fifteen invariants; a test breaks each one on purpose.</li></ul>
+      <ul class="points"><li class="no"><b>A refusal:</b> <code>I3 violated at step 23 (PublishRequested): published with ['mt-node-001'] stale</code></li></ul>
+    </div>
+    <p class="codefoot">Abridged from <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/engines/temporal/invariants.py#L56">engines/temporal/invariants.py:56</a></p>
+  </div>
+</section>
+
+<section class="slide" id="a7">
+  <div class="frame">
+    <p class="kicker">Appendix · code · Prompt architecture</p>
+    <h2>Three positions, kept apart, and a repair told why</h2>
+    <pre class="code">@dataclass(frozen=True)
+class Prompt:
+    instructions: str               <span class="c"># trusted · ours. the phase&#x27;s rules and schema</span>
+    author: str = &quot;&quot;                <span class="c"># authorized · untrusted. emphasis, tone, depth</span>
+    sources: tuple[str, ...] = ()   <span class="c"># untrusted. retrieved, inert by position</span>
+
+def _with_feedback(self, rules, obj):
+    <span class="c"># a repair is a retry that changed the request: the reason goes in, not &quot;try again&quot;</span>
+    reason = getattr(obj, &quot;last_refusal&quot;, None)
+    return rules if not reason else f&quot;{rules}\nThe previous attempt was refused: {reason}&quot;</pre>
+    <div class="cols">
+      <ul class="points"><li><b>Where it runs:</b> every model call. Only a provider adapter joins the positions, in the way its own API expects — never by concatenating strings in our code.</li></ul>
+      <ul class="points"><li class="no"><b>A test:</b> an author’s sentence asking to skip the checks switches none of them off.</li></ul>
+    </div>
+    <p class="codefoot">Abridged from <a href="https://github.com/Magru/governed-ai-course-generator-prototype/blob/main/gateway/provider/port.py#L50">gateway/provider/port.py:50</a></p>
   </div>
 </section>
 
