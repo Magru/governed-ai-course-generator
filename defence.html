@@ -78,6 +78,10 @@ td code { white-space: normal; }
 .ar { color: var(--muted); font-size: 1.2em; }
 .lbl { color: var(--muted); font-size: 0.9em; margin: 0 0.2em 0 0.6em; }
 .lbl:first-child { margin-left: 0; }
+/* Slide 3 carries both machines; smaller chips keep each path on one line. */
+#s3 .flow { font-size: calc(var(--small) * 0.84); gap: 0.55em; }
+#s3 .st { padding: 0.32em 0.5em; }
+#s3 .ar { font-size: 1.05em; }
 video { width: 100%; border-radius: 12px; border: 1px solid var(--hairline); background: #1e1e1e; }
 pre.code { white-space: pre; overflow-x: auto; font-family: var(--mono); background: var(--ink); color: #E9EDE6; border-radius: 10px; padding: 0.9em 1.1em; margin: 0 0 1em; font-size: clamp(0.62rem, 0.2rem + min(0.95vw, 1.55vh), 1.02rem); line-height: 1.45; }
 pre.code .c { color: #9FB0A6; }
@@ -160,7 +164,7 @@ ol.answer b { color: var(--accent); }
 <section class="slide" id="s3">
   <div class="frame">
     <p class="kicker">3 · State machine</p>
-    <h2>A revision moves only along the table</h2>
+    <h2>A revision, and each node in it, moves only along the table</h2>
     <div class="flow" aria-label="The revision lifecycle">
       <div class="lane">
         <span class="st">AwaitingBrief</span><span class="ar">→</span><span class="st">BriefValidation</span><span class="ar">→</span><span class="st">BriefFeasibility</span><span class="ar">→</span><span class="st">OutlineDrafting</span><span class="ar">→</span><span class="st">OutlineChecks</span><span class="ar">→</span><span class="st person">OutlineReview</span>
@@ -171,6 +175,12 @@ ol.answer b { color: var(--accent); }
       <div class="lane off">
         <span class="lbl">when something fails</span><span class="st no">BlockedRecoverable</span><span class="st no">ErrorRecovery</span><span class="st no">BlockedFinal</span>
         <span class="lbl">after publication</span><span class="st no">StaleReview</span><span class="st no">Withdrawn</span><span class="st done">Superseded</span><span class="st done">Archived</span>
+      </div>
+      <div class="lane off">
+        <span class="lbl">each node</span><span class="st">Planned</span><span class="ar">→</span><span class="st">ContentDrafting</span><span class="ar">→</span><span class="st">Generated</span><span class="ar">→</span><span class="st">OutputGuardrail</span><span class="ar">→</span><span class="st">NodeChecks</span><span class="ar">→</span><span class="st">Validated</span><span class="ar">→</span><span class="st person">NodeApproved</span>
+      </div>
+      <div class="lane">
+        <span class="lbl">a node, off the path</span><span class="st no">NodeRepair</span><span class="st no">NodeRecovery</span><span class="st no">NeedsRevalidation</span><span class="st no">BlockedFinal</span><span class="st no">Removed</span>
       </div>
     </div>
     <div class="cols" style="margin-top:1.1em">
