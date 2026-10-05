@@ -6,6 +6,10 @@
 <title>Defence — Governed AI Course Generator</title>
 <meta name="description" content="The final-project defence of the Governed AI Course Generator: fourteen slides, from the problem to the question every governed agent has to answer, and the code behind them.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+<script>
+  // Motion is opt-out: a reader who asked for less motion, and a printed page, see every slide whole.
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('motion');
+</script>
 <style>
 :root {
   --paper: #FAF9F5;
@@ -56,6 +60,8 @@ ul.points li.person::before { background: var(--hitl); }
 .big { font-family: var(--serif); font-size: clamp(2rem, 0.8rem + min(3.2vw, 6vh), 4.2rem); font-weight: 600; line-height: 1; color: var(--accent); }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1.2em; margin: 0.4em 0 1.2em; }
 .stat .label { font-size: var(--small); color: var(--muted); margin-top: 0.35em; }
+#s2 .stat { display: flex; flex-direction: column; }
+#s2 .stat .label { flex: 1; }
 .stat.no .big { color: var(--blocked); }
 .stat.person .big { color: var(--hitl); }
 .tbl { overflow-x: auto; }
@@ -90,8 +96,90 @@ pre.code.half { font-size: clamp(0.58rem, 0.15rem + min(0.85vw, 1.45vh), 0.95rem
 .codefoot a { color: var(--accent); }
 pre.cmd { white-space: pre-wrap; font-family: var(--mono); background: var(--ink); color: #E9EDE6; border-radius: 10px; padding: 0.9em 1.1em; font-size: var(--small); margin: 0 0 1em; overflow-x: auto; }
 .question { font-family: var(--serif); font-size: clamp(1.6rem, 0.7rem + 2.6vw, 3.2rem); line-height: 1.2; margin: 0 0 0.9em; max-width: 26em; }
-ol.answer { margin: 0; padding-left: 1.3em; display: grid; gap: 0.5em; max-width: 52em; }
+ol.answer { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.5em; max-width: 56em; }
+ol.answer li { display: grid; grid-template-columns: 1.35em minmax(0, 1fr); gap: 0.55em; align-items: start; }
 ol.answer b { color: var(--accent); }
+ol.answer li.person b { color: var(--hitl); }
+.ans-ic { width: 1.25em; height: 1.25em; margin-top: 0.05em; fill: none; stroke: var(--accent); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+li.person .ans-ic { stroke: var(--hitl); }
+html.motion .slide ol.answer > li { transition: opacity 0.45s ease, transform 0.55s cubic-bezier(.2,.7,.2,1); transition-delay: calc(var(--i, 0) * 90ms + 250ms); }
+html.motion .slide:not(.in) ol.answer > li { opacity: 0; transform: translateY(0.5em); }
+.qhead { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 2.5vw; align-items: center; margin-bottom: 0.9em; }
+.qhead .question { margin: 0; font-size: clamp(1.4rem, 0.6rem + min(2.3vw, 4vh), 3rem); }
+.qhead img.art { max-height: 30vh; -webkit-mask: linear-gradient(to top, transparent, #000 22%), linear-gradient(to right, transparent, #000 16%); -webkit-mask-composite: source-in; mask: linear-gradient(to top, transparent, #000 22%), linear-gradient(to right, transparent, #000 16%); mask-composite: intersect; }
+@media (max-width: 820px) { .qhead { grid-template-columns: 1fr; } }
+
+/* Glyphs carry the three meanings alongside colour: refused, a person decides, shown. */
+:root {
+  --ic-stop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.2' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='M3.8 12.2 12.2 3.8' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
+  --ic-person: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='4.6' r='3' fill='black'/%3E%3Cpath d='M2 15c0-3.6 2.7-6 6-6s6 2.4 6 6z' fill='black'/%3E%3C/svg%3E");
+  --ic-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 8.6 6.4 12.3 13.6 4' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.gl { display: inline-block; width: 0.85em; height: 0.85em; vertical-align: -0.08em; background: currentColor; -webkit-mask: var(--ic-check) center / contain no-repeat; mask: var(--ic-check) center / contain no-repeat; }
+.gl.no { -webkit-mask-image: var(--ic-stop); mask-image: var(--ic-stop); }
+.gl.person { -webkit-mask-image: var(--ic-person); mask-image: var(--ic-person); }
+ul.points li.no::before, ul.points li.person::before { width: 0.78em; height: 0.78em; top: 0.38em; left: -0.08em; border-radius: 0; -webkit-mask: var(--ic-stop) center / contain no-repeat; mask: var(--ic-stop) center / contain no-repeat; }
+ul.points li.person::before { -webkit-mask-image: var(--ic-person); mask-image: var(--ic-person); }
+.tag::before { content: ""; display: inline-block; width: 0.8em; height: 0.8em; margin-right: 0.3em; vertical-align: -0.08em; background: currentColor; -webkit-mask: var(--ic-check) center / contain no-repeat; mask: var(--ic-check) center / contain no-repeat; }
+.tag.no::before { -webkit-mask-image: var(--ic-stop); mask-image: var(--ic-stop); }
+.tag.person::before { -webkit-mask-image: var(--ic-person); mask-image: var(--ic-person); }
+
+/* Illustrations sit on the page's own paper; the edges fade so no seam shows. */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 3vw; align-items: center; margin-bottom: 1.4em; }
+.hero .lede { margin: 0; }
+img.art { display: block; width: 100%; height: auto; max-height: 36vh; object-fit: contain; }
+@media (max-width: 820px) { .hero { grid-template-columns: 1fr; } img.art { max-height: 30vh; } }
+
+/* The trace on slide 5: one course's steps, and one invariant reading them. */
+svg.trace { display: block; width: 100%; height: auto; margin-top: 0.9em; overflow: visible; font-family: var(--sans); }
+svg.trace text { font-size: 13px; fill: var(--muted); }
+svg.trace text.lab { fill: var(--accent); font-weight: 600; }
+svg.trace text.muted-lab { font-size: 12px; }
+svg.trace .rv { transform-box: fill-box; }
+
+.pair { display: flex; align-items: center; justify-content: center; gap: 0.4em; }
+.pair img { width: 42%; max-width: 11em; height: auto; max-height: 24vh; object-fit: contain; }
+.pair .ar { font-size: 1.6em; color: var(--accent); }
+.under { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); gap: 2vw; align-items: center; margin-top: 1.3em; }
+@media (max-width: 820px) { .under { grid-template-columns: 1fr; } }
+/* Slide 7's table is the densest on a 720-pixel screen. */
+#s7 td { padding-top: 0.36em; padding-bottom: 0.36em; }
+
+/* Proportion bars: each segment's width is its share of the whole, from latency-budget.yaml. */
+.bar { display: flex; height: 0.7em; border-radius: 5px; overflow: hidden; background: var(--hairline); margin-top: 0.7em; }
+.bar > i { display: block; height: 100%; flex: none; }
+.bar .model { background: #8B958F; }
+.bar .work { background: #C6CCC4; }
+.bar .gov { background: var(--accent); }
+.bar .gov2 { background: #6EA79C; background: color-mix(in srgb, var(--accent) 62%, white); }
+.bar .gov3 { background: #A4C7C0; background: color-mix(in srgb, var(--accent) 38%, white); }
+.bar .gov4 { background: #CFE2DE; background: color-mix(in srgb, var(--accent) 20%, white); }
+.bar .human { background: var(--hitl); }
+.legend i.gsw2 { background: #6EA79C; } .legend i.gsw3 { background: #A4C7C0; } .legend i.gsw4 { background: #CFE2DE; }
+.zoom { display: block; width: 100%; height: 1.1em; }
+.zoom polygon { fill: var(--accent-soft); }
+.legend { display: flex; flex-wrap: wrap; gap: 0.15em 0.9em; font-size: calc(var(--small) * 0.86); color: var(--muted); margin-top: 0.35em; line-height: 1.3; }
+.legend b { font-weight: 600; color: var(--ink); }
+.legend i { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 2px; margin-right: 0.3em; vertical-align: -0.05em; }
+.rows { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.35em 0.6em; align-items: center; margin-top: 0.7em; font-size: calc(var(--small) * 0.86); color: var(--muted); }
+.rows .bar { margin: 0; }
+/* Unit charts: one mark per thing counted. */
+.units { display: flex; flex-wrap: wrap; gap: 0.22em; margin-top: 0.55em; }
+.units > i { width: 0.78em; height: 0.78em; border-radius: 3px; background: var(--accent); }
+.units > i.no { background: var(--blocked); }
+.units > i.part { background: var(--blocked-soft); box-shadow: inset 0 0 0 1.5px var(--blocked); }
+.units.inline { display: inline-flex; margin: 0 0.35em 0 0; vertical-align: -0.1em; }
+
+/* Entrance: opacity and transform only, so no slide changes height while the page snaps to it. */
+html.motion .slide .rv, html.motion .slide .flow .lane > *, html.motion .slide .units > i, html.motion .slide .bar > i, html.motion .slide .draw { transition: opacity 0.45s ease, transform 0.55s cubic-bezier(.2,.7,.2,1), stroke-dashoffset 0.9s ease; transition-delay: calc(var(--i, 0) * 45ms + var(--d, 0ms)); }
+html.motion .slide:not(.in) .rv { opacity: 0; transform: translateY(0.6em); }
+html.motion .slide:not(.in) .flow .lane > * { opacity: 0; transform: translateX(-0.5em); }
+html.motion .slide:not(.in) .units > i { opacity: 0; transform: scale(0.4); }
+html.motion .slide .bar > i { transform-origin: left center; }
+html.motion .slide:not(.in) .bar > i { transform: scaleX(0); }
+html.motion .slide:not(.in) .draw { stroke-dashoffset: var(--len, 400); }
+html.motion .slide .draw { stroke-dasharray: var(--len, 400); }
+@media print { html.motion .slide * { opacity: 1 !important; transform: none !important; stroke-dashoffset: 0 !important; } }
 
 .hud { position: fixed; right: 1.4rem; bottom: 1.1rem; display: flex; gap: 0.5rem; align-items: center; font-size: 0.95rem; color: var(--muted); z-index: 5; }
 .hud button, .hud a { font: inherit; color: var(--ink); background: rgba(250, 249, 245, 0.92); border: 1px solid var(--hairline); border-radius: 8px; padding: 0.35rem 0.7rem; cursor: pointer; text-decoration: none; }
@@ -121,7 +209,10 @@ ol.answer b { color: var(--accent); }
   <div class="frame">
     <p class="kicker">Max Folko · AI Architect · Final project · Bar-Ilan · 4 October 2026</p>
     <h1>Governed AI Course Generator</h1>
-    <p class="lede">The model proposes. The architecture decides. The editor drives.</p>
+    <div class="hero">
+      <p class="lede">The model proposes. The architecture decides. The editor drives.</p>
+      <img class="art rv" style="--d:150ms" src="media/hero.webp" width="1100" height="353" alt="Lesson pages pass through three checkpoint gates; one page is stopped at the first gate, and a person stamps the finished stack.">
+    </div>
     <div class="cols">
       <ul class="points">
         <li><b>The problem.</b> On an enterprise learning platform a course takes days to author by hand. A model could draft it in minutes.</li>
@@ -144,9 +235,23 @@ ol.answer b { color: var(--accent); }
     <p class="kicker">2 · System value</p>
     <h2>Fast enough to use, and nothing reaches a learner unchecked</h2>
     <div class="stats">
-      <div class="stat"><div class="big">3.2%</div><div class="label">of the generation path is governance: 412 ms against a 12-second model call</div></div>
-      <div class="stat person"><div class="big">×10</div><div class="label">the human is the bottleneck, roughly tenfold, and that is the intended outcome</div></div>
-      <div class="stat"><div class="big">days → hours</div><div class="label">a twenty-node course: about six minutes of generation, about an hour of review</div></div>
+      <div class="stat"><div class="big" data-count="3.2" data-dec="1" data-suf="%">3.2%</div><div class="label">of the generation path is governance: 412 ms against a 12-second model call</div>
+        <div class="bar" role="img" aria-label="One node: model 12,000 ms, retrieval 300 ms, governance 412 ms"><i class="model" style="width:94.4%"></i><i class="work" style="width:2.36%"></i><i class="gov" style="width:3.24%"></i></div>
+        <svg class="zoom rv" style="--d:500ms" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><polygon points="96.76,0 100,0 100,10 0,10"/></svg>
+        <div class="bar" style="margin-top:0" role="img" aria-label="The 412 ms of governance: guardrail 300, engines 70, admission and audit 30, policy and schemas 12"><i class="gov" style="width:72.8%;--d:600ms"></i><i class="gov2" style="width:17%;--d:600ms"></i><i class="gov3" style="width:7.3%;--d:600ms"></i><i class="gov4" style="width:2.9%;--d:600ms"></i></div>
+        <div class="legend rv" style="--d:700ms"><span><i style="background:var(--accent)"></i>guardrail <b>300</b></span><span><i class="gsw2"></i>Z3 · Prolog · Datalog <b>70</b></span><span><i class="gsw3"></i>admission · audit <b>30</b></span><span><i class="gsw4"></i>OPA · schema <b>12</b> ms</span></div>
+      </div>
+      <div class="stat person"><div class="big" data-count="10" data-pre="×">×10</div><div class="label">the human is the bottleneck, roughly tenfold, and that is the intended outcome</div>
+        <div class="rows" role="img" aria-label="Per node: about 17 seconds to generate, about 180 seconds to review">
+          <span>model</span><div class="bar"><i class="model" style="width:9.7%"></i></div>
+          <span>person</span><div class="bar"><i class="human" style="width:100%;--d:250ms"></i></div>
+        </div>
+        <div class="legend rv" style="--d:500ms"><span>per node: <b>~17 s</b> to write, <b>~3 min</b> to review</span></div>
+      </div>
+      <div class="stat"><div class="big">days → hours</div><div class="label">a twenty-node course: about six minutes of generation, about an hour of review</div>
+        <div class="bar" role="img" aria-label="A twenty-node course: about 6 minutes of generation and about 60 minutes of review"><i class="model" style="width:9.1%"></i><i class="human" style="width:90.9%"></i></div>
+        <div class="legend rv" style="--d:500ms"><span><i style="background:#8B958F"></i>generation <b>~6 min</b></span><span><i style="background:var(--hitl)"></i>review <b>~1 h</b></span></div>
+      </div>
     </div>
     <div class="cols">
       <ul class="points">
@@ -239,6 +344,14 @@ ol.answer b { color: var(--accent); }
         </tbody>
       </table>
     </div>
+    <svg class="trace" viewBox="0 0 1000 118" role="img" aria-label="One course's trace: invariant I2 checks, at the step an exam is written, that its topics stood approved one step before; every invariant is checked at every step.">
+      <line x1="20" y1="62" x2="980" y2="62" stroke="var(--hairline)" stroke-width="2"/>
+      <g class="rv" style="--i:0"><circle cx="40" cy="62" r="7" fill="var(--paper)" stroke="#8B958F" stroke-width="2"/><text x="40" y="92" text-anchor="middle">brief</text></g><g class="rv" style="--i:1"><circle cx="155" cy="62" r="7" fill="var(--hitl-soft)" stroke="var(--hitl)" stroke-width="2"/><text x="155" y="92" text-anchor="middle">outline</text></g><g class="rv" style="--i:2"><circle cx="270" cy="62" r="7" fill="var(--hitl-soft)" stroke="var(--hitl)" stroke-width="2"/><text x="270" y="92" text-anchor="middle">201 ok</text></g><g class="rv" style="--i:3"><circle cx="385" cy="62" r="7" fill="var(--hitl-soft)" stroke="var(--hitl)" stroke-width="2"/><text x="385" y="92" text-anchor="middle">202 ok</text></g><g class="rv" style="--i:4"><circle cx="500" cy="62" r="7" fill="var(--hitl-soft)" stroke="var(--hitl)" stroke-width="2"/><text x="500" y="92" text-anchor="middle">203 ok</text></g><g class="rv" style="--i:5"><circle cx="615" cy="62" r="9" fill="var(--paper)" stroke="var(--accent)" stroke-width="3.5"/><text x="615" y="92" text-anchor="middle">exam written</text></g><g class="rv" style="--i:6"><circle cx="730" cy="62" r="7" fill="var(--paper)" stroke="#8B958F" stroke-width="2"/><text x="730" y="92" text-anchor="middle">course checks</text></g><g class="rv" style="--i:7"><circle cx="845" cy="62" r="7" fill="var(--hitl-soft)" stroke="var(--hitl)" stroke-width="2"/><text x="845" y="92" text-anchor="middle">two signatures</text></g><g class="rv" style="--i:8"><circle cx="960" cy="62" r="7" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/><text x="960" y="92" text-anchor="middle">published</text></g>
+      <path class="draw" style="--len:190;--d:650ms" d="M609,50 C585,14 530,14 505,50" fill="none" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#tr-head)"/>
+      <text class="rv lab" style="--d:1000ms" x="557" y="14" text-anchor="middle">I2 · Y: were its topics approved one step before?</text>
+      <text class="rv muted-lab" style="--d:1100ms" x="980" y="114" text-anchor="end">G: all fifteen are checked at every step, and before the signatures</text>
+      <defs><marker id="tr-head" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker></defs>
+    </svg>
     <p class="note"><b>Fifteen invariants</b> are checked over every run, and each one has a test that breaks a working run by a single field to prove it can fail. G = always · F = eventually · O = once in the past · Y = in the previous step.</p>
   </div>
 </section>
@@ -265,11 +378,18 @@ ol.answer b { color: var(--accent); }
         </ul>
       </div>
     </div>
-    <ul class="points" style="margin-top:1.3em">
+    <div class="under">
+    <ul class="points">
       <li><b>Who decides:</b> the transition table. A model's answer is an event the machine judges, never an instruction it follows.</li>
       <li class="no"><b>On a conflict,</b> any refusal wins. Live, each side refused what the other cannot see: the symbolic layers refused five artifacts the guardrail had allowed, and the guardrail refused a lesson as a denied topic, which no symbolic check reads.</li>
       <li class="person"><b>The last word</b> belongs to a person. Nothing neural can approve.</li>
     </ul>
+    <div class="pair" aria-label="The neural side writes; the symbolic side weighs what was written.">
+      <img class="rv" style="--d:200ms" src="media/neural.webp" width="360" height="370" alt="A swirl of flowing lines writes a page with a pen.">
+      <span class="ar rv" style="--d:400ms">→</span>
+      <img class="rv" style="--d:550ms" src="media/symbolic.webp" width="360" height="389" alt="A grid, gears, a balance and a padlock weigh a page.">
+    </div>
+    </div>
   </div>
 </section>
 
@@ -324,10 +444,10 @@ make live-run   # live models</pre>
     <p class="kicker">9 · Evaluation</p>
     <h2>Tests for the legal path, the forbidden one, and the rules over time</h2>
     <div class="stats">
-      <div class="stat"><div class="big">456</div><div class="label">tests, every one listed with what it expects in a matrix CI regenerates</div></div>
-      <div class="stat no"><div class="big">7</div><div class="label">evil twins, one for each way the architecture must refuse, each naming its guard and layer</div></div>
-      <div class="stat"><div class="big">15 / 15</div><div class="label">invariants, each one broken on purpose by a test</div></div>
-      <div class="stat"><div class="big">3 / 3</div><div class="label">live guardrail answers matched what the recording assumes</div></div>
+      <div class="stat"><div class="big" data-count="456">456</div><div class="label">tests, every one listed with what it expects in a matrix CI regenerates</div></div>
+      <div class="stat no"><div class="big" data-count="7">7</div><div class="label">evil twins, one for each way the architecture must refuse, each naming its guard and layer</div><div class="units" aria-hidden="true"><i class="no"></i><i class="no"></i><i class="no"></i><i class="no"></i><i class="no"></i><i class="no"></i><i class="no"></i></div></div>
+      <div class="stat"><div class="big">15 / 15</div><div class="label">invariants, each one broken on purpose by a test</div><div class="units" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="stat"><div class="big">3 / 3</div><div class="label">live guardrail answers matched what the recording assumes</div><div class="units" aria-hidden="true"><i></i><i></i><i></i></div></div>
     </div>
     <div class="cols">
       <ul class="points">
@@ -336,7 +456,7 @@ make live-run   # live models</pre>
         <li><b>Policies and inference:</b> every engine has its own suite, and is never allowed a fallback that says yes.</li>
       </ul>
       <ul class="points">
-        <li><b>The specification's eight required injection tests:</b> 5 kept, 1 partial, 2 gaps, and the matrix says which.</li>
+        <li><b>The specification's eight required injection tests:</b> <span class="units inline" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i class="part"></i><i class="no"></i><i class="no"></i></span>5 kept, 1 partial, 2 gaps, and the matrix says which.</li>
         <li><b>Live:</b> eight runs of the real model; three published a course. Every refusal came from the layer the specification gives it.</li>
       </ul>
     </div>
@@ -374,7 +494,7 @@ make live-run   # live models</pre>
     <h2>What works, what is still a demo, what comes next</h2>
     <div class="cols">
       <div>
-        <h3 style="margin:0 0 0.5em">Works</h3>
+        <h3 style="margin:0 0 0.5em"><span class="gl" style="color:var(--accent)"></span> Works</h3>
         <ul class="points">
           <li>The machine runs from the published specification, and the build fails if the two drift apart.</li>
           <li>Six engines, a gateway with eleven stages, and idempotency keys.</li>
@@ -383,13 +503,13 @@ make live-run   # live models</pre>
         </ul>
       </div>
       <div>
-        <h3 style="margin:0 0 0.5em">Still a demo</h3>
+        <h3 style="margin:0 0 0.5em"><span class="gl no" style="color:var(--blocked)"></span> Still a demo</h3>
         <ul class="points">
           <li class="no">The evidence rests on a recording; eight live runs are not a statistic, and a model answers differently every run.</li>
           <li class="no">There is no image model and no Bedrock generator. Images are designed end to end — next slide — and not generated.</li>
           <li class="no">There is no monitoring: of eleven assumptions, none has a signal yet.</li>
         </ul>
-        <h3 style="margin:1em 0 0.5em">Next</h3>
+        <h3 style="margin:1em 0 0.5em"><span style="color:var(--accent)">→</span> Next</h3>
         <ul class="points">
           <li>A monitoring map over the assumptions</li>
           <li>Exam topics and node count checked at the outline</li>
@@ -457,15 +577,20 @@ make live-run   # live models</pre>
 <!-- 14 · the question -->
 <section class="slide" id="s13">
   <div class="frame">
-    <p class="kicker">The question</p>
-    <p class="question">How does the system keep an AI agent from drifting, over time, from a correct sequence into a dangerous or forbidden one?</p>
+    <div class="qhead">
+      <div>
+        <p class="kicker">The question</p>
+        <p class="question">How does the system keep an AI agent from drifting, over time, from a correct sequence into a dangerous or forbidden one?</p>
+      </div>
+      <img class="art rv" style="--d:200ms" src="media/drift.webp" width="1000" height="733" alt="A small robot walks a railed path of stepping stones; the branch toward a cliff is shut by a gate, and a person waits at the end of the path.">
+    </div>
     <ol class="answer">
-      <li><b>State:</b> the forbidden sequence has no row in the table, so it cannot be taken. A refused event moves nothing and is recorded.</li>
-      <li><b>Events:</b> the agent acts only through registered actions, and each one is a question to a guard before anything is spent.</li>
-      <li><b>Guards:</b> OPA, Z3, Datalog and Prolog each refuse their own kind of fault, with a reason the next attempt is given.</li>
-      <li><b>Time:</b> temporal logic checks the whole trace, so drift across steps is caught, not just a bad step.</li>
-      <li><b>Change:</b> a new policy, guardrail, catalog or knowledge base re-verifies what it reaches. An approval does not outlive the rules it was given under.</li>
-      <li><b>People:</b> the model proposes, and only a person approves.</li>
+      <li><svg class="ans-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg><span><b>State:</b> the forbidden sequence has no row in the table, so it cannot be taken. A refused event moves nothing and is recorded.</span></li>
+      <li><svg class="ans-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span><b>Events:</b> the agent acts only through registered actions, and each one is a question to a guard before anything is spent.</span></li>
+      <li><svg class="ans-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v6c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg><span><b>Guards:</b> OPA, Z3, Datalog and Prolog each refuse their own kind of fault, with a reason the next attempt is given.</span></li>
+      <li><svg class="ans-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg><span><b>Time:</b> temporal logic checks the whole trace, so drift across steps is caught, not just a bad step.</span></li>
+      <li><svg class="ans-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.6L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.6L20 16"/><path d="M20 20.5V16h-4.5"/></svg><span><b>Change:</b> a new policy, guardrail, catalog or knowledge base re-verifies what it reaches. An approval does not outlive the rules it was given under.</span></li>
+      <li class="person"><svg class="ans-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg><span><b>People:</b> the model proposes, and only a person approves.</span></li>
     </ol>
   </div>
 </section>
@@ -649,7 +774,7 @@ def _with_feedback(self, rules, obj):
 <nav class="hud" aria-label="Slides">
   <span class="keys">← → to move</span>
   <button type="button" data-go="-1" aria-label="Previous slide">‹</button>
-  <span class="count" aria-live="polite">1 / 13</span>
+  <span class="count" aria-live="polite">1 / 21</span>
   <button type="button" data-go="1" aria-label="Next slide">›</button>
   <button type="button" data-full aria-label="Full screen">⤢</button>
   <a href="index.html" aria-label="Back to the specification">spec</a>
@@ -669,9 +794,38 @@ def _with_feedback(self, rules, obj):
     show(current);
     try { history.replaceState(null, '', `#${slides[current].id}`); } catch (e) { /* a sandboxed view */ }
   };
+  // Entrance, once per slide: a path appears in the order it is walked, counted
+  // things appear one by one, numbers count up. Never re-run on scrolling back.
+  const motion = document.documentElement.classList.contains('motion');
+  document.querySelectorAll('.flow').forEach(f =>
+    [...f.querySelectorAll('.lane > *')].forEach((el, i) => el.style.setProperty('--i', i)));
+  document.querySelectorAll('.units, .bar, ol.answer').forEach(u =>
+    [...u.children].forEach((el, i) => el.style.setProperty('--i', i)));
+  const counters = [...document.querySelectorAll('[data-count]')];
+  const fmt = (el, v) => {
+    const dec = Number(el.dataset.dec || 0);
+    el.textContent = (el.dataset.pre || '') + v.toFixed(dec) + (el.dataset.suf || '');
+  };
+  if (motion) counters.forEach(el => fmt(el, 0));
+  // A printed deck shows every number as it is, whether or not its slide was visited.
+  addEventListener('beforeprint', () => counters.forEach(el => fmt(el, Number(el.dataset.count))));
+  const enter = slide => {
+    if (slide.classList.contains('in')) return;
+    slide.classList.add('in');
+    if (!motion) return;
+    slide.querySelectorAll('[data-count]').forEach(el => {
+      const to = Number(el.dataset.count), t0 = performance.now(), ms = 900;
+      const tick = t => {
+        const k = Math.min(1, (t - t0) / ms);
+        fmt(el, to * (1 - Math.pow(1 - k, 3)));
+        if (k < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  };
   const seen = new IntersectionObserver(entries => {
     entries.forEach(e => {
-      if (e.isIntersecting) { current = slides.indexOf(e.target); show(current); }
+      if (e.isIntersecting) { current = slides.indexOf(e.target); show(current); enter(e.target); }
     });
   }, { threshold: 0.55 });
   slides.forEach(s => seen.observe(s));
